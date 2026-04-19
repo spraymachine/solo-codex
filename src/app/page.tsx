@@ -121,7 +121,7 @@ function ReflectionEditor({
                 accomplished: event.target.value,
               }))
             }
-            className="min-h-[100px] rounded-[0.9rem] border border-[var(--surface-border)] bg-[var(--input-bg)] px-4 py-3 text-sm outline-none transition-colors duration-300 focus:border-[var(--accent-solid)]"
+            className="min-h-[100px] w-full resize-none rounded-2xl border-0 bg-[var(--bg-secondary)] px-5 py-4 md:px-4 md:py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] outline-none ring-1 ring-transparent transition-all duration-300 focus:bg-[var(--bg-panel)] focus:ring-[var(--accent-solid)]"
           />
         </label>
         <label className="grid gap-2">
@@ -136,7 +136,7 @@ function ReflectionEditor({
                 blockers: event.target.value,
               }))
             }
-            className="min-h-[100px] rounded-[0.9rem] border border-[var(--surface-border)] bg-[var(--input-bg)] px-4 py-3 text-sm outline-none transition-colors duration-300 focus:border-[var(--accent-solid)]"
+            className="min-h-[100px] w-full resize-none rounded-2xl border-0 bg-[var(--bg-secondary)] px-5 py-4 md:px-4 md:py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] outline-none ring-1 ring-transparent transition-all duration-300 focus:bg-[var(--bg-panel)] focus:ring-[var(--accent-solid)]"
           />
         </label>
         <label className="grid gap-2">
@@ -151,7 +151,7 @@ function ReflectionEditor({
                 mood: event.target.value,
               }))
             }
-            className="min-h-11 rounded-[0.9rem] border border-[var(--surface-border)] bg-[var(--input-bg)] px-4 text-sm outline-none transition-colors duration-300 focus:border-[var(--accent-solid)]"
+            className="h-12 w-full rounded-2xl border-0 bg-[var(--bg-secondary)] px-5 md:px-4 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] outline-none ring-1 ring-transparent transition-all duration-300 focus:bg-[var(--bg-panel)] focus:ring-[var(--accent-solid)]"
           />
         </label>
         <ActionButton onClick={() => void onSave(reflection)} className="self-start">
@@ -300,52 +300,23 @@ export default function HomePage() {
                   type="button"
                   key={persona}
                   onClick={() => setActivePersona(persona)}
-                  className={`rounded-[1.35rem] border px-4 py-4 text-left transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.99] md:px-5 md:py-5 ${accentClasses} ${glowClasses}`}
+                  className={`rounded-[1.35rem] border px-4 py-5 text-left transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.99] md:px-6 md:py-6 ${accentClasses} ${glowClasses}`}
                 >
-                  <div className="mb-4 flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--text-secondary)]">
-                        Persona
-                      </p>
-                      <p className="mt-2 text-2xl font-semibold tracking-[-0.05em] text-[var(--text-primary)]">
-                        {meta.label}
-                      </p>
-                    </div>
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--text-secondary)]">
+                      {meta.label}
+                    </p>
                     <span
-                      className="mt-1 h-2.5 w-10 rounded-full"
+                      className="h-2 w-6 rounded-full"
                       style={{ backgroundColor: meta.accent }}
                     />
                   </div>
-                  <p className="text-sm font-medium uppercase tracking-[0.18em] text-[var(--text-secondary)]">
-                    Why: {getPersonaWhy(persona)}
-                  </p>
-                  <p className="mt-3 max-w-[28ch] text-sm leading-6 text-[var(--text-secondary)]">
-                    {meta.description}
+                  <p className="mt-3 text-4xl font-semibold tracking-[-0.04em] text-[var(--text-primary)] md:text-5xl">
+                    {getPersonaWhy(persona)}
                   </p>
                 </button>
               );
             })}
-          </div>
-
-          <div className="mt-5 grid gap-3 border-t border-[var(--surface-border)] pt-4 text-sm text-[var(--text-secondary)] md:grid-cols-3">
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.22em]">Selected day</p>
-              <p className="mt-2 text-base font-medium text-[var(--text-primary)]">
-                {formatHumanDate(selectedDate)}
-              </p>
-            </div>
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.22em]">Current day</p>
-              <p className="mt-2 text-base font-medium text-[var(--text-primary)]">
-                {formatHumanDate(currentDate)}
-              </p>
-            </div>
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.22em]">Data scope</p>
-              <p className="mt-2 text-base font-medium text-[var(--text-primary)]">
-                Separate per person
-              </p>
-            </div>
           </div>
         </div>
       </section>
@@ -355,7 +326,7 @@ export default function HomePage() {
         title="Todo list for the day"
         description="Everything here belongs to the selected date only. Add it, cross it off, or remove it without leaking into another day."
       >
-        <div className="flex flex-col gap-3 md:flex-row">
+        <div className="flex flex-col gap-4 md:flex-row md:gap-3">
           <input
             value={todoDraft}
             onChange={(event) => setTodoDraft(event.target.value)}
@@ -365,9 +336,9 @@ export default function HomePage() {
               }
             }}
             placeholder="Add one concrete task for this day"
-            className="min-h-11 flex-1 rounded-xl border border-[var(--surface-border)] bg-[var(--input-bg)] px-4 text-sm outline-none transition-colors duration-300 focus:border-[var(--accent-solid)]"
+            className="h-13 flex-1 rounded-2xl border-0 bg-[var(--bg-secondary)] px-5 md:h-12 md:px-4 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] outline-none ring-1 ring-transparent transition-all duration-300 focus:bg-[var(--bg-panel)] focus:ring-[var(--accent-solid)]"
           />
-          <ActionButton onClick={() => void handleCreateTodo()} className="min-h-11 w-full md:w-auto md:px-5">
+          <ActionButton onClick={() => void handleCreateTodo()} className="h-13 w-full md:h-11 md:w-auto md:px-5">
             Add todo
           </ActionButton>
         </div>
@@ -438,7 +409,7 @@ export default function HomePage() {
         title="Goals to achieve across these three weeks"
         description="This section stays broader than the daily checklist. Use it for the meaningful outcomes you want to move toward across the full campaign window."
       >
-        <div className="flex flex-col gap-3 md:flex-row">
+        <div className="flex flex-col gap-4 md:flex-row md:gap-3">
           <input
             value={goalDraft}
             onChange={(event) => setGoalDraft(event.target.value)}
@@ -448,9 +419,9 @@ export default function HomePage() {
               }
             }}
             placeholder="Add one 3-week goal"
-            className="min-h-11 flex-1 rounded-xl border border-[var(--surface-border)] bg-[var(--input-bg)] px-4 text-sm outline-none transition-colors duration-300 focus:border-[var(--accent-solid)]"
+            className="h-13 flex-1 rounded-2xl border-0 bg-[var(--bg-secondary)] px-5 md:h-12 md:px-4 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] outline-none ring-1 ring-transparent transition-all duration-300 focus:bg-[var(--bg-panel)] focus:ring-[var(--accent-solid)]"
           />
-          <ActionButton onClick={() => void handleCreateGoal()} className="min-h-11 w-full md:w-auto md:px-5">
+          <ActionButton onClick={() => void handleCreateGoal()} className="h-13 w-full md:h-11 md:w-auto md:px-5">
             Add goal
           </ActionButton>
         </div>
@@ -504,12 +475,12 @@ export default function HomePage() {
       >
         <div className="grid gap-6 md:grid-cols-[0.95fr_1.05fr]">
           <div className="space-y-4">
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-4">
               <textarea
                 value={logDraft}
                 onChange={(event) => setLogDraft(event.target.value)}
                 placeholder="Write a quick log entry for the selected day"
-                className="min-h-[120px] rounded-[1rem] border border-[var(--surface-border)] bg-[var(--input-bg)] px-4 py-3 text-sm outline-none transition-colors duration-300 focus:border-[var(--accent-solid)]"
+                className="min-h-[120px] w-full resize-none rounded-2xl border-0 bg-[var(--bg-secondary)] px-5 py-4 md:px-4 md:py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] outline-none ring-1 ring-transparent transition-all duration-300 focus:bg-[var(--bg-panel)] focus:ring-[var(--accent-solid)]"
               />
               <ActionButton onClick={() => void handleSaveLog()} className="self-start">
                 Save log
