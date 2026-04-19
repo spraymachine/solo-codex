@@ -7,9 +7,7 @@ import { useTimerStore } from "@/lib/stores/timer-store";
 
 function formatRemaining(ms: number) {
   const totalSeconds = Math.max(0, Math.floor(ms / 1000));
-  const minutes = Math.floor(totalSeconds / 60)
-    .toString()
-    .padStart(2, "0");
+  const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, "0");
   const seconds = (totalSeconds % 60).toString().padStart(2, "0");
   return `${minutes}:${seconds}`;
 }
@@ -39,35 +37,41 @@ export function DungeonTimerOverlay() {
 
   return (
     <>
+      {/* ── Active timer: compact bottom bar ─────────────────────────────── */}
       {active ? (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-[rgba(242,233,221,0.72)] backdrop-blur-sm">
-          <div className="glow-blue mx-4 w-full max-w-lg rounded-3xl bg-[var(--bg-secondary)] p-8 text-center">
-            <p className="font-mono text-xs tracking-[0.35em] text-[var(--accent-soft)]">DUNGEON TIMER</p>
-            <h2 className="mt-4 text-2xl text-[var(--text-primary)]">{questTitle || "Manual Focus Session"}</h2>
-            <p className="mt-4 font-mono text-6xl text-[var(--accent-soft)]">{label}</p>
-            <p className="mt-2 text-sm text-slate-400">
-              {expired ? "Dungeon clear window reached." : "Stay inside the gate until the timer ends."}
+        <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-[var(--surface-border)] bg-[var(--bg-panel-strong)] backdrop-blur-sm">
+          <div className="mx-auto flex max-w-[1480px] items-center gap-4 px-4 py-3 md:px-6">
+            <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-[var(--accent-soft)] shrink-0">
+              {expired ? "Clear" : "Timer"}
             </p>
-            <div className="mt-6 flex items-center justify-center gap-3">
-              <Button variant="ghost" onClick={stopTimer}>
-                Give Up
+            <p className="min-w-0 flex-1 truncate text-sm font-medium text-[var(--text-primary)]">
+              {questTitle || "Manual Focus Session"}
+            </p>
+            <p className="font-mono text-lg font-semibold tabular-nums text-[var(--accent-soft)] shrink-0">
+              {label}
+            </p>
+            <div className="flex shrink-0 items-center gap-2">
+              <Button variant="ghost" onClick={stopTimer} className="h-8 px-3 text-xs">
+                Give up
               </Button>
-              <Button onClick={() => void completeTimer()}>
-                {expired ? "Claim Clear" : "Complete Early"}
+              <Button onClick={() => void completeTimer()} className="h-8 px-3 text-xs">
+                {expired ? "Claim" : "Done"}
               </Button>
             </div>
           </div>
         </div>
-      ) : null}
+      ) : (
+        /* ── Inactive: floating button bottom-right ──────────────────────── */
+        <button
+          type="button"
+          onClick={() => setQuickTimerOpen(true)}
+          className="fixed bottom-6 right-4 z-40 rounded-full border border-[color:color-mix(in_srgb,var(--accent-solid)_30%,transparent)] bg-[color:color-mix(in_srgb,var(--accent-solid)_18%,transparent)] px-4 py-2.5 font-mono text-[10px] tracking-[0.25em] text-[var(--accent-soft)] shadow-[0_0_25px_color-mix(in_srgb,var(--accent-solid)_20%,transparent)] md:right-6"
+        >
+          TIMER
+        </button>
+      )}
 
-      <button
-        type="button"
-        onClick={() => setQuickTimerOpen(true)}
-        className="fixed bottom-24 right-4 z-40 rounded-full border border-[color:color-mix(in_srgb,var(--accent-solid)_30%,transparent)] bg-[color:color-mix(in_srgb,var(--accent-solid)_18%,transparent)] px-4 py-3 font-mono text-xs tracking-[0.25em] text-[var(--accent-soft)] shadow-[0_0_25px_color-mix(in_srgb,var(--accent-solid)_20%,transparent)] md:bottom-6"
-      >
-        TIMER
-      </button>
-
+      {/* ── Quick-start modal ─────────────────────────────────────────────── */}
       <Modal open={quickTimerOpen} onClose={() => setQuickTimerOpen(false)} title="START TIMER">
         <form
           className="space-y-4"
@@ -95,9 +99,7 @@ export function DungeonTimerOverlay() {
             placeholder="Minutes"
           />
           <div className="flex justify-end gap-2">
-            <Button variant="ghost" type="button" onClick={() => setQuickTimerOpen(false)}>
-              Cancel
-            </Button>
+            <Button variant="ghost" type="button" onClick={() => setQuickTimerOpen(false)}>Cancel</Button>
             <Button type="submit">Start</Button>
           </div>
         </form>

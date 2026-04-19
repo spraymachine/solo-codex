@@ -14,6 +14,7 @@ interface RecordsState {
   load: () => Promise<void>;
   addEntry: (text: string, date?: string) => Promise<void>;
   saveReflection: (reflection: Reflection, date?: string) => Promise<void>;
+  addGratitude: (text: string, date?: string) => Promise<void>;
   applyPenaltyForDate: (date: string) => Promise<void>;
 }
 
@@ -57,6 +58,13 @@ export const useRecordsStore = create<RecordsState>((set) => ({
 
   async saveReflection(reflection, date = todayDate()) {
     const record = await storage.saveHunterReflection(date, reflection);
+    set((state) => ({
+      records: [record, ...state.records.filter((item) => item.date !== date)],
+    }));
+  },
+
+  async addGratitude(text, date = todayDate()) {
+    const record = await storage.addGratitudeItem(date, text);
     set((state) => ({
       records: [record, ...state.records.filter((item) => item.date !== date)],
     }));

@@ -1,7 +1,7 @@
 "use client";
 
 import type { ButtonHTMLAttributes, ReactNode } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Modal } from "@/components/ui/modal";
 import {
   getPersonaWhy,
@@ -26,7 +26,7 @@ function SectionShell({
   className = "",
 }: {
   eyebrow: string;
-  title: string;
+  title?: string;
   description: string;
   children: ReactNode;
   className?: string;
@@ -36,15 +36,17 @@ function SectionShell({
       className={`rounded-[1.5rem] border border-[var(--surface-border)] bg-[var(--bg-secondary)] p-2 ${className}`}
     >
       <div className="rounded-[1.1rem] border border-[var(--surface-highlight)] bg-[var(--bg-panel-strong)] px-4 py-5 md:px-6 md:py-6">
-        <div className="mb-6 space-y-2 border-b border-[var(--surface-border)] pb-5">
+        <div className={`${title ? "mb-6 space-y-2" : "mb-6"} border-b border-[var(--surface-border)] pb-5`}>
           <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--text-secondary)]">
             {eyebrow}
           </p>
-          <div className="space-y-1">
-            <h2 className="text-xl font-semibold tracking-[-0.03em] text-[var(--text-primary)] md:text-2xl">
-              {title}
-            </h2>
-          </div>
+          {title ? (
+            <div className="space-y-1">
+              <h2 className="text-xl font-semibold tracking-[-0.03em] text-[var(--text-primary)] md:text-2xl">
+                {title}
+              </h2>
+            </div>
+          ) : null}
         </div>
         {children}
       </div>
@@ -129,6 +131,27 @@ function formatHumanDate(date: string) {
   }).format(new Date(`${date}T12:00:00`));
 }
 
+function formatTime(isoTimestamp: string) {
+  return new Intl.DateTimeFormat("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  }).format(new Date(isoTimestamp));
+}
+
+function useLiveClock() {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(new Date()), 30_000);
+    return () => window.clearInterval(id);
+  }, []);
+  return new Intl.DateTimeFormat("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  }).format(now);
+}
+
 function getCalendarChipLabel(date: string) {
   const parsed = new Date(`${date}T12:00:00`);
   const day = parsed.getDate();
@@ -151,64 +174,19 @@ function ReflectionEditor({
   initialReflection: Reflection | null;
   onSave: (reflection: Reflection) => Promise<void>;
 }) {
-  const [reflection, setReflection] = useState({
-    accomplished: initialReflection?.accomplished ?? "",
-    blockers: initialReflection?.blockers ?? "",
-    mood: initialReflection?.mood ?? "",
-  });
+  const [reflect, setReflect] = useState(initialReflection?.reflect ?? "");
 
   return (
-    <div className="rounded-[1rem] border border-[var(--surface-border)] bg-[var(--bg-panel)] px-4 py-4 md:px-5">
-      <div className="grid gap-4">
-        <label className="grid gap-2">
-          <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--text-secondary)]">
-            Accomplished
-          </span>
-          <textarea
-            value={reflection.accomplished}
-            onChange={(event) =>
-              setReflection((current) => ({
-                ...current,
-                accomplished: event.target.value,
-              }))
-            }
-            className="min-h-[100px] w-full resize-none rounded-2xl border border-[var(--textarea-border)] bg-[var(--textarea-bg)] px-5 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] md:px-4 md:py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] outline-none transition-all duration-300 focus:bg-[var(--bg-panel)] focus:border-[var(--accent-solid)]"
-          />
-        </label>
-        <label className="grid gap-2">
-          <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--text-secondary)]">
-            Blockers
-          </span>
-          <textarea
-            value={reflection.blockers}
-            onChange={(event) =>
-              setReflection((current) => ({
-                ...current,
-                blockers: event.target.value,
-              }))
-            }
-            className="min-h-[100px] w-full resize-none rounded-2xl border border-[var(--textarea-border)] bg-[var(--textarea-bg)] px-5 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] md:px-4 md:py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] outline-none transition-all duration-300 focus:bg-[var(--bg-panel)] focus:border-[var(--accent-solid)]"
-          />
-        </label>
-        <label className="grid gap-2">
-          <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--text-secondary)]">
-            Mood
-          </span>
-          <input
-            value={reflection.mood}
-            onChange={(event) =>
-              setReflection((current) => ({
-                ...current,
-                mood: event.target.value,
-              }))
-            }
-            className="h-12 w-full rounded-2xl border-0 bg-[var(--bg-secondary)] px-5 md:px-4 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] outline-none ring-1 ring-transparent transition-all duration-300 focus:bg-[var(--bg-panel)] focus:ring-[var(--accent-solid)]"
-          />
-        </label>
-        <ActionButton onClick={() => void onSave(reflection)} className="self-start">
-          Save journal
-        </ActionButton>
-      </div>
+    <div className="flex flex-col gap-4">
+      <textarea
+        value={reflect}
+        onChange={(event) => setReflect(event.target.value)}
+        placeholder="Reflect on the day…"
+        className="min-h-[220px] w-full resize-none rounded-2xl border border-[var(--textarea-border)] bg-[var(--textarea-bg)] px-5 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] md:px-4 md:py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] outline-none transition-all duration-300 focus:bg-[var(--bg-panel)] focus:border-[var(--accent-solid)]"
+      />
+      <ActionButton onClick={() => void onSave({ reflect })} className="self-start">
+        Save
+      </ActionButton>
     </div>
   );
 }
@@ -418,13 +396,16 @@ export default function HomePage() {
   const records = useRecordsStore((state) => state.records);
   const addEntry = useRecordsStore((state) => state.addEntry);
   const saveReflection = useRecordsStore((state) => state.saveReflection);
+  const addGratitude = useRecordsStore((state) => state.addGratitude);
 
   const profile = usePlayerStore((state) => state.profile);
 
   const [todoDraft, setTodoDraft] = useState("");
   const [goalDraft, setGoalDraft] = useState("");
-  const [logDraft, setLogDraft] = useState("");
+  const [gratitudeDraft, setGratitudeDraft] = useState("");
+  const [quickLogDraft, setQuickLogDraft] = useState("");
   const [activeGoalId, setActiveGoalId] = useState<string | null>(null);
+  const currentTime = useLiveClock();
 
   const dayTodos = missions
     .filter((mission) => mission.date === selectedDate)
@@ -564,14 +545,18 @@ export default function HomePage() {
     });
   }
 
-  async function handleSaveLog() {
-    const text = logDraft.trim();
-    if (!text) {
-      return;
-    }
-
+  async function handleQuickLog() {
+    const text = quickLogDraft.trim();
+    if (!text) return;
     await addEntry(text, selectedDate);
-    setLogDraft("");
+    setQuickLogDraft("");
+  }
+
+  async function handleAddGratitude() {
+    const text = gratitudeDraft.trim();
+    if (!text) return;
+    await addGratitude(text, selectedDate);
+    setGratitudeDraft("");
   }
 
   async function handleSaveReflection(nextReflection: Reflection) {
@@ -635,9 +620,49 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ── Quick log ──────────────────────────────────────────────────────── */}
+      <section className="rounded-[1.5rem] border border-[var(--surface-border)] bg-[var(--bg-secondary)] p-2">
+        <div className="rounded-[1.1rem] border border-[var(--surface-highlight)] bg-[var(--bg-panel-strong)] px-4 py-4 md:px-6 md:py-5">
+          <div className="mb-3 flex items-center justify-between">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--text-secondary)]">
+              Quick log
+            </p>
+            <p className="font-mono text-[10px] tabular-nums text-[var(--text-secondary)]">
+              {currentTime}
+            </p>
+          </div>
+          <div className="flex flex-col gap-4 md:flex-row md:gap-3">
+            <ResponsiveEntryField
+              value={quickLogDraft}
+              onChange={setQuickLogDraft}
+              onSubmit={() => void handleQuickLog()}
+              placeholder={`What's happening right now...`}
+            />
+            <ActionButton onClick={() => void handleQuickLog()} className="h-13 w-full md:h-11 md:w-auto md:px-5">
+              Log
+            </ActionButton>
+          </div>
+          {dayRecord && dayRecord.entries.length > 0 && (
+            <div className="mt-4 space-y-2 border-t border-[var(--surface-border)] pt-4">
+              {dayRecord.entries
+                .slice()
+                .reverse()
+                .slice(0, 4)
+                .map((entry) => (
+                  <div key={entry.timestamp} className="flex items-baseline gap-3">
+                    <span className="shrink-0 font-mono text-[10px] tabular-nums text-[var(--text-secondary)]">
+                      {formatTime(entry.timestamp)}
+                    </span>
+                    <p className="min-w-0 truncate text-sm text-[var(--text-primary)]">{entry.text}</p>
+                  </div>
+                ))}
+            </div>
+          )}
+        </div>
+      </section>
+
       <SectionShell
         eyebrow="01 Daily list"
-        title="Todo list for the day"
         description="Everything here belongs to the selected date only. Add it, cross it off, or remove it without leaking into another day."
       >
         <div className="flex flex-col gap-4 md:flex-row md:gap-3">
@@ -704,7 +729,6 @@ export default function HomePage() {
 
       <SectionShell
         eyebrow="02 Three-week arc"
-        title="Goals to achieve across these three weeks"
         description="This section stays broader than the daily checklist. Use it for the meaningful outcomes you want to move toward across the full campaign window."
       >
         <div className="flex flex-col gap-4 md:flex-row md:gap-3">
@@ -794,43 +818,40 @@ export default function HomePage() {
 
       <SectionShell
         eyebrow="03 Reflection"
-        title="Logs and journal entries"
         description="Keep the trail of the day visible. Quick logs catch the facts; the journal fields keep the day interpretable."
       >
         <div className="grid gap-6 md:grid-cols-[0.95fr_1.05fr]">
           <div className="space-y-4">
             <div className="flex flex-col gap-4">
-              <textarea
-                value={logDraft}
-                onChange={(event) => setLogDraft(event.target.value)}
-                placeholder="Write a quick log entry for the selected day"
-                className="min-h-[120px] w-full resize-none rounded-2xl border border-[var(--textarea-border)] bg-[var(--textarea-bg)] px-5 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] md:px-4 md:py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] outline-none transition-all duration-300 focus:bg-[var(--bg-panel)] focus:border-[var(--accent-solid)]"
+              <input
+                value={gratitudeDraft}
+                onChange={(event) => setGratitudeDraft(event.target.value)}
+                onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); void handleAddGratitude(); } }}
+                placeholder="I'm grateful for…"
+                className="h-13 md:h-12 w-full rounded-2xl border-0 bg-[var(--bg-secondary)] px-5 md:px-4 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] outline-none ring-1 ring-transparent transition-all duration-300 focus:bg-[var(--bg-panel)] focus:ring-[var(--accent-solid)]"
               />
-              <ActionButton onClick={() => void handleSaveLog()} className="self-start">
-                Save log
+              <ActionButton onClick={() => void handleAddGratitude()} className="self-start">
+                Add
               </ActionButton>
             </div>
 
             <div className="rounded-[1rem] border border-[var(--surface-border)] bg-[var(--bg-panel)] px-4 py-4">
               <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--text-secondary)]">
-                Saved logs
+                Gratitude list
               </p>
-              <div className="mt-4 space-y-3">
-                {dayRecord?.entries.length ? (
-                  dayRecord.entries
+              <div className="mt-4 space-y-2">
+                {dayRecord?.gratitude?.length ? (
+                  dayRecord.gratitude
                     .slice()
                     .reverse()
-                    .map((entry) => (
-                      <div key={entry.timestamp} className="border-l border-black/8 pl-3">
-                        <p className="text-sm leading-6 text-[var(--text-primary)]">{entry.text}</p>
-                        <p className="mt-1 text-[11px] uppercase tracking-[0.16em] text-[var(--text-secondary)]">
-                          {entry.timestamp.slice(11, 16)}
-                        </p>
-                      </div>
+                    .map((item, index) => (
+                      <p key={index} className="text-sm leading-6 text-[var(--text-primary)]">
+                        {item}
+                      </p>
                     ))
                 ) : (
                   <p className="text-sm text-[var(--text-secondary)]">
-                    No logs for this date yet.
+                    Nothing added yet.
                   </p>
                 )}
               </div>
@@ -838,7 +859,7 @@ export default function HomePage() {
           </div>
 
           <ReflectionEditor
-            key={`${selectedDate}-${dayRecord?.reflection?.accomplished ?? ""}-${dayRecord?.reflection?.blockers ?? ""}-${dayRecord?.reflection?.mood ?? ""}`}
+            key={`${selectedDate}-${dayRecord?.reflection?.reflect ?? ""}`}
             initialReflection={dayRecord?.reflection ?? null}
             onSave={handleSaveReflection}
           />

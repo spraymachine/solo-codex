@@ -43,14 +43,12 @@ describe("full storage", () => {
   it("adds hunter record entries and reflections", async () => {
     await storage.addHunterEntry("2026-04-16", "Finished deep work block");
     await storage.saveHunterReflection("2026-04-16", {
-      accomplished: "Shipped a feature",
-      blockers: "None",
-      mood: "Focused",
+      reflect: "Shipped a feature, no blockers, feeling focused.",
     });
 
     const record = await storage.getHunterRecord("2026-04-16");
     expect(record?.entries).toHaveLength(1);
-    expect(record?.reflection?.mood).toBe("Focused");
+    expect(record?.reflection?.reflect).toBe("Shipped a feature, no blockers, feeling focused.");
   });
 
   it("creates penalty records only once per day", async () => {

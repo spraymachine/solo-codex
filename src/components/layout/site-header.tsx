@@ -55,19 +55,15 @@ export function SiteHeader() {
         {themeMode === "light" ? <MoonIcon /> : <SunIcon />}
       </button>
 
-      {/* Sign out — pill with email on desktop, icon-only on mobile */}
+      {/* Sign out — icon only */}
       {user ? (
         <button
           type="button"
           onClick={() => void signOut()}
           title="Sign out"
-          className="pointer-events-auto flex h-8 items-center gap-2 rounded-full border border-[var(--surface-border)] bg-[var(--bg-panel)] pl-2 pr-3 text-[var(--text-secondary)] shadow-sm transition-all duration-300 hover:border-[var(--accent-solid)] hover:text-[var(--text-primary)] md:pl-3"
+          className="pointer-events-auto flex h-8 w-8 items-center justify-center rounded-full border border-[var(--surface-border)] bg-[var(--bg-panel)] text-[var(--text-secondary)] shadow-sm transition-all duration-300 hover:border-[var(--accent-solid)] hover:text-[var(--text-primary)]"
         >
           <SignOutIcon />
-          {/* Email label — hidden on mobile */}
-          <span className="hidden max-w-[140px] truncate font-mono text-[10px] uppercase tracking-[0.18em] md:block">
-            {user.email}
-          </span>
         </button>
       ) : null}
     </header>

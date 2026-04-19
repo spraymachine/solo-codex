@@ -297,6 +297,7 @@ export const storage = {
         { timestamp: nowISO(), text },
       ],
       reflection: existing?.reflection ?? null,
+      gratitude: existing?.gratitude ?? [],
       penaltyApplied: existing?.penaltyApplied ?? false,
     };
 
@@ -314,6 +315,22 @@ export const storage = {
       date,
       entries: existing?.entries ?? [],
       reflection,
+      gratitude: existing?.gratitude ?? [],
+      penaltyApplied: existing?.penaltyApplied ?? false,
+    };
+
+    await db.hunterRecords.put(next);
+    return next;
+  },
+
+  async addGratitudeItem(date: string, text: string): Promise<HunterRecord> {
+    const db = getDb();
+    const existing = await db.hunterRecords.get(date);
+    const next: HunterRecord = {
+      date,
+      entries: existing?.entries ?? [],
+      reflection: existing?.reflection ?? null,
+      gratitude: [...(existing?.gratitude ?? []), text],
       penaltyApplied: existing?.penaltyApplied ?? false,
     };
 
@@ -328,6 +345,7 @@ export const storage = {
       date,
       entries: existing?.entries ?? [],
       reflection: existing?.reflection ?? null,
+      gratitude: existing?.gratitude ?? [],
       penaltyApplied: true,
     };
 

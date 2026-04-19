@@ -74,15 +74,14 @@ export interface LogEntry {
 }
 
 export interface Reflection {
-  accomplished: string;
-  blockers: string;
-  mood: string;
+  reflect: string;
 }
 
 export interface HunterRecord {
   date: string;
   entries: LogEntry[];
   reflection: Reflection | null;
+  gratitude: string[];
   penaltyApplied: boolean;
 }
 

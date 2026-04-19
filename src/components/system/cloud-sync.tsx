@@ -161,15 +161,33 @@ async function pushToTables(
           user_id: userId,
           persona,
           date: record.date,
-          accomplished: record.reflection!.accomplished,
-          blockers: record.reflection!.blockers,
-          mood: record.reflection!.mood,
+          reflect: record.reflection!.reflect,
+          updated_at: new Date().toISOString(),
         }));
 
       if (reflections.length > 0) {
         await supabase
           .from("solo_reflections")
           .upsert(reflections, { onConflict: "user_id,persona,date" });
+      }
+    })(),
+
+    // ── Gratitude ─────────────────────────────────────────────────────────────
+    (async () => {
+      const gratitudeRows = state.hunterRecords
+        .filter((record) => record.gratitude?.length)
+        .map((record) => ({
+          user_id: userId,
+          persona,
+          date: record.date,
+          items: record.gratitude,
+          updated_at: new Date().toISOString(),
+        }));
+
+      if (gratitudeRows.length > 0) {
+        await supabase
+          .from("solo_gratitude")
+          .upsert(gratitudeRows, { onConflict: "user_id,persona,date" });
       }
     })(),
   ]);
@@ -241,9 +259,9 @@ export function CloudSync() {
       return;
     }
 
-    loadingRef.current = true;
-
-    void (async () => {
+    async function loadSnapshot() {
+      if (!supabase || !user) return;
+      loadingRef.current = true;
       try {
         const { data, error } = await supabase
           .from("solo_snapshots")
@@ -269,7 +287,35 @@ export function CloudSync() {
         initialized.current = true;
         loadingRef.current = false;
       }
-    })();
+    }
+
+    void loadSnapshot();
+
+    // ── Realtime: re-import whenever another device saves a snapshot ─────────
+    const channel = supabase
+      .channel(`snapshots:${user.id}:${activePersona}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "solo_snapshots",
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          // Only apply if the update is for our persona and came from another tab/device
+          // (our own writes are already reflected in local state, but re-importing is safe)
+          const incomingPersona = (payload.new as { persona?: string }).persona;
+          if (incomingPersona !== activePersona) return;
+          console.log("[CloudSync] realtime snapshot received — syncing");
+          void loadSnapshot();
+        },
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
   }, [activePersona, enabled, loadAll, loadGates, loadInventory, loadMissions, loadRecords, loadStats, user]);
 
   // ── Save on state change (debounced 700ms) ────────────────────────────────
