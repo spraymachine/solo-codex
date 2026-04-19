@@ -29,12 +29,13 @@ export function useAuth() {
 export function AuthGate({ children }: PropsWithChildren) {
   const [session, setSession] = useState<Session | null>(null);
   const enabled = isSupabaseConfigured();
-  const [loading, setLoading] = useState(enabled);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const supabase = getSupabaseBrowserClient();
 
     if (!enabled || !supabase) {
+      setLoading(false);
       return;
     }
 
@@ -79,14 +80,15 @@ export function AuthGate({ children }: PropsWithChildren) {
   if (loading) {
     return (
       <div className="flex min-h-[100dvh] items-center justify-center px-4">
-        <div className="rounded-[2rem] border border-[var(--surface-border)] bg-white/80 px-6 py-4 font-mono text-sm text-[var(--text-secondary)] shadow-[0_18px_42px_rgba(122,92,65,0.08)]">
-          initializing secure link...
-        </div>
+        <p className="font-mono text-xs uppercase tracking-[0.25em] text-[var(--text-secondary)]">
+          loading...
+        </p>
       </div>
     );
   }
 
-  if (enabled && !session) {
+  // Always require sign-in — no session means auth panel, full stop
+  if (!session) {
     return (
       <AuthContext.Provider value={value}>
         <AuthPanel />
