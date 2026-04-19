@@ -55,6 +55,22 @@ class SoloLevelingDB extends Dexie {
           mission.why ??= "";
         });
       });
+    this.version(3)
+      .stores({
+        profile: "_id",
+        gates: "id, status, rank, date",
+        quests: "id, gateId, status, order",
+        missions: "id, rank, date",
+        inventory: "id",
+        hunterRecords: "date",
+        gymStats: "id",
+        xpLog: "id, timestamp",
+      })
+      .upgrade(async (tx) => {
+        await tx.table("gates").toCollection().modify((gate: Partial<Gate>) => {
+          gate.subTodos ??= [];
+        });
+      });
   }
 }
 

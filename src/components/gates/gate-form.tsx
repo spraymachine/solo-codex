@@ -70,7 +70,7 @@ export function GateForm({ open, onClose, onSubmit }: GateFormProps) {
           <textarea
             value={why}
             onChange={(event) => setWhy(event.target.value)}
-            className="w-full resize-none rounded-xl border border-[var(--surface-border)] bg-white/80 px-3 py-2 text-sm text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--accent-solid)]"
+            className="w-full resize-none rounded-xl border border-[var(--textarea-border)] bg-[var(--textarea-bg)] px-3 py-2 text-sm text-[var(--text-primary)] shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] outline-none transition-colors focus:border-[var(--accent-solid)]"
             rows={3}
             placeholder="Why does this day’s challenge matter?"
           />

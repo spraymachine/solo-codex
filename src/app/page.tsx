@@ -2,6 +2,7 @@
 
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 import { useState } from "react";
+import { Modal } from "@/components/ui/modal";
 import {
   getPersonaWhy,
   getStatusSnapshot,
@@ -13,7 +14,9 @@ import { personaMeta, usePersonaStore } from "@/lib/stores/persona-store";
 import { usePlayerStore } from "@/lib/stores/player-store";
 import { useRecordsStore } from "@/lib/stores/records-store";
 import { useMissionsStore } from "@/lib/stores/missions-store";
-import type { Reflection } from "@/lib/types";
+import type { Gate, Reflection, SubQuest } from "@/lib/types";
+
+const WEEKDAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 function SectionShell({
   eyebrow,
@@ -79,6 +82,45 @@ function GhostButton({
   );
 }
 
+function normalizeInlineEntry(value: string) {
+  return value.replace(/\s*\n+\s*/g, " ").trim();
+}
+
+function ResponsiveEntryField({
+  value,
+  onChange,
+  onSubmit,
+  placeholder,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  onSubmit: () => void;
+  placeholder: string;
+}) {
+  return (
+    <>
+      <textarea
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+        rows={2}
+        className="min-h-[64px] w-full resize-none rounded-2xl border border-[var(--textarea-border)] bg-[var(--textarea-bg)] px-6 py-3 text-sm leading-6 text-[var(--text-primary)] shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] placeholder:text-[var(--text-secondary)] outline-none transition-all duration-300 focus:bg-[var(--bg-panel)] focus:border-[var(--accent-solid)] md:hidden"
+      />
+      <input
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") {
+            void onSubmit();
+          }
+        }}
+        placeholder={placeholder}
+        className="hidden h-12 flex-1 rounded-2xl border-0 bg-[var(--bg-secondary)] px-4 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] outline-none ring-1 ring-transparent transition-all duration-300 focus:bg-[var(--bg-panel)] focus:ring-[var(--accent-solid)] md:block"
+      />
+    </>
+  );
+}
+
 function formatHumanDate(date: string) {
   return new Intl.DateTimeFormat("en-US", {
     month: "short",
@@ -91,6 +133,15 @@ function getCalendarChipLabel(date: string) {
   const parsed = new Date(`${date}T12:00:00`);
   const day = parsed.getDate();
   return `${day}`;
+}
+
+function formatCalendarRange(startDate: string, endDate: string) {
+  const start = new Date(`${startDate}T12:00:00`);
+  const end = new Date(`${endDate}T12:00:00`);
+  const startMonth = new Intl.DateTimeFormat("en-US", { month: "short" }).format(start);
+  const endMonth = new Intl.DateTimeFormat("en-US", { month: "short" }).format(end);
+
+  return `${startMonth} ${start.getDate()} — ${endMonth} ${end.getDate()}`;
 }
 
 function ReflectionEditor({
@@ -121,7 +172,7 @@ function ReflectionEditor({
                 accomplished: event.target.value,
               }))
             }
-            className="min-h-[100px] w-full resize-none rounded-2xl border-0 bg-[var(--bg-secondary)] px-5 py-4 md:px-4 md:py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] outline-none ring-1 ring-transparent transition-all duration-300 focus:bg-[var(--bg-panel)] focus:ring-[var(--accent-solid)]"
+            className="min-h-[100px] w-full resize-none rounded-2xl border border-[var(--textarea-border)] bg-[var(--textarea-bg)] px-5 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] md:px-4 md:py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] outline-none transition-all duration-300 focus:bg-[var(--bg-panel)] focus:border-[var(--accent-solid)]"
           />
         </label>
         <label className="grid gap-2">
@@ -136,7 +187,7 @@ function ReflectionEditor({
                 blockers: event.target.value,
               }))
             }
-            className="min-h-[100px] w-full resize-none rounded-2xl border-0 bg-[var(--bg-secondary)] px-5 py-4 md:px-4 md:py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] outline-none ring-1 ring-transparent transition-all duration-300 focus:bg-[var(--bg-panel)] focus:ring-[var(--accent-solid)]"
+            className="min-h-[100px] w-full resize-none rounded-2xl border border-[var(--textarea-border)] bg-[var(--textarea-bg)] px-5 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] md:px-4 md:py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] outline-none transition-all duration-300 focus:bg-[var(--bg-panel)] focus:border-[var(--accent-solid)]"
           />
         </label>
         <label className="grid gap-2">
@@ -162,6 +213,188 @@ function ReflectionEditor({
   );
 }
 
+function GoalPlannerModal({
+  goal,
+  selectedDate,
+  canPushSubTodo,
+  onClose,
+  onUpdateGoal,
+  onAddSubTodo,
+  onToggleSubTodo,
+  onDeleteSubTodo,
+  onPushSubTodo,
+}: {
+  goal: Gate | null;
+  selectedDate: string;
+  canPushSubTodo: (subTodo: SubQuest) => boolean;
+  onClose: () => void;
+  onUpdateGoal: (goalId: string, updates: Partial<Gate>) => Promise<void>;
+  onAddSubTodo: (goalId: string, title: string) => Promise<void>;
+  onToggleSubTodo: (goalId: string, subTodoId: string) => Promise<void>;
+  onDeleteSubTodo: (goalId: string, subTodoId: string) => Promise<void>;
+  onPushSubTodo: (goal: Gate, subTodo: SubQuest) => Promise<void>;
+}) {
+  const [subTodoDraft, setSubTodoDraft] = useState("");
+
+  if (!goal) {
+    return null;
+  }
+
+  const ranks = ["S", "A", "B", "C", "D", "E"] as const;
+
+  return (
+    <Modal open={Boolean(goal)} onClose={onClose} title="GOAL PLANNER">
+      <div className="space-y-5">
+        <div className="grid gap-2">
+          <label className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--text-secondary)]">
+            Main task
+          </label>
+          <input
+            value={goal.title}
+            onChange={(event) => void onUpdateGoal(goal.id, { title: event.target.value })}
+            className="w-full rounded-xl border border-[var(--surface-border)] bg-[var(--bg-panel)] px-4 py-3 text-base font-medium text-[var(--text-primary)] outline-none focus:border-[var(--accent-solid)]"
+            placeholder="Power BI certificate"
+          />
+        </div>
+
+        <div className="grid gap-2">
+          <label className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--text-secondary)]">
+            Rank
+          </label>
+          <div className="grid grid-cols-6 gap-2">
+            {ranks.map((rank) => {
+              const active = goal.rank === rank;
+              return (
+                <button
+                  key={rank}
+                  type="button"
+                  onClick={() => void onUpdateGoal(goal.id, { rank })}
+                  className={`h-11 border text-sm font-semibold transition-colors duration-300 ${
+                    active
+                      ? "border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--bg-panel)]"
+                      : "border-[var(--surface-border)] bg-[var(--bg-panel)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                  }`}
+                >
+                  {rank}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="grid gap-3">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--text-secondary)]">
+                Goal steps
+              </p>
+              <p className="mt-1 text-xs text-[var(--text-secondary)]">
+                Add reusable steps here, then send any step into the home todos for {formatHumanDate(selectedDate)}.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <input
+              value={subTodoDraft}
+              onChange={(event) => setSubTodoDraft(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  const nextTitle = normalizeInlineEntry(subTodoDraft);
+                  if (nextTitle) {
+                    void onAddSubTodo(goal.id, nextTitle);
+                    setSubTodoDraft("");
+                  }
+                }
+              }}
+              className="min-h-11 flex-1 rounded-xl border border-[var(--surface-border)] bg-[var(--bg-panel)] px-4 py-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent-solid)]"
+              placeholder="Add a step for this goal"
+            />
+            <ActionButton
+              onClick={() => {
+                const nextTitle = normalizeInlineEntry(subTodoDraft);
+                if (nextTitle) {
+                  void onAddSubTodo(goal.id, nextTitle);
+                  setSubTodoDraft("");
+                }
+              }}
+              className="h-11 w-full px-5 sm:w-auto"
+            >
+              Add step
+            </ActionButton>
+          </div>
+
+          <div className="space-y-2">
+            {goal.subTodos.length === 0 ? (
+              <div className="border border-dashed border-[var(--surface-border)] bg-[var(--bg-panel)] px-4 py-4 text-sm text-[var(--text-secondary)]">
+                No steps yet. Add the parts of this goal that you want to send into daily todos.
+              </div>
+            ) : (
+              goal.subTodos.map((subTodo) => {
+                const alreadyPushed = !canPushSubTodo(subTodo);
+
+                return (
+                  <div
+                    key={subTodo.id}
+                    className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-3 border border-[var(--surface-border)] bg-[var(--bg-panel)] px-3 py-3 sm:px-4"
+                  >
+                    <button
+                      type="button"
+                      aria-label={subTodo.completed ? "Mark sub-todo open" : "Mark sub-todo complete"}
+                      onClick={() => void onToggleSubTodo(goal.id, subTodo.id)}
+                      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors duration-300 ${
+                        subTodo.completed
+                          ? "border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--bg-panel)]"
+                          : "border-black/12 bg-white text-transparent"
+                      }`}
+                    >
+                      <svg viewBox="0 0 16 16" className="h-3.5 w-3.5 fill-none stroke-current">
+                        <path d="M3.5 8.2 6.6 11l5.9-6.2" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </button>
+                    <p
+                      className={`min-w-0 flex-1 text-sm font-medium text-[var(--text-primary)] ${
+                        subTodo.completed ? "line-through opacity-45" : ""
+                      }`}
+                    >
+                      {subTodo.title}
+                    </p>
+                    <button
+                      type="button"
+                      aria-label={alreadyPushed ? "Already added to selected date" : "Add to selected date todos"}
+                      disabled={alreadyPushed}
+                      onClick={() => void onPushSubTodo(goal, subTodo)}
+                      className={`flex h-11 w-11 shrink-0 items-center justify-center border transition-colors duration-300 ${
+                        alreadyPushed
+                          ? "border-[var(--surface-border)] bg-[var(--bg-secondary)] text-[var(--text-secondary)] opacity-55"
+                          : "border-[var(--surface-border)] bg-[var(--bg-panel)] text-[var(--text-primary)] hover:bg-[var(--bg-panel-strong)]"
+                      }`}
+                    >
+                      <svg viewBox="0 0 20 20" className="h-4 w-4 fill-none stroke-current">
+                        <path d="M4 10h9" strokeWidth="1.5" strokeLinecap="round" />
+                        <path d="m10 5 5 5-5 5" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Delete sub-todo"
+                      onClick={() => void onDeleteSubTodo(goal.id, subTodo.id)}
+                      className="flex h-11 w-11 shrink-0 items-center justify-center text-base leading-none text-[var(--text-secondary)] transition-colors duration-300 hover:text-[var(--text-primary)]"
+                    >
+                      ×
+                    </button>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
 export default function HomePage() {
   const activePersona = usePersonaStore((state) => state.activePersona);
   const setActivePersona = usePersonaStore((state) => state.setActivePersona);
@@ -179,6 +412,7 @@ export default function HomePage() {
 
   const gates = useGatesStore((state) => state.gates);
   const createGate = useGatesStore((state) => state.createGate);
+  const updateGate = useGatesStore((state) => state.updateGate);
   const deleteGate = useGatesStore((state) => state.deleteGate);
 
   const records = useRecordsStore((state) => state.records);
@@ -190,6 +424,7 @@ export default function HomePage() {
   const [todoDraft, setTodoDraft] = useState("");
   const [goalDraft, setGoalDraft] = useState("");
   const [logDraft, setLogDraft] = useState("");
+  const [activeGoalId, setActiveGoalId] = useState<string | null>(null);
 
   const dayTodos = missions
     .filter((mission) => mission.date === selectedDate)
@@ -197,7 +432,12 @@ export default function HomePage() {
   const campaignGoals = gates
     .filter((gate) => campaignDates.includes(gate.date))
     .sort((left, right) => left.date.localeCompare(right.date));
+  const activeGoal = campaignGoals.find((goal) => goal.id === activeGoalId) ?? null;
   const dayRecord = records.find((record) => record.date === selectedDate) ?? null;
+  const rangeStartDate = campaignDates[0];
+  const rangeEndDate = campaignDates.at(-1) ?? campaignDates[0];
+  const trailingCalendarSlots = (7 - (campaignDates.length % 7)) % 7;
+  const calendarDates = [...campaignDates, ...Array.from({ length: trailingCalendarSlots }, () => null)];
 
   const completedTodos = dayTodos.filter((mission) => isMissionComplete(mission)).length;
   const completedGoals = campaignGoals.filter((goal) => goal.status === "cleared").length;
@@ -210,7 +450,7 @@ export default function HomePage() {
     streakCount: profile?.streakCount ?? 0,
   });
   async function handleCreateTodo() {
-    const title = todoDraft.trim();
+    const title = normalizeInlineEntry(todoDraft);
     if (!title) {
       return;
     }
@@ -238,16 +478,90 @@ export default function HomePage() {
   }
 
   async function handleCreateGoal() {
-    const title = goalDraft.trim();
+    const title = normalizeInlineEntry(goalDraft);
     if (!title) {
       return;
     }
 
-    await createGate(title, "C", {
+    const gate = await createGate(title, "C", {
       date: selectedDate,
       why: getPersonaWhy(activePersona),
     });
     setGoalDraft("");
+    setActiveGoalId(gate.id);
+  }
+
+  async function handleUpdateGoal(goalId: string, updates: Partial<Gate>) {
+    await updateGate(goalId, updates);
+  }
+
+  async function handleAddGoalSubTodo(goalId: string, title: string) {
+    const goal = gates.find((item) => item.id === goalId);
+    if (!goal) {
+      return;
+    }
+
+    const nextSubTodo: SubQuest = {
+      id: crypto.randomUUID(),
+      title,
+      completed: false,
+    };
+
+    await updateGate(goalId, {
+      subTodos: [...goal.subTodos, nextSubTodo],
+    });
+  }
+
+  async function handleToggleGoalSubTodo(goalId: string, subTodoId: string) {
+    const goal = gates.find((item) => item.id === goalId);
+    if (!goal) {
+      return;
+    }
+
+    await updateGate(goalId, {
+      subTodos: goal.subTodos.map((subTodo) =>
+        subTodo.id === subTodoId ? { ...subTodo, completed: !subTodo.completed } : subTodo,
+      ),
+    });
+  }
+
+  async function handleDeleteGoalSubTodo(goalId: string, subTodoId: string) {
+    const goal = gates.find((item) => item.id === goalId);
+    if (!goal) {
+      return;
+    }
+
+    await updateGate(goalId, {
+      subTodos: goal.subTodos.filter((subTodo) => subTodo.id !== subTodoId),
+    });
+  }
+
+  function canPushGoalSubTodo(goal: Gate, subTodo: SubQuest) {
+    return !missions.some(
+      (mission) =>
+        mission.date === selectedDate &&
+        mission.title === subTodo.title &&
+        mission.linkedGateIds.includes(goal.id),
+    );
+  }
+
+  async function handlePushGoalSubTodo(goal: Gate, subTodo: SubQuest) {
+    if (!canPushGoalSubTodo(goal, subTodo)) {
+      return;
+    }
+
+    await createMission({
+      title: subTodo.title,
+      rank: goal.rank,
+      date: selectedDate,
+      why: getPersonaWhy(activePersona),
+      targetMetric: "Checklist",
+      currentValue: 0,
+      targetValue: 1,
+      unit: "done",
+      deadline: selectedDate,
+      linkedGateIds: [goal.id],
+    });
   }
 
   async function handleSaveLog() {
@@ -327,16 +641,11 @@ export default function HomePage() {
         description="Everything here belongs to the selected date only. Add it, cross it off, or remove it without leaking into another day."
       >
         <div className="flex flex-col gap-4 md:flex-row md:gap-3">
-          <input
+          <ResponsiveEntryField
             value={todoDraft}
-            onChange={(event) => setTodoDraft(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") {
-                void handleCreateTodo();
-              }
-            }}
+            onChange={setTodoDraft}
+            onSubmit={() => void handleCreateTodo()}
             placeholder="Add one concrete task for this day"
-            className="h-13 flex-1 rounded-2xl border-0 bg-[var(--bg-secondary)] px-5 md:h-12 md:px-4 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] outline-none ring-1 ring-transparent transition-all duration-300 focus:bg-[var(--bg-panel)] focus:ring-[var(--accent-solid)]"
           />
           <ActionButton onClick={() => void handleCreateTodo()} className="h-13 w-full md:h-11 md:w-auto md:px-5">
             Add todo
@@ -355,48 +664,37 @@ export default function HomePage() {
               return (
                 <div
                   key={mission.id}
-                  className="flex flex-col gap-4 rounded-[1rem] border border-[var(--surface-border)] bg-[var(--bg-panel)] px-4 py-4 md:flex-row md:items-center md:justify-between"
+                  className="flex items-center gap-3 rounded-[1rem] border border-[var(--surface-border)] bg-[var(--bg-panel)] px-4 py-3"
                 >
-                  <div className="flex items-start gap-3">
-                    <button
-                      aria-label={complete ? "Mark todo as open" : "Mark todo as complete"}
-                      onClick={() => void handleToggleTodo(mission.id, !complete)}
-                      className={`mt-0.5 flex h-5 w-5 items-center justify-center rounded-full border transition-colors duration-300 ${
-                        complete
-                          ? "border-[#111111] bg-[#111111] text-white"
-                          : "border-black/12 bg-white text-transparent"
-                      }`}
-                    >
-                      <svg viewBox="0 0 16 16" className="h-3.5 w-3.5 fill-none stroke-current">
-                        <path d="M3.5 8.2 6.6 11l5.9-6.2" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </button>
-                    <div>
-                      <p
-                        className={`text-sm font-medium text-[var(--text-primary)] ${
-                          complete ? "line-through opacity-55" : ""
-                        }`}
-                      >
-                        {mission.title}
-                      </p>
-                      <p className="mt-1 text-xs uppercase tracking-[0.18em] text-[var(--text-secondary)]">
-                        {mission.date} · Why: {mission.why || getPersonaWhy(activePersona)}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    aria-label={complete ? "Mark todo as open" : "Mark todo as complete"}
+                    onClick={() => void handleToggleTodo(mission.id, !complete)}
+                    className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                  >
                     <span
-                      className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] ${
-                        complete
-                          ? "bg-[#edf3ec] text-[#346538]"
-                          : "bg-[#fbf3db] text-[#956400]"
+                      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors duration-300 ${
+                        complete ? "border-[#111111] bg-[#111111] text-white" : "border-black/12 bg-white text-transparent"
                       }`}
                     >
-                      {complete ? "Done" : "Open"}
                     </span>
-                    <GhostButton onClick={() => void deleteMission(mission.id)}>Delete</GhostButton>
-                  </div>
+                    <p
+                      className={`min-w-0 text-sm font-medium text-[var(--text-primary)] transition-opacity duration-300 ${
+                        complete ? "line-through opacity-45" : ""
+                      }`}
+                    >
+                      {mission.title}
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    aria-label="Delete todo"
+                    onClick={() => void deleteMission(mission.id)}
+                    className="shrink-0 text-base leading-none text-[var(--text-secondary)] transition-colors duration-300 hover:text-[var(--text-primary)] active:scale-[0.96]"
+                  >
+                    ×
+                  </button>
                 </div>
               );
             })
@@ -410,16 +708,11 @@ export default function HomePage() {
         description="This section stays broader than the daily checklist. Use it for the meaningful outcomes you want to move toward across the full campaign window."
       >
         <div className="flex flex-col gap-4 md:flex-row md:gap-3">
-          <input
+          <ResponsiveEntryField
             value={goalDraft}
-            onChange={(event) => setGoalDraft(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") {
-                void handleCreateGoal();
-              }
-            }}
-            placeholder="Add one 3-week goal"
-            className="h-13 flex-1 rounded-2xl border-0 bg-[var(--bg-secondary)] px-5 md:h-12 md:px-4 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] outline-none ring-1 ring-transparent transition-all duration-300 focus:bg-[var(--bg-panel)] focus:ring-[var(--accent-solid)]"
+            onChange={setGoalDraft}
+            onSubmit={() => void handleCreateGoal()}
+            placeholder="Add one 3-week goal to plan"
           />
           <ActionButton onClick={() => void handleCreateGoal()} className="h-13 w-full md:h-11 md:w-auto md:px-5">
             Add goal
@@ -435,7 +728,16 @@ export default function HomePage() {
             campaignGoals.map((goal) => (
               <div
                 key={goal.id}
-                className="rounded-[1rem] border border-[var(--surface-border)] bg-[var(--bg-panel)] px-4 py-4"
+                role="button"
+                tabIndex={0}
+                onClick={() => setActiveGoalId(goal.id)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    setActiveGoalId(goal.id);
+                  }
+                }}
+                className="cursor-pointer rounded-[1rem] border border-[var(--surface-border)] bg-[var(--bg-panel)] px-4 py-4 transition-colors duration-300 hover:bg-[var(--bg-panel-strong)]"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -444,6 +746,9 @@ export default function HomePage() {
                     </p>
                     <p className="mt-2 text-xs uppercase tracking-[0.18em] text-[var(--text-secondary)]">
                       {goal.rank} rank · {goal.date}
+                    </p>
+                    <p className="mt-3 text-xs uppercase tracking-[0.16em] text-[var(--text-secondary)]">
+                      {goal.subTodos.length} step{goal.subTodos.length === 1 ? "" : "s"}
                     </p>
                   </div>
                   <span
@@ -460,13 +765,32 @@ export default function HomePage() {
                   Why: {goal.why || getPersonaWhy(activePersona)}
                 </p>
                 <div className="mt-4 flex justify-end">
-                  <GhostButton onClick={() => void deleteGate(goal.id)}>Delete</GhostButton>
+                  <GhostButton
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      void deleteGate(goal.id);
+                    }}
+                  >
+                    Delete
+                  </GhostButton>
                 </div>
               </div>
             ))
           )}
         </div>
       </SectionShell>
+
+      <GoalPlannerModal
+        goal={activeGoal}
+        selectedDate={selectedDate}
+        canPushSubTodo={(subTodo) => (activeGoal ? canPushGoalSubTodo(activeGoal, subTodo) : false)}
+        onClose={() => setActiveGoalId(null)}
+        onUpdateGoal={handleUpdateGoal}
+        onAddSubTodo={handleAddGoalSubTodo}
+        onToggleSubTodo={handleToggleGoalSubTodo}
+        onDeleteSubTodo={handleDeleteGoalSubTodo}
+        onPushSubTodo={handlePushGoalSubTodo}
+      />
 
       <SectionShell
         eyebrow="03 Reflection"
@@ -480,7 +804,7 @@ export default function HomePage() {
                 value={logDraft}
                 onChange={(event) => setLogDraft(event.target.value)}
                 placeholder="Write a quick log entry for the selected day"
-                className="min-h-[120px] w-full resize-none rounded-2xl border-0 bg-[var(--bg-secondary)] px-5 py-4 md:px-4 md:py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] outline-none ring-1 ring-transparent transition-all duration-300 focus:bg-[var(--bg-panel)] focus:ring-[var(--accent-solid)]"
+                className="min-h-[120px] w-full resize-none rounded-2xl border border-[var(--textarea-border)] bg-[var(--textarea-bg)] px-5 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] md:px-4 md:py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] outline-none transition-all duration-300 focus:bg-[var(--bg-panel)] focus:border-[var(--accent-solid)]"
               />
               <ActionButton onClick={() => void handleSaveLog()} className="self-start">
                 Save log
@@ -525,47 +849,88 @@ export default function HomePage() {
         <SectionShell
           eyebrow="04 Calendar"
           title="Calendar"
-          description="A compact 21-day view for moving across the cycle."
+          description="A sharp cycle grid for moving across the full campaign."
         >
-          <div className="mb-4 flex items-center justify-between border-b border-[var(--surface-border)] pb-3">
+          <div className="mb-4 flex items-end justify-between border-b border-[var(--surface-border)] pb-3">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--text-secondary)]">
+                Cycle view
+              </p>
+              <p className="mt-2 text-lg font-semibold tracking-[-0.04em] text-[var(--text-primary)] md:text-xl">
+                {formatCalendarRange(rangeStartDate, rangeEndDate)}
+              </p>
+            </div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--text-secondary)]">
-              20
-            </p>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--text-secondary)]">
-              May 10
+              {campaignDates.length} days
             </p>
           </div>
-          <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
-            {campaignDates.map((date) => {
+          <div className="grid grid-cols-7 border-l border-t border-[var(--surface-border)] bg-[var(--bg-panel)]">
+            {WEEKDAY_LABELS.map((label) => (
+              <div
+                key={label}
+                className="border-r border-b border-[var(--surface-border)] px-1 py-2 text-center text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-secondary)] md:px-2 md:py-3"
+              >
+                <span className="hidden md:inline">{label}</span>
+                <span className="md:hidden">{label.slice(0, 1)}</span>
+              </div>
+            ))}
+            {calendarDates.map((date, index) => {
+              if (!date) {
+                return (
+                  <div
+                    key={`empty-${index}`}
+                    aria-hidden="true"
+                    className="aspect-square border-r border-b border-[var(--surface-border)] bg-[color:color-mix(in_srgb,var(--bg-panel)_72%,transparent)]"
+                  />
+                );
+              }
+
               const isSelected = date === selectedDate;
               const isCurrent = date === currentDate;
               const dailyTodoCount = missions.filter((mission) => mission.date === date).length;
               const hasLog = records.some(
                 (record) => record.date === date && (record.entries.length > 0 || record.reflection),
               );
-              const hasActivity = dailyTodoCount > 0 || hasLog;
+              const hasTodos = dailyTodoCount > 0;
+              const cornerTone = hasTodos && hasLog
+                ? "bg-[var(--text-primary)]"
+                : hasLog
+                  ? "bg-[var(--accent-solid)]"
+                  : hasTodos
+                    ? "bg-[#956400]"
+                    : "";
 
               return (
                 <button
                   key={date}
                   onClick={() => selectDate(date)}
                   aria-label={formatHumanDate(date)}
-                  className={`relative aspect-square rounded-[0.8rem] border px-1.5 py-1.5 text-center transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                  className={`group relative aspect-square border-r border-b border-[var(--surface-border)] px-1.5 py-1.5 text-left transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] md:px-2 md:py-2 ${
                     isSelected
-                      ? "border-[var(--accent-solid)] bg-[color:color-mix(in_srgb,var(--accent-solid)_14%,var(--bg-panel))]"
-                      : "border-[var(--surface-border)] bg-[var(--bg-panel)] hover:bg-[var(--bg-panel-strong)]"
+                      ? "bg-[color:color-mix(in_srgb,var(--bg-panel)_86%,white)]"
+                      : "bg-[var(--bg-panel)] hover:bg-[var(--bg-panel-strong)]"
                   }`}
                 >
-                  <p className="pt-1 text-[11px] font-medium tracking-[-0.02em] text-[var(--text-primary)] sm:text-xs">
-                    {getCalendarChipLabel(date)}
-                  </p>
-                  <div className="mt-2 flex items-center justify-center gap-1.5">
-                    {isCurrent ? (
-                      <span className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--text-primary)]" />
-                    ) : null}
-                    {hasActivity ? (
-                      <span className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--accent-solid)]/70" />
-                    ) : null}
+                  {isSelected ? (
+                    <span className="pointer-events-none absolute inset-[3px] border-2 border-[var(--text-primary)] md:inset-[5px]" />
+                  ) : null}
+                  {(hasTodos || hasLog) ? (
+                    <span
+                      className={`pointer-events-none absolute right-0 top-0 h-0 w-0 border-l-[12px] border-t-[12px] border-l-transparent ${cornerTone} md:border-l-[14px] md:border-t-[14px]`}
+                    />
+                  ) : null}
+                  <div className="relative flex h-full flex-col justify-between">
+                    <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)] md:text-[10px]">
+                      {WEEKDAY_LABELS[new Date(`${date}T12:00:00`).getDay() === 0 ? 6 : new Date(`${date}T12:00:00`).getDay() - 1].slice(0, 1)}
+                    </p>
+                    <div className="flex items-end justify-between gap-2">
+                      <p className="text-base font-semibold tracking-[-0.04em] text-[var(--text-primary)] md:text-xl">
+                        {getCalendarChipLabel(date)}
+                      </p>
+                      {isCurrent ? (
+                        <span className="mb-0.5 h-[2px] w-3 bg-[var(--text-primary)] md:w-4" />
+                      ) : null}
+                    </div>
                   </div>
                 </button>
               );

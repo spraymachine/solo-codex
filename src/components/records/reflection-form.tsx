@@ -24,14 +24,14 @@ export function ReflectionForm({ initialValue, onSubmit }: ReflectionFormProps) 
       <textarea
         value={accomplished}
         onChange={(event) => setAccomplished(event.target.value)}
-        className="w-full resize-none rounded-xl border border-[var(--surface-border)] bg-white/80 px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent-solid)]"
+        className="w-full resize-none rounded-xl border border-[var(--textarea-border)] bg-[var(--textarea-bg)] px-3 py-2 text-sm text-[var(--text-primary)] shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] outline-none focus:border-[var(--accent-solid)]"
         rows={2}
         placeholder="What got accomplished?"
       />
       <textarea
         value={blockers}
         onChange={(event) => setBlockers(event.target.value)}
-        className="w-full resize-none rounded-xl border border-[var(--surface-border)] bg-white/80 px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent-solid)]"
+        className="w-full resize-none rounded-xl border border-[var(--textarea-border)] bg-[var(--textarea-bg)] px-3 py-2 text-sm text-[var(--text-primary)] shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] outline-none focus:border-[var(--accent-solid)]"
         rows={2}
         placeholder="Any blockers?"
       />

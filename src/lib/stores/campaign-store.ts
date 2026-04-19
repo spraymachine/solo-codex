@@ -5,7 +5,7 @@ import { persist } from "zustand/middleware";
 import { shiftDate } from "@/lib/utils";
 
 const DEFAULT_START_DATE = "2026-04-20";
-const DEFAULT_TOTAL_DAYS = 21;
+const DEFAULT_TOTAL_DAYS = 22;
 
 interface CampaignState {
   startDate: string;
@@ -46,10 +46,25 @@ export const useCampaignStore = create<CampaignState>()(
           set({ currentDate: nextDate, selectedDate: nextDate });
         }
       },
-      extendCampaign: (days = 7) => {
-        set((state) => ({ totalDays: state.totalDays + days }));
+      extendCampaign: () => {
+        set(() => ({ totalDays: DEFAULT_TOTAL_DAYS }));
       },
     }),
-    { name: "solo-leveling-campaign" },
+    {
+      name: "solo-leveling-campaign",
+      version: 3,
+      migrate: (persistedState: unknown) => {
+        if (!persistedState || typeof persistedState !== "object") {
+          return persistedState as CampaignState;
+        }
+
+        const state = persistedState as CampaignState;
+        if (state.startDate === DEFAULT_START_DATE && state.totalDays !== DEFAULT_TOTAL_DAYS) {
+          return { ...state, totalDays: DEFAULT_TOTAL_DAYS };
+        }
+
+        return state;
+      },
+    },
   ),
 );

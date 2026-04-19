@@ -77,6 +77,7 @@ export const storage = {
       rank: input.rank,
       date: input.date ?? todayDate(),
       why: input.why ?? "",
+      subTodos: [],
       status: "active",
       createdAt: nowISO(),
       clearedAt: null,

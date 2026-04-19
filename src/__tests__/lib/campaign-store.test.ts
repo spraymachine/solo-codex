@@ -5,17 +5,17 @@ describe("campaign store", () => {
   beforeEach(() => {
     useCampaignStore.setState({
       startDate: "2026-04-20",
-      totalDays: 21,
+      totalDays: 22,
       currentDate: "2026-04-20",
       selectedDate: "2026-04-20",
     });
   });
 
-  it("builds the default 21-day campaign starting on 2026-04-20", () => {
+  it("builds the default 22-day campaign starting on 2026-04-20", () => {
     const dates = useCampaignStore.getState().getDates();
     expect(dates[0]).toBe("2026-04-20");
-    expect(dates.at(-1)).toBe("2026-05-10");
-    expect(dates).toHaveLength(21);
+    expect(dates.at(-1)).toBe("2026-05-11");
+    expect(dates).toHaveLength(22);
   });
 
   it("marks only the current campaign day as editable", () => {
@@ -32,11 +32,11 @@ describe("campaign store", () => {
     expect(store.selectedDate).toBe("2026-04-21");
   });
 
-  it("extends the challenge beyond the original 21 days", () => {
+  it("keeps the challenge locked to May 11 even if an extension is requested", () => {
     useCampaignStore.getState().extendCampaign(7);
     const store = useCampaignStore.getState();
     const dates = store.getDates();
-    expect(store.totalDays).toBe(28);
-    expect(dates.at(-1)).toBe("2026-05-17");
+    expect(store.totalDays).toBe(22);
+    expect(dates.at(-1)).toBe("2026-05-11");
   });
 });
