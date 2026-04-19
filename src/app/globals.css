@@ -1,26 +1,127 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg-primary: oklch(0.962 0.012 75);
+  --bg-secondary: color-mix(in oklab, var(--bg-primary) 86%, var(--accent-solid) 14%);
+  --bg-panel: oklch(0.985 0.005 75);
+  --bg-panel-strong: color-mix(in oklab, var(--bg-panel) 92%, var(--accent-solid) 8%);
+  --surface-soft: color-mix(in oklab, var(--accent-solid) 10%, transparent);
+  --surface-border: color-mix(in oklab, var(--accent-solid) 18%, rgba(114, 90, 65, 0.12));
+  --surface-highlight: rgba(255, 255, 255, 0.72);
+  --input-bg: color-mix(in oklab, var(--bg-panel) 94%, var(--accent-solid) 6%);
+  --text-primary: oklch(0.24 0.02 68);
+  --text-secondary: oklch(0.5 0.02 68);
+  --accent-solid: #5ea2ff;
+  --accent-soft: #78aef4;
+  --danger: #d86f68;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+  background:
+    radial-gradient(circle at 12% 14%, color-mix(in srgb, var(--accent-solid) 22%, white), transparent 26%),
+    radial-gradient(circle at 86% 10%, color-mix(in srgb, var(--accent-soft) 18%, white), transparent 22%),
+    linear-gradient(180deg, color-mix(in srgb, var(--bg-primary) 84%, white) 0%, var(--bg-primary) 100%);
+  color-scheme: light;
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+  background: transparent;
+  color: var(--text-primary);
+  font-family: var(--font-sans), sans-serif;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+  opacity: 0.06;
+  background-image:
+    radial-gradient(circle at 20% 20%, rgba(121, 99, 76, 0.22) 0.55px, transparent 0.7px),
+    radial-gradient(circle at 80% 60%, rgba(121, 99, 76, 0.16) 0.45px, transparent 0.7px);
+  background-size: 28px 28px, 34px 34px;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+[data-persona="harti"] {
+  --accent-solid: #61c78c;
+  --accent-soft: #4d9b6d;
+}
+
+[data-theme="dark"] {
+  --bg-primary: oklch(0.19 0.012 255);
+  --bg-secondary: color-mix(in oklab, var(--bg-primary) 78%, var(--accent-solid) 22%);
+  --bg-panel: oklch(0.23 0.012 255);
+  --bg-panel-strong: color-mix(in oklab, var(--bg-panel) 88%, var(--accent-solid) 12%);
+  --surface-soft: color-mix(in oklab, var(--accent-solid) 14%, transparent);
+  --surface-border: color-mix(in oklab, var(--accent-solid) 22%, rgba(255, 255, 255, 0.08));
+  --surface-highlight: rgba(255, 255, 255, 0.08);
+  --input-bg: color-mix(in oklab, var(--bg-panel) 92%, var(--accent-solid) 8%);
+  --text-primary: oklch(0.94 0.01 255);
+  --text-secondary: oklch(0.78 0.01 255);
+}
+
+[data-theme="dark"] html,
+html[data-theme="dark"] {
+  background:
+    radial-gradient(circle at 12% 14%, color-mix(in srgb, var(--accent-solid) 28%, black), transparent 24%),
+    radial-gradient(circle at 86% 10%, color-mix(in srgb, var(--accent-soft) 22%, black), transparent 22%),
+    linear-gradient(180deg, color-mix(in srgb, var(--bg-primary) 88%, black) 0%, var(--bg-primary) 100%);
+  color-scheme: dark;
+}
+
+.glow-blue,
+.glow-violet,
+.glow-emerald,
+.glow-amber {
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--accent-solid) 14%, rgba(126, 96, 72, 0.12)),
+    0 24px 60px rgba(143, 111, 83, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
+.glow-red {
+  box-shadow:
+    0 0 0 1px rgba(216, 111, 104, 0.18),
+    0 24px 60px rgba(216, 111, 104, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
+::selection {
+  background: color-mix(in srgb, var(--accent-solid) 22%, white);
+  color: var(--text-primary);
+}
+
+input,
+textarea,
+select {
+  color: var(--text-primary);
+  background: var(--input-bg);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: color-mix(in srgb, var(--text-secondary) 72%, white);
 }
