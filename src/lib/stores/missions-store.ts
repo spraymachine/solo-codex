@@ -49,7 +49,7 @@ export const useMissionsStore = create<MissionsState>((set, get) => ({
   async syncLinkedProgress(questsByGate) {
     const missions = get().missions;
     const updates = missions
-      .filter((mission) => mission.linkedGateIds.length > 0)
+      .filter((mission) => mission.linkedGateIds.length > 0 && mission.targetMetric !== "Checklist")
       .map((mission) => {
         const completedCount = mission.linkedGateIds.reduce((count, gateId) => {
           const quests = questsByGate[gateId] ?? [];
