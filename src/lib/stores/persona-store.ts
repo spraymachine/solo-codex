@@ -16,8 +16,8 @@ export const personaMeta: Record<
 > = {
   mani: {
     label: "Mani",
-    accent: "#5ea2ff",
-    secondary: "#b4d2ff",
+    accent: "#38bdf8",
+    secondary: "#7dd3fc",
     description: "Planning, structure, and high-focus systems.",
   },
   harti: {

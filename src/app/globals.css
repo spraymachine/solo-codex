@@ -16,8 +16,8 @@
   --textarea-shadow: 0 1px 0 rgba(255, 255, 255, 0.92), 0 10px 24px rgba(122, 92, 65, 0.06);
   --text-primary: oklch(0.24 0.02 68);
   --text-secondary: oklch(0.5 0.02 68);
-  --accent-solid: #5ea2ff;
-  --accent-soft: #78aef4;
+  --accent-solid: #38bdf8;
+  --accent-soft: #7dd3fc;
   --danger: #d86f68;
 }
 
@@ -73,6 +73,11 @@ a {
 [data-persona="harti"] {
   --accent-solid: #61c78c;
   --accent-soft: #4d9b6d;
+}
+
+[data-theme="dark"]:not([data-persona="harti"]) {
+  --accent-solid: #5b21b6;
+  --accent-soft: #7c3aed;
 }
 
 [data-theme="dark"] {
