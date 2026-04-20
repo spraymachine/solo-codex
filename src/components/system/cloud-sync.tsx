@@ -242,6 +242,8 @@ export function CloudSync() {
   const xpLog = usePlayerStore((state) => state.xpLog);
   const initialized = useRef(false);
   const loadingRef = useRef(false);
+  const savingRef = useRef(false);
+  const saveDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const loadAll = usePlayerStore((state) => state.load);
   const loadGates = useGatesStore((state) => state.load);
@@ -303,10 +305,14 @@ export function CloudSync() {
           filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
-          // Only apply if the update is for our persona and came from another tab/device
-          // (our own writes are already reflected in local state, but re-importing is safe)
           const incomingPersona = (payload.new as { persona?: string }).persona;
           if (incomingPersona !== activePersona) return;
+          // Skip if this device just saved — the realtime bounce would overwrite
+          // local state that hasn't been persisted to Supabase yet (700ms debounce)
+          if (savingRef.current) {
+            console.log("[CloudSync] realtime snapshot skipped — own save in flight");
+            return;
+          }
           console.log("[CloudSync] realtime snapshot received — syncing");
           void loadSnapshot();
         },
@@ -333,14 +339,22 @@ export function CloudSync() {
       return;
     }
 
+    savingRef.current = true;
+    if (saveDebounceRef.current) clearTimeout(saveDebounceRef.current);
+
     const timeout = window.setTimeout(async () => {
       if (!navigator.onLine) {
+        savingRef.current = false;
         markPending(activePersona);
         console.log("[CloudSync] offline — queued sync for", activePersona);
         return;
       }
 
       const ok = await syncNow(supabase, user.id, activePersona);
+      // Keep savingRef true for 2s after save to absorb the realtime bounce
+      saveDebounceRef.current = setTimeout(() => {
+        savingRef.current = false;
+      }, 2000);
       if (ok) {
         clearPending(activePersona);
       } else {
