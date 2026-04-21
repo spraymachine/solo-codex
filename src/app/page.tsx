@@ -167,6 +167,25 @@ function formatCalendarRange(startDate: string, endDate: string) {
   return `${startMonth} ${start.getDate()} — ${endMonth} ${end.getDate()}`;
 }
 
+function getGoalRankTone(rank: Gate["rank"]) {
+  switch (rank) {
+    case "S":
+      return "text-[#7a4a00]";
+    case "A":
+      return "text-[#1f6c9f]";
+    case "B":
+      return "text-[#346538]";
+    case "C":
+      return "text-[#956400]";
+    case "D":
+      return "text-[#9f2f2d]";
+    case "E":
+      return "text-[#6c5b4f]";
+    default:
+      return "text-[var(--text-primary)]";
+  }
+}
+
 function ReflectionEditor({
   initialReflection,
   onSave,
@@ -643,17 +662,19 @@ export default function HomePage() {
             </ActionButton>
           </div>
           {dayRecord && dayRecord.entries.length > 0 && (
-            <div className="mt-4 space-y-2 border-t border-[var(--surface-border)] pt-4">
+            <div className="mt-4 max-h-[220px] space-y-2 overflow-y-auto border-t border-[var(--surface-border)] pt-4 pr-1 md:max-h-none md:overflow-visible">
               {dayRecord.entries
                 .slice()
                 .reverse()
                 .slice(0, 4)
                 .map((entry) => (
-                  <div key={entry.timestamp} className="flex items-baseline gap-3">
+                  <div key={entry.timestamp} className="flex items-start gap-3">
                     <span className="shrink-0 font-mono text-[10px] tabular-nums text-[var(--text-secondary)]">
                       {formatTime(entry.timestamp)}
                     </span>
-                    <p className="min-w-0 truncate text-sm text-[var(--text-primary)]">{entry.text}</p>
+                    <p className="min-w-0 break-words text-sm leading-6 text-[var(--text-primary)]">
+                      {entry.text}
+                    </p>
                   </div>
                 ))}
             </div>
@@ -764,15 +785,17 @@ export default function HomePage() {
                 className="cursor-pointer rounded-[1rem] border border-[var(--surface-border)] bg-[var(--bg-panel)] px-4 py-4 transition-colors duration-300 hover:bg-[var(--bg-panel-strong)]"
               >
                 <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-base font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
+                  <div className="min-w-0">
+                    <div className="flex items-end gap-2">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--text-secondary)]">
+                        Rank
+                      </p>
+                      <span className={`text-xl font-semibold leading-none tracking-[-0.05em] ${getGoalRankTone(goal.rank)}`}>
+                        {goal.rank}
+                      </span>
+                    </div>
+                    <p className="mt-3 text-base font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
                       {goal.title}
-                    </p>
-                    <p className="mt-2 text-xs uppercase tracking-[0.18em] text-[var(--text-secondary)]">
-                      {goal.rank} rank · {goal.date}
-                    </p>
-                    <p className="mt-3 text-xs uppercase tracking-[0.16em] text-[var(--text-secondary)]">
-                      {goal.subTodos.length} step{goal.subTodos.length === 1 ? "" : "s"}
                     </p>
                   </div>
                   <span
