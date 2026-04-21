@@ -194,6 +194,41 @@ function ReflectionEditor({
   onSave: (reflection: Reflection) => Promise<void>;
 }) {
   const [reflect, setReflect] = useState(initialReflection?.reflect ?? "");
+  const [isEditing, setIsEditing] = useState(() => !initialReflection?.reflect);
+
+  async function handleSave() {
+    const nextReflect = reflect.trim();
+    if (!nextReflect) {
+      return;
+    }
+
+    await onSave({ reflect: nextReflect });
+    setReflect(nextReflect);
+    setIsEditing(false);
+  }
+
+  if (!isEditing && initialReflection?.reflect) {
+    return (
+      <div className="rounded-[1.3rem] border border-[var(--surface-border)] bg-[var(--bg-panel)] px-5 py-5 md:px-6 md:py-6">
+        <div className="flex items-start justify-between gap-4 border-b border-[var(--surface-border)] pb-4">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--text-secondary)]">
+              Saved reflection
+            </p>
+            <p className="mt-2 text-lg font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
+              Journal entry captured
+            </p>
+          </div>
+          <GhostButton onClick={() => setIsEditing(true)} className="shrink-0">
+            Edit
+          </GhostButton>
+        </div>
+        <p className="mt-5 whitespace-pre-wrap text-sm leading-7 text-[var(--text-primary)]">
+          {reflect}
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -203,7 +238,7 @@ function ReflectionEditor({
         placeholder="Reflect on the day…"
         className="min-h-[220px] w-full resize-none rounded-2xl border border-[var(--textarea-border)] bg-[var(--textarea-bg)] px-5 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] md:px-4 md:py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] outline-none transition-all duration-300 focus:bg-[var(--bg-panel)] focus:border-[var(--accent-solid)]"
       />
-      <ActionButton onClick={() => void onSave({ reflect })} className="self-start">
+      <ActionButton onClick={() => void handleSave()} className="self-start">
         Save
       </ActionButton>
     </div>
