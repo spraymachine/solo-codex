@@ -786,15 +786,7 @@ export default function HomePage() {
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <div className="flex items-end gap-2">
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--text-secondary)]">
-                        Rank
-                      </p>
-                      <span className={`text-xl font-semibold leading-none tracking-[-0.05em] ${getGoalRankTone(goal.rank)}`}>
-                        {goal.rank}
-                      </span>
-                    </div>
-                    <p className="mt-3 text-base font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
+                    <p className="text-xl font-semibold tracking-[-0.05em] text-[var(--text-primary)] md:text-2xl">
                       {goal.title}
                     </p>
                   </div>
@@ -808,10 +800,15 @@ export default function HomePage() {
                     {goal.status === "cleared" ? "Cleared" : "Active"}
                   </span>
                 </div>
-                <p className="mt-4 text-sm leading-6 text-[var(--text-secondary)]">
-                  Why: {goal.why || getPersonaWhy(activePersona)}
-                </p>
-                <div className="mt-4 flex justify-end">
+                <div className="mt-4 flex items-end justify-between gap-3">
+                  <div className="flex items-end gap-2">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--text-secondary)]">
+                      Rank
+                    </p>
+                    <span className={`text-xl font-semibold leading-none tracking-[-0.05em] ${getGoalRankTone(goal.rank)}`}>
+                      {goal.rank}
+                    </span>
+                  </div>
                   <GhostButton
                     onClick={(event) => {
                       event.stopPropagation();
