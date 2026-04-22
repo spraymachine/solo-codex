@@ -17,6 +17,14 @@ import { useMissionsStore } from "@/lib/stores/missions-store";
 import type { Gate, Reflection, SubQuest } from "@/lib/types";
 
 const WEEKDAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const GOAL_RANK_ORDER: Record<Gate["rank"], number> = {
+  S: 0,
+  A: 1,
+  B: 2,
+  C: 3,
+  D: 4,
+  E: 5,
+};
 
 function SectionShell({
   eyebrow,
@@ -463,10 +471,32 @@ export default function HomePage() {
 
   const dayTodos = missions
     .filter((mission) => mission.date === selectedDate)
-    .sort((left, right) => left.createdAt.localeCompare(right.createdAt));
+    .sort((left, right) => {
+      const leftComplete = isMissionComplete(left);
+      const rightComplete = isMissionComplete(right);
+
+      if (leftComplete !== rightComplete) {
+        return Number(leftComplete) - Number(rightComplete);
+      }
+
+      return left.createdAt.localeCompare(right.createdAt);
+    });
   const campaignGoals = gates
     .filter((gate) => campaignDates.includes(gate.date))
-    .sort((left, right) => left.date.localeCompare(right.date));
+    .sort((left, right) => {
+      const rankDifference = GOAL_RANK_ORDER[left.rank] - GOAL_RANK_ORDER[right.rank];
+
+      if (rankDifference !== 0) {
+        return rankDifference;
+      }
+
+      const dateDifference = left.date.localeCompare(right.date);
+      if (dateDifference !== 0) {
+        return dateDifference;
+      }
+
+      return left.createdAt.localeCompare(right.createdAt);
+    });
   const activeGoal = campaignGoals.find((goal) => goal.id === activeGoalId) ?? null;
   const dayRecord = records.find((record) => record.date === selectedDate) ?? null;
   const rangeStartDate = campaignDates[0];
