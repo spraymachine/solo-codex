@@ -13,6 +13,16 @@ export function todayDate(): string {
   return formatDate(new Date());
 }
 
+export function formatShortDayDate(date: Date): string {
+  return new Intl.DateTimeFormat("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  })
+    .format(date)
+    .toLowerCase();
+}
+
 export function nowISO(): string {
   return new Date().toISOString();
 }

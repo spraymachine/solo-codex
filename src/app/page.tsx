@@ -2,19 +2,21 @@
 
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 import { useEffect, useState } from "react";
+import { useAuth } from "@/components/auth/auth-gate";
 import { Modal } from "@/components/ui/modal";
 import {
   getPersonaWhy,
   getStatusSnapshot,
   isMissionComplete,
 } from "@/lib/home-dashboard";
+import { getAllowedPersonas } from "@/lib/persona-access";
 import { buildCampaignDates, useCampaignStore } from "@/lib/stores/campaign-store";
 import { useGatesStore } from "@/lib/stores/gates-store";
 import { personaMeta, usePersonaStore } from "@/lib/stores/persona-store";
 import { usePlayerStore } from "@/lib/stores/player-store";
 import { useRecordsStore } from "@/lib/stores/records-store";
 import { useMissionsStore } from "@/lib/stores/missions-store";
-import type { Gate, Reflection, SubQuest } from "@/lib/types";
+import type { Gate, Persona, Reflection, SubQuest } from "@/lib/types";
 
 const WEEKDAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const GOAL_RANK_ORDER: Record<Gate["rank"], number> = {
@@ -26,10 +28,33 @@ const GOAL_RANK_ORDER: Record<Gate["rank"], number> = {
   E: 5,
 };
 
+const PERSONA_CARD_STYLE: Record<
+  Persona,
+  { activeBorder: string; activeShadow: string; heroBackground: string }
+> = {
+  mani: {
+    activeBorder: "border-[#8dbdff]",
+    activeShadow: "shadow-[0_18px_44px_rgba(94,162,255,0.18)]",
+    heroBackground:
+      "bg-[linear-gradient(135deg,rgba(94,162,255,0.3),rgba(255,253,250,0.92)_40%,rgba(180,210,255,0.28))]",
+  },
+  harti: {
+    activeBorder: "border-[#9ed8b4]",
+    activeShadow: "shadow-[0_18px_44px_rgba(97,199,140,0.18)]",
+    heroBackground:
+      "bg-[linear-gradient(135deg,rgba(97,199,140,0.3),rgba(255,253,250,0.92)_40%,rgba(184,235,202,0.28))]",
+  },
+  mouli: {
+    activeBorder: "border-[#f0a3c8]",
+    activeShadow: "shadow-[0_18px_44px_rgba(236,72,153,0.18)]",
+    heroBackground:
+      "bg-[linear-gradient(135deg,rgba(236,72,153,0.26),rgba(255,253,250,0.92)_40%,rgba(249,168,212,0.3))]",
+  },
+};
+
 function SectionShell({
   eyebrow,
   title,
-  description,
   children,
   className = "",
 }: {
@@ -436,8 +461,10 @@ function GoalPlannerModal({
 }
 
 export default function HomePage() {
+  const { user } = useAuth();
   const activePersona = usePersonaStore((state) => state.activePersona);
   const setActivePersona = usePersonaStore((state) => state.setActivePersona);
+  const allowedPersonas = getAllowedPersonas(user?.email);
   const selectedDate = useCampaignStore((state) => state.selectedDate);
   const currentDate = useCampaignStore((state) => state.currentDate);
   const startDate = useCampaignStore((state) => state.startDate);
@@ -647,36 +674,32 @@ export default function HomePage() {
     await saveReflection(nextReflection, selectedDate);
   }
 
+  if (!allowedPersonas.includes(activePersona)) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <p className="font-mono text-xs uppercase tracking-[0.25em] text-[var(--text-secondary)]">
+          loading page...
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-[1220px] space-y-8 pb-8 md:space-y-10">
       <section
-        className={`rounded-[2rem] border border-[var(--surface-border)] p-2 transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] ${
-          activePersona === "mani"
-            ? "bg-[linear-gradient(135deg,rgba(94,162,255,0.3),rgba(255,253,250,0.92)_40%,rgba(180,210,255,0.28))]"
-            : "bg-[linear-gradient(135deg,rgba(97,199,140,0.3),rgba(255,253,250,0.92)_40%,rgba(184,235,202,0.28))]"
-        }`}
+        className={`rounded-[2rem] border border-[var(--surface-border)] p-2 transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] ${PERSONA_CARD_STYLE[activePersona].heroBackground}`}
       >
         <div className="rounded-[1.6rem] border border-[var(--surface-highlight)] bg-[var(--bg-panel-strong)] px-4 py-5 md:px-6 md:py-6">
           <div className="grid gap-3 md:grid-cols-2">
-            {(["mani", "harti"] as const).map((persona) => {
+            {allowedPersonas.map((persona) => {
               const meta = personaMeta[persona];
               const isActive = activePersona === persona;
-              const accentClasses =
-                persona === "mani"
-                  ? isActive
-                    ? "border-[#8dbdff] bg-[color:color-mix(in_srgb,var(--accent-solid)_16%,var(--bg-panel))]"
-                    : "border-[var(--surface-border)] bg-[var(--bg-panel)]"
-                  : isActive
-                    ? "border-[#9ed8b4] bg-[color:color-mix(in_srgb,var(--accent-solid)_16%,var(--bg-panel))]"
-                    : "border-[var(--surface-border)] bg-[var(--bg-panel)]";
-              const glowClasses =
-                persona === "mani"
-                  ? isActive
-                    ? "shadow-[0_18px_44px_rgba(94,162,255,0.18)]"
-                    : "shadow-[0_10px_24px_rgba(0,0,0,0.03)]"
-                  : isActive
-                    ? "shadow-[0_18px_44px_rgba(97,199,140,0.18)]"
-                    : "shadow-[0_10px_24px_rgba(0,0,0,0.03)]";
+              const accentClasses = isActive
+                ? `${PERSONA_CARD_STYLE[persona].activeBorder} bg-[color:color-mix(in_srgb,var(--accent-solid)_16%,var(--bg-panel))]`
+                : "border-[var(--surface-border)] bg-[var(--bg-panel)]";
+              const glowClasses = isActive
+                ? PERSONA_CARD_STYLE[persona].activeShadow
+                : "shadow-[0_10px_24px_rgba(0,0,0,0.03)]";
 
               return (
                 <button

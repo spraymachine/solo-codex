@@ -29,13 +29,12 @@ export function useAuth() {
 export function AuthGate({ children }: PropsWithChildren) {
   const [session, setSession] = useState<Session | null>(null);
   const enabled = isSupabaseConfigured();
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(enabled);
 
   useEffect(() => {
     const supabase = getSupabaseBrowserClient();
 
     if (!enabled || !supabase) {
-      setLoading(false);
       return;
     }
 

@@ -3,6 +3,7 @@ import { Geist, JetBrains_Mono } from "next/font/google";
 import { AuthGate } from "@/components/auth/auth-gate";
 import { SiteHeader } from "@/components/layout/site-header";
 import { StoreInitializer } from "@/components/store-initializer";
+import { AuthPersonaScope } from "@/components/system/auth-persona-scope";
 import { CloudSync } from "@/components/system/cloud-sync";
 import { DungeonTimerOverlay } from "@/components/system/dungeon-timer-overlay";
 import { SystemEffects } from "@/components/system/system-effects";
@@ -22,7 +23,7 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "Solo system",
   description:
-    "A dual-persona personal operating system for Mani and Harti, with secure Supabase sync.",
+    "A private personal operating system for isolated Solo personas, with secure Supabase sync.",
 };
 
 export default function RootLayout({
@@ -38,6 +39,7 @@ export default function RootLayout({
     >
       <body className="font-sans antialiased">
         <AuthGate>
+          <AuthPersonaScope />
           <ThemeSync />
           <StoreInitializer />
           <CloudSync />

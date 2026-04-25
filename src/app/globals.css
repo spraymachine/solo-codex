@@ -75,7 +75,12 @@ a {
   --accent-soft: #4d9b6d;
 }
 
-[data-theme="dark"]:not([data-persona="harti"]) {
+[data-persona="mouli"] {
+  --accent-solid: #ec4899;
+  --accent-soft: #f9a8d4;
+}
+
+[data-theme="dark"][data-persona="mani"] {
   --accent-solid: #5b21b6;
   --accent-soft: #7c3aed;
 }

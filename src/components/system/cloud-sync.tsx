@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { useAuth } from "@/components/auth/auth-gate";
 import { storage } from "@/lib/db/storage";
+import { canAccessPersona } from "@/lib/persona-access";
 import { useGatesStore } from "@/lib/stores/gates-store";
 import { useInventoryStore } from "@/lib/stores/inventory-store";
 import { useMissionsStore } from "@/lib/stores/missions-store";
@@ -251,12 +252,13 @@ export function CloudSync() {
   const loadInventory = useInventoryStore((state) => state.load);
   const loadRecords = useRecordsStore((state) => state.load);
   const loadStats = useStatsStore((state) => state.load);
+  const personaAllowed = canAccessPersona(activePersona, user?.email);
 
   // ── Load from Supabase on mount / persona switch ───────────────────────────
   useEffect(() => {
     const supabase = getSupabaseBrowserClient();
 
-    if (!enabled || !user || !supabase || !isSupabaseConfigured()) {
+    if (!enabled || !user || !supabase || !isSupabaseConfigured() || !personaAllowed) {
       initialized.current = true;
       return;
     }
@@ -322,7 +324,7 @@ export function CloudSync() {
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [activePersona, enabled, loadAll, loadGates, loadInventory, loadMissions, loadRecords, loadStats, user]);
+  }, [activePersona, enabled, loadAll, loadGates, loadInventory, loadMissions, loadRecords, loadStats, personaAllowed, user]);
 
   // ── Save on state change (debounced 700ms) ────────────────────────────────
   useEffect(() => {
@@ -333,6 +335,7 @@ export function CloudSync() {
       loadingRef.current ||
       !enabled ||
       !user ||
+      !personaAllowed ||
       !supabase ||
       !profile
     ) {
@@ -363,13 +366,13 @@ export function CloudSync() {
     }, 700);
 
     return () => window.clearTimeout(timeout);
-  }, [activePersona, enabled, gates, gymStats, inventory, missions, profile, quests, records, user, xpLog]);
+  }, [activePersona, enabled, gates, gymStats, inventory, missions, personaAllowed, profile, quests, records, user, xpLog]);
 
   // ── Flush pending queue when back online ─────────────────────────────────
   useEffect(() => {
     const supabase = getSupabaseBrowserClient();
 
-    if (!enabled || !user || !supabase) return;
+    if (!enabled || !user || !supabase || !personaAllowed) return;
 
     const flush = async () => {
       if (!navigator.onLine) return;
@@ -391,7 +394,7 @@ export function CloudSync() {
     void flush();
 
     return () => window.removeEventListener("online", flush);
-  }, [activePersona, enabled, user]);
+  }, [activePersona, enabled, personaAllowed, user]);
 
   return null;
 }

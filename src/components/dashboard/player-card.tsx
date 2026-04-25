@@ -4,6 +4,7 @@ import { Panel } from "@/components/ui/panel";
 import { RankBadge } from "@/components/ui/rank-badge";
 import { XpBar } from "@/components/ui/xp-bar";
 import { config } from "@/lib/config";
+import { formatShortDayDate } from "@/lib/utils";
 import { usePlayerStore } from "@/lib/stores/player-store";
 
 export function PlayerCard() {
@@ -20,21 +21,27 @@ export function PlayerCard() {
 
   const levelXp = profile.xp - spentXp;
   const xpForNextLevel = config.leveling.xpPerLevel(profile.level);
+  const todayLabel = formatShortDayDate(new Date());
 
   return (
     <Panel glow="violet" className="h-full">
       <div className="flex h-full flex-col justify-between gap-6">
         <div className="flex items-center gap-4">
           <RankBadge rank={profile.rank} size="lg" />
-          <div className="flex-1">
-            <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[var(--accent-soft)]">
-              player status
-            </p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
-              {profile.name}
-            </h2>
-            <p className="font-mono text-xs text-slate-400">
-              Level {profile.level} • Rank {profile.rank}
+          <div className="flex flex-1 flex-col gap-1 md:flex-row md:items-end md:justify-between md:gap-4">
+            <div>
+              <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[var(--accent-soft)]">
+                player status
+              </p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
+                {profile.name}
+              </h2>
+              <p className="font-mono text-xs text-slate-400">
+                Level {profile.level} • Rank {profile.rank}
+              </p>
+            </div>
+            <p className="font-mono text-xs uppercase tracking-[0.22em] text-[var(--text-secondary)] md:pb-1 md:text-right">
+              {todayLabel}
             </p>
           </div>
         </div>

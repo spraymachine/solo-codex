@@ -1,7 +1,15 @@
 import type { Persona } from "@/lib/types";
 
 export function getPersonaWhy(persona: Persona) {
-  return persona === "mani" ? "Self-worth" : "Consistency";
+  if (persona === "mani") {
+    return "Self-worth";
+  }
+
+  if (persona === "harti") {
+    return "Consistency";
+  }
+
+  return "Pro-active";
 }
 
 export function isMissionComplete(input: {

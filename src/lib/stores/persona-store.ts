@@ -2,6 +2,7 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { mouliMeta } from "@/lib/personas/mouli";
 import type { Persona } from "@/lib/types";
 
 interface PersonaState {
@@ -26,6 +27,7 @@ export const personaMeta: Record<
     secondary: "#b8ebca",
     description: "Growth, rhythm, and steady daily momentum.",
   },
+  mouli: mouliMeta,
 };
 
 export const usePersonaStore = create<PersonaState>()(
