@@ -864,54 +864,86 @@ export default function HomePage() {
             </div>
           ) : (
             campaignGoals.map((goal) => (
-              <div
-                key={goal.id}
-                role="button"
-                tabIndex={0}
-                onClick={() => setActiveGoalId(goal.id)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault();
-                    setActiveGoalId(goal.id);
-                  }
-                }}
-                className="cursor-pointer rounded-[1rem] border border-[var(--surface-border)] bg-[var(--bg-panel)] px-4 py-4 transition-colors duration-300 hover:bg-[var(--bg-panel-strong)]"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-xl font-semibold tracking-[-0.05em] text-[var(--text-primary)] md:text-2xl">
-                      {goal.title}
-                    </p>
-                  </div>
-                  <span
-                    className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] ${
-                      goal.status === "cleared"
-                        ? "bg-[#edf3ec] text-[#346538]"
-                        : "bg-[#e1f3fe] text-[#1f6c9f]"
-                    }`}
-                  >
-                    {goal.status === "cleared" ? "Cleared" : "Active"}
-                  </span>
-                </div>
-                <div className="mt-4 flex items-end justify-between gap-3">
-                  <div className="flex items-end gap-2">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--text-secondary)]">
-                      Rank
-                    </p>
-                    <span className={`text-xl font-semibold leading-none tracking-[-0.05em] ${getGoalRankTone(goal.rank)}`}>
-                      {goal.rank}
-                    </span>
-                  </div>
-                  <GhostButton
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      void deleteGate(goal.id);
+              (() => {
+                const goalIsComplete = goal.subTodos.length > 0 && goal.subTodos.every((subTodo) => subTodo.completed);
+
+                return (
+                  <div
+                    key={goal.id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setActiveGoalId(goal.id)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        setActiveGoalId(goal.id);
+                      }
                     }}
+                    className="relative cursor-pointer overflow-hidden rounded-[1rem] border border-[var(--surface-border)] bg-[var(--bg-panel)] px-4 py-4 transition-colors duration-300 hover:bg-[var(--bg-panel-strong)]"
                   >
-                    Delete
-                  </GhostButton>
-                </div>
-              </div>
+                    {goalIsComplete ? (
+                      <svg
+                        aria-hidden="true"
+                        viewBox="0 0 100 100"
+                        preserveAspectRatio="none"
+                        className="pointer-events-none absolute inset-[2px] z-10 h-[calc(100%-4px)] w-[calc(100%-4px)] overflow-visible text-[color:color-mix(in_srgb,var(--text-primary)_72%,transparent)] opacity-70"
+                      >
+                        <path
+                          d="M10 14 90 86"
+                          className="drop-shadow-[0_1px_0_rgba(255,255,255,0.35)]"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeLinecap="round"
+                          strokeWidth="4.5"
+                        />
+                        <path
+                          d="M90 14 10 86"
+                          className="drop-shadow-[0_1px_0_rgba(255,255,255,0.35)]"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeLinecap="round"
+                          strokeWidth="4.5"
+                        />
+                        <circle cx="50" cy="50" r="6" fill="currentColor" opacity="0.12" />
+                      </svg>
+                    ) : null}
+                    <div className="relative z-20 flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-xl font-semibold tracking-[-0.05em] text-[var(--text-primary)] md:text-2xl">
+                          {goal.title}
+                        </p>
+                      </div>
+                      <span
+                        className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] ${
+                          goal.status === "cleared"
+                            ? "bg-[#edf3ec] text-[#346538]"
+                            : "bg-[#e1f3fe] text-[#1f6c9f]"
+                        }`}
+                      >
+                        {goal.status === "cleared" ? "Cleared" : "Active"}
+                      </span>
+                    </div>
+                    <div className="relative z-20 mt-4 flex items-end justify-between gap-3">
+                      <div className="flex items-end gap-2">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--text-secondary)]">
+                          Rank
+                        </p>
+                        <span className={`text-xl font-semibold leading-none tracking-[-0.05em] ${getGoalRankTone(goal.rank)}`}>
+                          {goal.rank}
+                        </span>
+                      </div>
+                      <GhostButton
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          void deleteGate(goal.id);
+                        }}
+                      >
+                        Delete
+                      </GhostButton>
+                    </div>
+                  </div>
+                );
+              })()
             ))
           )}
         </div>
