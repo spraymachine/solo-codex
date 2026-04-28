@@ -9,6 +9,7 @@ import {
   getStatusSnapshot,
   isMissionComplete,
 } from "@/lib/home-dashboard";
+import { formatShortDayDate } from "@/lib/utils";
 import { getAllowedPersonas } from "@/lib/persona-access";
 import { buildCampaignDates, useCampaignStore } from "@/lib/stores/campaign-store";
 import { useGatesStore } from "@/lib/stores/gates-store";
@@ -530,6 +531,7 @@ export default function HomePage() {
   const rangeEndDate = campaignDates.at(-1) ?? campaignDates[0];
   const trailingCalendarSlots = (7 - (campaignDates.length % 7)) % 7;
   const calendarDates = [...campaignDates, ...Array.from({ length: trailingCalendarSlots }, () => null)];
+  const personaDateLabel = formatShortDayDate(new Date(`${selectedDate}T12:00:00`));
 
   const completedTodos = dayTodos.filter((mission) => isMissionComplete(mission)).length;
   const completedGoals = campaignGoals.filter((goal) => goal.status === "cleared").length;
@@ -719,6 +721,9 @@ export default function HomePage() {
                   </div>
                   <p className="mt-3 text-4xl font-semibold tracking-[-0.04em] text-[var(--text-primary)] md:text-5xl">
                     {getPersonaWhy(persona)}
+                  </p>
+                  <p className="mt-2 text-right text-base font-semibold tracking-[-0.02em] text-black md:text-lg">
+                    {personaDateLabel}
                   </p>
                 </button>
               );
