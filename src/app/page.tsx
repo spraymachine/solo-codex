@@ -466,6 +466,7 @@ export default function HomePage() {
   const continuationStartDate = useContinuationStore((state) => state.startDate);
   const continuationTotalDays = useContinuationStore((state) => state.totalDays);
   const selectDate = useContinuationStore((state) => state.selectDate);
+  const selectCurrentDate = useContinuationStore((state) => state.selectCurrentDate);
   const campaignStartDate = useCampaignStore((state) => state.startDate);
   const campaignTotalDays = useCampaignStore((state) => state.totalDays);
   const campaignDates = buildCampaignDates(campaignStartDate, campaignTotalDays);
@@ -695,7 +696,13 @@ export default function HomePage() {
                 <button
                   type="button"
                   key={persona}
-                  onClick={() => setActivePersona(persona)}
+                  onClick={(event) => {
+                    setActivePersona(persona);
+                    if (event.detail >= 2) {
+                      selectCurrentDate();
+                    }
+                  }}
+                  onDoubleClick={() => selectCurrentDate()}
                   className={`rounded-[1.35rem] border px-4 py-5 text-left transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.99] md:px-6 md:py-6 ${accentClasses} ${glowClasses}`}
                 >
                   <div className="flex items-start justify-between gap-3">

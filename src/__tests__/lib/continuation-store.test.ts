@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { useContinuationStore } from "@/lib/stores/continuation-store";
+import {
+  getContinuationCurrentDate,
+  useContinuationStore,
+} from "@/lib/stores/continuation-store";
 
 describe("continuation store", () => {
   beforeEach(() => {
@@ -24,5 +27,17 @@ describe("continuation store", () => {
 
     useContinuationStore.getState().selectDate("2026-06-01");
     expect(useContinuationStore.getState().selectedDate).toBe("2026-05-20");
+  });
+
+  it("uses an in-range calendar day as the current continuation date", () => {
+    expect(getContinuationCurrentDate("2026-05-13")).toBe("2026-05-13");
+  });
+
+  it("jumps the selected date back to the current continuation date", () => {
+    useContinuationStore.getState().selectDate("2026-05-20");
+    useContinuationStore.getState().selectCurrentDate();
+    expect(useContinuationStore.getState().selectedDate).toBe(
+      getContinuationCurrentDate(),
+    );
   });
 });
