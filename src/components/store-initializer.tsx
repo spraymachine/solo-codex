@@ -8,6 +8,7 @@ import { usePersonaStore } from "@/lib/stores/persona-store";
 import { usePlayerStore } from "@/lib/stores/player-store";
 import { useRecordsStore } from "@/lib/stores/records-store";
 import { useCampaignStore } from "@/lib/stores/campaign-store";
+import { useContinuationStore } from "@/lib/stores/continuation-store";
 import { useStatsStore } from "@/lib/stores/stats-store";
 import { useSystemStore } from "@/lib/stores/system-store";
 
@@ -71,12 +72,16 @@ export function StoreInitializer() {
     useCampaignStore.persist.setOptions({
       name: `solo-leveling-campaign-${activePersona}`,
     });
+    useContinuationStore.persist.setOptions({
+      name: `solo-leveling-continuation-${activePersona}`,
+    });
     useSystemStore.persist.setOptions({
       name: `solo-leveling-system-settings-${activePersona}`,
     });
 
     void Promise.all([
       useCampaignStore.persist.rehydrate(),
+      useContinuationStore.persist.rehydrate(),
       useSystemStore.persist.rehydrate(),
       loadPlayer(),
       loadGates(),

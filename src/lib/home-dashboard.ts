@@ -5,11 +5,7 @@ export function getPersonaWhy(persona: Persona) {
     return "Self-worth";
   }
 
-  if (persona === "harti") {
-    return "Consistency";
-  }
-
-  return "Pro-active";
+  return "Consistency";
 }
 
 export function isMissionComplete(input: {

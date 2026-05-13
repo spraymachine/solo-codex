@@ -2,13 +2,19 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { mouliMeta } from "@/lib/personas/mouli";
 import type { Persona } from "@/lib/types";
 
 interface PersonaState {
   activePersona: Persona;
   setActivePersona: (persona: Persona) => void;
   togglePersona: () => void;
+}
+
+const DEFAULT_PERSONA: Persona = "mani";
+const AVAILABLE_PERSONAS: Persona[] = ["mani", "harti"];
+
+function isPersona(value: unknown): value is Persona {
+  return typeof value === "string" && AVAILABLE_PERSONAS.includes(value as Persona);
 }
 
 export const personaMeta: Record<
@@ -27,19 +33,32 @@ export const personaMeta: Record<
     secondary: "#b8ebca",
     description: "Growth, rhythm, and steady daily momentum.",
   },
-  mouli: mouliMeta,
 };
 
 export const usePersonaStore = create<PersonaState>()(
   persist(
     (set) => ({
-      activePersona: "mani",
+      activePersona: DEFAULT_PERSONA,
       setActivePersona: (persona) => set({ activePersona: persona }),
       togglePersona: () =>
         set((state) => ({
           activePersona: state.activePersona === "mani" ? "harti" : "mani",
         })),
     }),
-    { name: "solo-leveling-persona" },
+    {
+      name: "solo-leveling-persona",
+      version: 1,
+      migrate: (persistedState: unknown) => {
+        if (!persistedState || typeof persistedState !== "object") {
+          return persistedState as PersonaState;
+        }
+
+        const state = persistedState as PersonaState;
+        return {
+          ...state,
+          activePersona: isPersona(state.activePersona) ? state.activePersona : DEFAULT_PERSONA,
+        };
+      },
+    },
   ),
 );

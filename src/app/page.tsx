@@ -12,6 +12,7 @@ import {
 import { formatShortDayDate } from "@/lib/utils";
 import { getAllowedPersonas } from "@/lib/persona-access";
 import { buildCampaignDates, useCampaignStore } from "@/lib/stores/campaign-store";
+import { buildContinuationDates, useContinuationStore } from "@/lib/stores/continuation-store";
 import { useGatesStore } from "@/lib/stores/gates-store";
 import { personaMeta, usePersonaStore } from "@/lib/stores/persona-store";
 import { usePlayerStore } from "@/lib/stores/player-store";
@@ -44,12 +45,6 @@ const PERSONA_CARD_STYLE: Record<
     activeShadow: "shadow-[0_18px_44px_rgba(97,199,140,0.18)]",
     heroBackground:
       "bg-[linear-gradient(135deg,rgba(97,199,140,0.3),rgba(255,253,250,0.92)_40%,rgba(184,235,202,0.28))]",
-  },
-  mouli: {
-    activeBorder: "border-[#f0a3c8]",
-    activeShadow: "shadow-[0_18px_44px_rgba(236,72,153,0.18)]",
-    heroBackground:
-      "bg-[linear-gradient(135deg,rgba(236,72,153,0.26),rgba(255,253,250,0.92)_40%,rgba(249,168,212,0.3))]",
   },
 };
 
@@ -466,12 +461,15 @@ export default function HomePage() {
   const activePersona = usePersonaStore((state) => state.activePersona);
   const setActivePersona = usePersonaStore((state) => state.setActivePersona);
   const allowedPersonas = getAllowedPersonas(user?.email);
-  const selectedDate = useCampaignStore((state) => state.selectedDate);
-  const currentDate = useCampaignStore((state) => state.currentDate);
-  const startDate = useCampaignStore((state) => state.startDate);
-  const totalDays = useCampaignStore((state) => state.totalDays);
-  const selectDate = useCampaignStore((state) => state.selectDate);
-  const campaignDates = buildCampaignDates(startDate, totalDays);
+  const selectedDate = useContinuationStore((state) => state.selectedDate);
+  const currentDate = useContinuationStore((state) => state.currentDate);
+  const continuationStartDate = useContinuationStore((state) => state.startDate);
+  const continuationTotalDays = useContinuationStore((state) => state.totalDays);
+  const selectDate = useContinuationStore((state) => state.selectDate);
+  const campaignStartDate = useCampaignStore((state) => state.startDate);
+  const campaignTotalDays = useCampaignStore((state) => state.totalDays);
+  const campaignDates = buildCampaignDates(campaignStartDate, campaignTotalDays);
+  const continuationDates = buildContinuationDates(continuationStartDate, continuationTotalDays);
 
   const missions = useMissionsStore((state) => state.missions);
   const createMission = useMissionsStore((state) => state.createMission);
@@ -479,7 +477,6 @@ export default function HomePage() {
   const deleteMission = useMissionsStore((state) => state.deleteMission);
 
   const gates = useGatesStore((state) => state.gates);
-  const createGate = useGatesStore((state) => state.createGate);
   const updateGate = useGatesStore((state) => state.updateGate);
   const deleteGate = useGatesStore((state) => state.deleteGate);
 
@@ -491,7 +488,6 @@ export default function HomePage() {
   const profile = usePlayerStore((state) => state.profile);
 
   const [todoDraft, setTodoDraft] = useState("");
-  const [goalDraft, setGoalDraft] = useState("");
   const [gratitudeDraft, setGratitudeDraft] = useState("");
   const [quickLogDraft, setQuickLogDraft] = useState("");
   const [activeGoalId, setActiveGoalId] = useState<string | null>(null);
@@ -527,10 +523,16 @@ export default function HomePage() {
     });
   const activeGoal = campaignGoals.find((goal) => goal.id === activeGoalId) ?? null;
   const dayRecord = records.find((record) => record.date === selectedDate) ?? null;
-  const rangeStartDate = campaignDates[0];
-  const rangeEndDate = campaignDates.at(-1) ?? campaignDates[0];
-  const trailingCalendarSlots = (7 - (campaignDates.length % 7)) % 7;
-  const calendarDates = [...campaignDates, ...Array.from({ length: trailingCalendarSlots }, () => null)];
+  const rangeStartDate = continuationDates[0];
+  const rangeEndDate = continuationDates.at(-1) ?? continuationDates[0];
+  const leadingCalendarSlots =
+    (new Date(`${rangeStartDate}T12:00:00`).getDay() + 6) % 7;
+  const trailingCalendarSlots = (7 - ((leadingCalendarSlots + continuationDates.length) % 7)) % 7;
+  const calendarDates = [
+    ...Array.from({ length: leadingCalendarSlots }, () => null),
+    ...continuationDates,
+    ...Array.from({ length: trailingCalendarSlots }, () => null),
+  ];
   const personaDateLabel = formatShortDayDate(new Date(`${selectedDate}T12:00:00`));
 
   const completedTodos = dayTodos.filter((mission) => isMissionComplete(mission)).length;
@@ -569,20 +571,6 @@ export default function HomePage() {
       currentValue: complete ? 1 : 0,
       completedAt: complete ? new Date().toISOString() : null,
     });
-  }
-
-  async function handleCreateGoal() {
-    const title = normalizeInlineEntry(goalDraft);
-    if (!title) {
-      return;
-    }
-
-    const gate = await createGate(title, "C", {
-      date: selectedDate,
-      why: getPersonaWhy(activePersona),
-    });
-    setGoalDraft("");
-    setActiveGoalId(gate.id);
   }
 
   async function handleUpdateGoal(goalId: string, updates: Partial<Gate>) {
@@ -842,19 +830,16 @@ export default function HomePage() {
       </SectionShell>
 
       <SectionShell
-        eyebrow="02 Three-week arc"
-        description="This section stays broader than the daily checklist. Use it for the meaningful outcomes you want to move toward across the full campaign window."
+        eyebrow="02 Finished arc"
+        description="The original three-week run stays locked here as its own record."
       >
-        <div className="flex flex-col gap-4 md:flex-row md:gap-3">
-          <ResponsiveEntryField
-            value={goalDraft}
-            onChange={setGoalDraft}
-            onSubmit={() => void handleCreateGoal()}
-            placeholder="Add one 3-week goal to plan"
-          />
-          <ActionButton onClick={() => void handleCreateGoal()} className="h-13 w-full md:h-11 md:w-auto md:px-5">
-            Add goal
-          </ActionButton>
+        <div className="border-b border-[var(--surface-border)] pb-4">
+          <p className="text-sm font-medium text-[var(--text-primary)]">
+            Locked campaign: {formatCalendarRange(campaignDates[0], campaignDates.at(-1) ?? campaignDates[0])}
+          </p>
+          <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
+            This arc is independent from the May continuation calendar below.
+          </p>
         </div>
 
         <div className="mt-6 grid gap-3 md:grid-cols-2">
@@ -1015,19 +1000,19 @@ export default function HomePage() {
         <SectionShell
           eyebrow="04 Calendar"
           title="Calendar"
-          description="A sharp cycle grid for moving across the full campaign."
+          description="A sharp current-month grid for the continuation from May 12 onward."
         >
           <div className="mb-4 flex items-end justify-between border-b border-[var(--surface-border)] pb-3">
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--text-secondary)]">
-                Cycle view
+                Continuation
               </p>
               <p className="mt-2 text-lg font-semibold tracking-[-0.04em] text-[var(--text-primary)] md:text-xl">
                 {formatCalendarRange(rangeStartDate, rangeEndDate)}
               </p>
             </div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--text-secondary)]">
-              {campaignDates.length} days
+              {continuationDates.length} days
             </p>
           </div>
           <div className="grid grid-cols-7 border-l border-t border-[var(--surface-border)] bg-[var(--bg-panel)]">

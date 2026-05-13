@@ -2,6 +2,7 @@
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { isSupabaseConfigured } from "./config";
+import { getSupabaseAuthStorageKey } from "./auth-storage";
 
 let browserClient: SupabaseClient | null = null;
 
@@ -19,6 +20,7 @@ export function getSupabaseBrowserClient() {
           persistSession: true,
           autoRefreshToken: true,
           detectSessionInUrl: true,
+          storageKey: getSupabaseAuthStorageKey() ?? undefined,
         },
       },
     );

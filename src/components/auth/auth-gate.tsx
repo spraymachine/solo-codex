@@ -4,6 +4,7 @@ import { type PropsWithChildren, createContext, useContext, useEffect, useMemo, 
 import type { Session, User } from "@supabase/supabase-js";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { clearSupabaseAuthStorage, isInvalidRefreshTokenError } from "@/lib/supabase/auth-storage";
 import { AuthPanel } from "./auth-panel";
 
 interface AuthContextValue {
@@ -40,12 +41,43 @@ export function AuthGate({ children }: PropsWithChildren) {
 
     let active = true;
 
-    supabase.auth.getSession().then(({ data }) => {
-      if (active) {
+    supabase.auth
+      .getSession()
+      .then(({ data, error }) => {
+        if (!active) {
+          return;
+        }
+
+        if (error) {
+          if (isInvalidRefreshTokenError(error)) {
+            clearSupabaseAuthStorage();
+            setSession(null);
+            setLoading(false);
+            return;
+          }
+
+          throw error;
+        }
+
         setSession(data.session);
         setLoading(false);
-      }
-    });
+      })
+      .catch((error: unknown) => {
+        if (!active) {
+          return;
+        }
+
+        if (isInvalidRefreshTokenError(error)) {
+          clearSupabaseAuthStorage();
+          setSession(null);
+          setLoading(false);
+          return;
+        }
+
+        console.error(error);
+        setSession(null);
+        setLoading(false);
+      });
 
     const {
       data: { subscription },

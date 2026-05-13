@@ -10,7 +10,6 @@ describe("home-dashboard helpers", () => {
   it("returns the hardcoded why statements for each persona", () => {
     expect(getPersonaWhy("mani")).toBe("Self-worth");
     expect(getPersonaWhy("harti")).toBe("Consistency");
-    expect(getPersonaWhy("mouli")).toBe("Pro-active");
   });
 
   it("derives mission completion from progress values", () => {
