@@ -83,12 +83,12 @@ export function StoreInitializer() {
       useCampaignStore.persist.rehydrate(),
       useContinuationStore.persist.rehydrate(),
       useSystemStore.persist.rehydrate(),
-      loadPlayer(),
-      loadGates(),
-      loadMissions(),
-      loadInventory(),
-      loadRecords(),
-      loadStats(),
+      loadPlayer(activePersona),
+      loadGates(activePersona),
+      loadMissions(activePersona),
+      loadInventory(activePersona),
+      loadRecords(activePersona),
+      loadStats(activePersona),
     ]);
   }, [
     activePersona,

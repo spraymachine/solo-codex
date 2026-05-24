@@ -2,13 +2,14 @@
 
 import { create } from "zustand";
 import { storage } from "@/lib/db/storage";
-import type { GymStat } from "@/lib/types";
+import { usePersonaStore } from "@/lib/stores/persona-store";
+import type { GymStat, Persona } from "@/lib/types";
 import { todayDate } from "@/lib/utils";
 
 interface StatsState {
   gymStats: GymStat[];
   loaded: boolean;
-  load: () => Promise<void>;
+  load: (persona?: Persona) => Promise<void>;
   createGymStat: (name: string, unit: string) => Promise<GymStat>;
   addGymEntry: (id: string, value: number, date?: string) => Promise<void>;
   updateGymStat: (id: string, updates: Partial<GymStat>) => Promise<void>;
@@ -19,8 +20,16 @@ export const useStatsStore = create<StatsState>((set) => ({
   gymStats: [],
   loaded: false,
 
-  async load() {
-    set({ gymStats: await storage.getGymStats(), loaded: true });
+  async load(persona) {
+    if (persona && usePersonaStore.getState().activePersona !== persona) {
+      return;
+    }
+    set({ gymStats: [], loaded: false });
+    const gymStats = await storage.getGymStats({ persona });
+    if (persona && usePersonaStore.getState().activePersona !== persona) {
+      return;
+    }
+    set({ gymStats, loaded: true });
   },
 
   async createGymStat(name, unit) {

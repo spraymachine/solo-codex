@@ -14,7 +14,192 @@ import { useRecordsStore } from "@/lib/stores/records-store";
 import { useStatsStore } from "@/lib/stores/stats-store";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
-import type { AppSnapshot } from "@/lib/types";
+import type { AppSnapshot, Gate, HunterRecord, Mission, Persona, Rank } from "@/lib/types";
+import { todayDate } from "@/lib/utils";
+
+// ─── Row types for individual Supabase tables ─────────────────────────────────
+
+type GoalRow = {
+  id: string;
+  title: string | null;
+  rank: Rank | null;
+  date: string | null;
+  why: string | null;
+  end_date: string | null;
+  sub_todos: Gate["subTodos"] | null;
+  status: Gate["status"] | null;
+  cleared_at: string | null;
+  created_at: string | null;
+};
+
+type TodoRow = {
+  id: string;
+  title: string | null;
+  rank: Rank | null;
+  date: string | null;
+  why: string | null;
+  target_metric: string | null;
+  current_value: number | null;
+  target_value: number | null;
+  unit: string | null;
+  deadline: string | null;
+  linked_gate_ids: string[] | null;
+  completed_at: string | null;
+  created_at: string | null;
+};
+
+type LogRow = { date: string; text: string | null; timestamp: string };
+type ReflectionRow = { date: string; reflect: string | null };
+type GratitudeRow = { date: string; items: string[] | null };
+
+function isRank(v: unknown): v is Rank {
+  return v === "E" || v === "D" || v === "C" || v === "B" || v === "A" || v === "S";
+}
+
+function isGateStatus(v: unknown): v is Gate["status"] {
+  return v === "locked" || v === "active" || v === "cleared" || v === "failed";
+}
+
+function fromGoalRow(row: GoalRow): Gate {
+  return {
+    id: row.id,
+    title: row.title ?? "Untitled goal",
+    rank: isRank(row.rank) ? row.rank : "E",
+    date: row.date ?? todayDate(),
+    endDate: row.end_date ?? null,
+    why: row.why ?? "",
+    subTodos: row.sub_todos ?? [],
+    status: isGateStatus(row.status) ? row.status : "active",
+    clearedAt: row.cleared_at,
+    createdAt: row.created_at ?? new Date().toISOString(),
+  };
+}
+
+function fromTodoRow(row: TodoRow): Mission {
+  return {
+    id: row.id,
+    title: row.title ?? "Untitled todo",
+    rank: isRank(row.rank) ? row.rank : "E",
+    date: row.date ?? todayDate(),
+    why: row.why ?? "",
+    targetMetric: row.target_metric ?? "Checklist",
+    currentValue: row.current_value ?? 0,
+    targetValue: row.target_value ?? 1,
+    unit: row.unit ?? "item",
+    deadline: row.deadline,
+    linkedGateIds: row.linked_gate_ids ?? [],
+    completedAt: row.completed_at,
+    createdAt: row.created_at ?? new Date().toISOString(),
+  };
+}
+
+function getOrCreateRecord(map: Map<string, HunterRecord>, date: string): HunterRecord {
+  let record = map.get(date);
+  if (!record) {
+    record = { date, entries: [], reflection: null, gratitude: [], penaltyApplied: false };
+    map.set(date, record);
+  }
+  return record;
+}
+
+/**
+ * Merge individual-table rows into a base snapshot.
+ * Individual tables are authoritative for entries/reflection/gratitude —
+ * the snapshot blob is only used for penaltyApplied and structural data
+ * (gates, missions, profile, xpLog).
+ */
+export function mergeTableRowsIntoSnapshot(
+  snapshot: AppSnapshot,
+  rows: {
+    goals?: GoalRow[];
+    todos?: TodoRow[];
+    logs?: LogRow[];
+    reflections?: ReflectionRow[];
+    gratitude?: GratitudeRow[];
+  },
+): AppSnapshot {
+  // Gates: index from snapshot, overwrite from individual table rows
+  const gatesById = new Map(snapshot.gates.map((g) => [g.id, g]));
+  for (const row of rows.goals ?? []) {
+    gatesById.set(row.id, fromGoalRow(row));
+  }
+
+  // Missions: same
+  const missionsById = new Map(snapshot.missions.map((m) => [m.id, m]));
+  for (const row of rows.todos ?? []) {
+    missionsById.set(row.id, fromTodoRow(row));
+  }
+
+  // Records: start with EMPTY entries/reflection/gratitude (individual tables are authority).
+  // Only preserve penaltyApplied from snapshot so we don't lose that state.
+  const recordsByDate = new Map<string, HunterRecord>(
+    snapshot.hunterRecords.map((r) => [
+      r.date,
+      { date: r.date, entries: [], reflection: null, gratitude: [], penaltyApplied: r.penaltyApplied },
+    ]),
+  );
+
+  for (const row of rows.logs ?? []) {
+    const record = getOrCreateRecord(recordsByDate, row.date);
+    if (!record.entries.some((e) => e.timestamp === row.timestamp)) {
+      record.entries.push({ timestamp: row.timestamp, text: row.text ?? "" });
+    }
+  }
+
+  for (const row of rows.reflections ?? []) {
+    getOrCreateRecord(recordsByDate, row.date).reflection = { reflect: row.reflect ?? "" };
+  }
+
+  for (const row of rows.gratitude ?? []) {
+    getOrCreateRecord(recordsByDate, row.date).gratitude = row.items ?? [];
+  }
+
+  return {
+    ...snapshot,
+    gates: Array.from(gatesById.values()),
+    missions: Array.from(missionsById.values()),
+    hunterRecords: Array.from(recordsByDate.values()).sort((a, b) =>
+      b.date.localeCompare(a.date),
+    ),
+  };
+}
+
+async function selectCloudTable<T>(
+  supabase: SupabaseClient,
+  table: string,
+  userId: string,
+  persona: Persona,
+  columns = "*",
+): Promise<T[]> {
+  const { data, error } = await supabase
+    .from(table)
+    .select(columns)
+    .eq("user_id", userId)
+    .eq("persona", persona);
+
+  if (error) {
+    console.error(`[CloudSync] ${table} fetch failed:`, error.message);
+    return [];
+  }
+  return (data ?? []) as T[];
+}
+
+async function loadCloudState(
+  supabase: SupabaseClient,
+  userId: string,
+  persona: Persona,
+  baseSnapshot: AppSnapshot,
+): Promise<AppSnapshot> {
+  const [goals, todos, logs, reflections, gratitude] = await Promise.all([
+    selectCloudTable<GoalRow>(supabase, "solo_goals", userId, persona),
+    selectCloudTable<TodoRow>(supabase, "solo_todos", userId, persona),
+    selectCloudTable<LogRow>(supabase, "solo_logs", userId, persona, "date,text,timestamp"),
+    selectCloudTable<ReflectionRow>(supabase, "solo_reflections", userId, persona, "date,reflect"),
+    selectCloudTable<GratitudeRow>(supabase, "solo_gratitude", userId, persona, "date,items"),
+  ]);
+
+  return mergeTableRowsIntoSnapshot(baseSnapshot, { goals, todos, logs, reflections, gratitude });
+}
 
 // ─── Offline queue helpers ────────────────────────────────────────────────────
 
@@ -206,9 +391,9 @@ async function pushToTables(
 async function syncNow(
   supabase: SupabaseClient,
   userId: string,
-  persona: string,
+  persona: Persona,
 ): Promise<boolean> {
-  const state = await storage.exportSnapshot();
+  const state = await storage.exportSnapshot({ persona });
 
   const { error } = await supabase.from("solo_snapshots").upsert(
     {
@@ -245,6 +430,7 @@ export function CloudSync() {
   const initialized = useRef(false);
   const loadingRef = useRef(false);
   const savingRef = useRef(false);
+  const loadTokenRef = useRef(0);
   const saveDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const loadAll = usePlayerStore((state) => state.load);
@@ -259,10 +445,19 @@ export function CloudSync() {
   useEffect(() => {
     const supabase = getSupabaseBrowserClient();
 
+    // Reset these so the save effect won't fire during load
+    const loadToken = loadTokenRef.current + 1;
+    loadTokenRef.current = loadToken;
+    initialized.current = false;
+    loadingRef.current = false;
+
     if (!enabled || !user || !supabase || !isSupabaseConfigured() || !personaAllowed) {
       initialized.current = true;
       return;
     }
+
+    // Capture persona at effect start — guards against stale closures
+    const persona = activePersona;
 
     async function loadSnapshot() {
       if (!supabase || !user) return;
@@ -272,25 +467,48 @@ export function CloudSync() {
           .from("solo_snapshots")
           .select("state")
           .eq("user_id", user.id)
-          .eq("persona", activePersona)
+          .eq("persona", persona)
           .maybeSingle();
 
         if (error) {
           console.error("[CloudSync] load failed:", error.message);
-        } else if (data?.state) {
-          await storage.importSnapshot(data.state);
-          await Promise.all([
-            loadAll(),
-            loadGates(),
-            loadMissions(),
-            loadInventory(),
-            loadRecords(),
-            loadStats(),
-          ]);
+        } else {
+          // Use individual tables as the source of truth, merging on top of the snapshot
+          const localState = await storage.exportSnapshot({ persona });
+          const baseState = (data?.state ?? localState) as AppSnapshot;
+          const incomingState = await loadCloudState(supabase, user.id, persona, baseState);
+
+          const hasData =
+            incomingState.gates.length > 0 ||
+            incomingState.missions.length > 0 ||
+            incomingState.hunterRecords.length > 0 ||
+            Boolean(data?.state);
+
+          if (hasData) {
+            // Guard: abort if persona switched while we were loading
+            if (usePersonaStore.getState().activePersona !== persona) return;
+
+            await storage.importSnapshot(incomingState, { persona });
+
+            // Guard again before reloading stores
+            if (usePersonaStore.getState().activePersona !== persona) return;
+
+            await Promise.all([
+              loadAll(persona),
+              loadGates(persona),
+              loadMissions(persona),
+              loadInventory(persona),
+              loadRecords(persona),
+              loadStats(persona),
+            ]);
+          }
         }
       } finally {
-        initialized.current = true;
-        loadingRef.current = false;
+        // Only finalize if this load token is still current
+        if (loadTokenRef.current === loadToken) {
+          initialized.current = true;
+          loadingRef.current = false;
+        }
       }
     }
 

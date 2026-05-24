@@ -3,15 +3,16 @@
 import { create } from "zustand";
 import { config } from "@/lib/config";
 import { storage } from "@/lib/db/storage";
+import { usePersonaStore } from "@/lib/stores/persona-store";
 import { usePlayerStore } from "@/lib/stores/player-store";
-import type { HunterRecord, Reflection } from "@/lib/types";
+import type { HunterRecord, Persona, Reflection } from "@/lib/types";
 import { shiftDate, todayDate } from "@/lib/utils";
 
 interface RecordsState {
   records: HunterRecord[];
   loaded: boolean;
   latestPenaltyDate: string | null;
-  load: () => Promise<void>;
+  load: (persona?: Persona) => Promise<void>;
   addEntry: (text: string, date?: string) => Promise<void>;
   saveReflection: (reflection: Reflection, date?: string) => Promise<void>;
   addGratitude: (text: string, date?: string) => Promise<void>;
@@ -23,10 +24,17 @@ export const useRecordsStore = create<RecordsState>((set) => ({
   loaded: false,
   latestPenaltyDate: null,
 
-  async load() {
-    const records = await storage.getHunterRecords();
+  async load(persona) {
+    if (persona && usePersonaStore.getState().activePersona !== persona) {
+      return;
+    }
+    set({ records: [], loaded: false, latestPenaltyDate: null });
+    const records = await storage.getHunterRecords({ persona });
     const latestPenaltyDate =
       records.find((record) => record.penaltyApplied)?.date ?? null;
+    if (persona && usePersonaStore.getState().activePersona !== persona) {
+      return;
+    }
     set({ records, latestPenaltyDate, loaded: true });
   },
 

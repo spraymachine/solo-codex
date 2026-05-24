@@ -2,12 +2,13 @@
 
 import { create } from "zustand";
 import { storage } from "@/lib/db/storage";
-import type { InventoryItem } from "@/lib/types";
+import { usePersonaStore } from "@/lib/stores/persona-store";
+import type { InventoryItem, Persona } from "@/lib/types";
 
 interface InventoryState {
   items: InventoryItem[];
   loaded: boolean;
-  load: () => Promise<void>;
+  load: (persona?: Persona) => Promise<void>;
   createItem: (input: {
     name: string;
     notes: string;
@@ -21,8 +22,16 @@ export const useInventoryStore = create<InventoryState>((set) => ({
   items: [],
   loaded: false,
 
-  async load() {
-    set({ items: await storage.getInventoryItems(), loaded: true });
+  async load(persona) {
+    if (persona && usePersonaStore.getState().activePersona !== persona) {
+      return;
+    }
+    set({ items: [], loaded: false });
+    const items = await storage.getInventoryItems({ persona });
+    if (persona && usePersonaStore.getState().activePersona !== persona) {
+      return;
+    }
+    set({ items, loaded: true });
   },
 
   async createItem(input) {

@@ -2,14 +2,15 @@
 
 import { create } from "zustand";
 import { storage } from "@/lib/db/storage";
-import type { Mission, Quest } from "@/lib/types";
+import { usePersonaStore } from "@/lib/stores/persona-store";
+import type { Mission, Persona, Quest } from "@/lib/types";
 
 type MissionInput = Omit<Mission, "id" | "createdAt" | "completedAt">;
 
 interface MissionsState {
   missions: Mission[];
   loaded: boolean;
-  load: () => Promise<void>;
+  load: (persona?: Persona) => Promise<void>;
   createMission: (input: MissionInput) => Promise<Mission>;
   updateMission: (id: string, updates: Partial<Mission>) => Promise<void>;
   deleteMission: (id: string) => Promise<void>;
@@ -20,8 +21,16 @@ export const useMissionsStore = create<MissionsState>((set, get) => ({
   missions: [],
   loaded: false,
 
-  async load() {
-    set({ missions: await storage.getMissions(), loaded: true });
+  async load(persona) {
+    if (persona && usePersonaStore.getState().activePersona !== persona) {
+      return;
+    }
+    set({ missions: [], loaded: false });
+    const missions = await storage.getMissions({ persona });
+    if (persona && usePersonaStore.getState().activePersona !== persona) {
+      return;
+    }
+    set({ missions, loaded: true });
   },
 
   async createMission(input) {

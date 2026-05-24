@@ -6,6 +6,7 @@ import type {
   HunterRecord,
   InventoryItem,
   Mission,
+  Persona,
   PlayerProfile,
   Quest,
   QuestPriority,
@@ -14,6 +15,10 @@ import type {
   XpLogEntry,
 } from "@/lib/types";
 import { generateId, nowISO, todayDate } from "@/lib/utils";
+
+type StorageOptions = {
+  persona?: Persona;
+};
 
 const DEFAULT_PROFILE: PlayerProfile = {
   name: "Hunter",
@@ -25,8 +30,8 @@ const DEFAULT_PROFILE: PlayerProfile = {
 };
 
 export const storage = {
-  async getProfile(): Promise<PlayerProfile> {
-    const db = getDb();
+  async getProfile(options?: StorageOptions): Promise<PlayerProfile> {
+    const db = getDb(options?.persona);
     const row = await db.profile.get(1);
 
     if (!row) {
@@ -49,13 +54,13 @@ export const storage = {
     await db.profile.put({ ...profile, _id: 1 });
   },
 
-  async getGates(): Promise<Gate[]> {
-    const db = getDb();
+  async getGates(options?: StorageOptions): Promise<Gate[]> {
+    const db = getDb(options?.persona);
     return db.gates.toArray();
   },
 
-  async getGatesByDate(date: string): Promise<Gate[]> {
-    const db = getDb();
+  async getGatesByDate(date: string, options?: StorageOptions): Promise<Gate[]> {
+    const db = getDb(options?.persona);
     return db.gates.where("date").equals(date).toArray();
   },
 
@@ -102,8 +107,8 @@ export const storage = {
     });
   },
 
-  async getQuestsByGate(gateId: string): Promise<Quest[]> {
-    const db = getDb();
+  async getQuestsByGate(gateId: string, options?: StorageOptions): Promise<Quest[]> {
+    const db = getDb(options?.persona);
     return db.quests.where("gateId").equals(gateId).sortBy("order");
   },
 
@@ -184,18 +189,18 @@ export const storage = {
     await db.xpLog.add(entry);
   },
 
-  async getXpLog(): Promise<XpLogEntry[]> {
-    const db = getDb();
+  async getXpLog(options?: StorageOptions): Promise<XpLogEntry[]> {
+    const db = getDb(options?.persona);
     return db.xpLog.orderBy("timestamp").toArray();
   },
 
-  async getMissions(): Promise<Mission[]> {
-    const db = getDb();
+  async getMissions(options?: StorageOptions): Promise<Mission[]> {
+    const db = getDb(options?.persona);
     return db.missions.toArray();
   },
 
-  async getMissionsByDate(date: string): Promise<Mission[]> {
-    const db = getDb();
+  async getMissionsByDate(date: string, options?: StorageOptions): Promise<Mission[]> {
+    const db = getDb(options?.persona);
     return db.missions.where("date").equals(date).toArray();
   },
 
@@ -242,8 +247,8 @@ export const storage = {
     await db.missions.delete(id);
   },
 
-  async getInventoryItems(): Promise<InventoryItem[]> {
-    const db = getDb();
+  async getInventoryItems(options?: StorageOptions): Promise<InventoryItem[]> {
+    const db = getDb(options?.persona);
     return db.inventory.toArray();
   },
 
@@ -279,8 +284,8 @@ export const storage = {
     await db.inventory.delete(id);
   },
 
-  async getHunterRecords(): Promise<HunterRecord[]> {
-    const db = getDb();
+  async getHunterRecords(options?: StorageOptions): Promise<HunterRecord[]> {
+    const db = getDb(options?.persona);
     return db.hunterRecords.orderBy("date").reverse().toArray();
   },
 
@@ -355,8 +360,8 @@ export const storage = {
     return next;
   },
 
-  async getGymStats(): Promise<GymStat[]> {
-    const db = getDb();
+  async getGymStats(options?: StorageOptions): Promise<GymStat[]> {
+    const db = getDb(options?.persona);
     return db.gymStats.toArray();
   },
 
@@ -421,18 +426,18 @@ export const storage = {
     ]);
   },
 
-  async exportSnapshot(): Promise<AppSnapshot> {
-    const db = getDb();
+  async exportSnapshot(options?: StorageOptions): Promise<AppSnapshot> {
+    const db = getDb(options?.persona);
     const [profile, gates, quests, missions, inventory, hunterRecords, gymStats, xpLog] =
       await Promise.all([
-        this.getProfile(),
-        this.getGates(),
+        this.getProfile(options),
+        this.getGates(options),
         db.quests.toArray(),
-        this.getMissions(),
-        this.getInventoryItems(),
-        this.getHunterRecords(),
-        this.getGymStats(),
-        this.getXpLog(),
+        this.getMissions(options),
+        this.getInventoryItems(options),
+        this.getHunterRecords(options),
+        this.getGymStats(options),
+        this.getXpLog(options),
       ]);
 
     return {
@@ -447,8 +452,8 @@ export const storage = {
     };
   },
 
-  async importSnapshot(snapshot: AppSnapshot): Promise<void> {
-    const db = getDb();
+  async importSnapshot(snapshot: AppSnapshot, options?: StorageOptions): Promise<void> {
+    const db = getDb(options?.persona);
     await db.transaction(
       "rw",
       [
@@ -462,7 +467,16 @@ export const storage = {
         db.xpLog,
       ],
       async () => {
-        await this.clear();
+        await Promise.all([
+          db.profile.clear(),
+          db.gates.clear(),
+          db.quests.clear(),
+          db.missions.clear(),
+          db.inventory.clear(),
+          db.hunterRecords.clear(),
+          db.gymStats.clear(),
+          db.xpLog.clear(),
+        ]);
         await db.profile.put({ ...snapshot.profile, _id: 1 });
         if (snapshot.gates.length) await db.gates.bulkPut(snapshot.gates);
         if (snapshot.quests.length) await db.quests.bulkPut(snapshot.quests);

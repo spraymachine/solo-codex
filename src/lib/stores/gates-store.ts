@@ -2,13 +2,14 @@
 
 import { create } from "zustand";
 import { storage } from "@/lib/db/storage";
-import type { Gate, Quest, QuestPriority, Rank } from "@/lib/types";
+import { usePersonaStore } from "@/lib/stores/persona-store";
+import type { Gate, Persona, Quest, QuestPriority, Rank } from "@/lib/types";
 
 interface GatesState {
   gates: Gate[];
   quests: Record<string, Quest[]>;
   loaded: boolean;
-  load: () => Promise<void>;
+  load: (persona?: Persona) => Promise<void>;
   createGate: (title: string, rank: Rank, options?: { date?: string; why?: string; endDate?: string }) => Promise<Gate>;
   updateGate: (id: string, updates: Partial<Gate>) => Promise<void>;
   deleteGate: (id: string) => Promise<void>;
@@ -32,14 +33,22 @@ export const useGatesStore = create<GatesState>((set, get) => ({
   quests: {},
   loaded: false,
 
-  async load() {
-    const gates = await storage.getGates();
+  async load(persona) {
+    if (persona && usePersonaStore.getState().activePersona !== persona) {
+      return;
+    }
+    set({ gates: [], quests: {}, loaded: false });
+
+    const gates = await storage.getGates({ persona });
     const quests: Record<string, Quest[]> = {};
 
     for (const gate of gates) {
-      quests[gate.id] = await storage.getQuestsByGate(gate.id);
+      quests[gate.id] = await storage.getQuestsByGate(gate.id, { persona });
     }
 
+    if (persona && usePersonaStore.getState().activePersona !== persona) {
+      return;
+    }
     set({ gates, quests, loaded: true });
   },
 

@@ -3,13 +3,14 @@
 import { create } from "zustand";
 import { storage } from "@/lib/db/storage";
 import { config } from "@/lib/config";
-import type { PlayerProfile, Rank, XpLogEntry } from "@/lib/types";
+import { usePersonaStore } from "@/lib/stores/persona-store";
+import type { Persona, PlayerProfile, Rank, XpLogEntry } from "@/lib/types";
 
 interface PlayerState {
   profile: PlayerProfile | null;
   xpLog: XpLogEntry[];
   loaded: boolean;
-  load: () => Promise<void>;
+  load: (persona?: Persona) => Promise<void>;
   addXp: (amount: number, reason: string, source: string) => Promise<void>;
   saveProfile: (updates: Partial<PlayerProfile>) => Promise<void>;
 }
@@ -45,11 +46,18 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   xpLog: [],
   loaded: false,
 
-  async load() {
+  async load(persona) {
+    if (persona && usePersonaStore.getState().activePersona !== persona) {
+      return;
+    }
+    set({ profile: null, xpLog: [], loaded: false });
     const [profile, xpLog] = await Promise.all([
-      storage.getProfile(),
-      storage.getXpLog(),
+      storage.getProfile({ persona }),
+      storage.getXpLog({ persona }),
     ]);
+    if (persona && usePersonaStore.getState().activePersona !== persona) {
+      return;
+    }
     set({ profile, xpLog, loaded: true });
   },
 
