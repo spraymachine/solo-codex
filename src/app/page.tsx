@@ -238,6 +238,20 @@ function getArcTimeProgress(startDate: string, endDate: string | null): { pct: n
   return { pct, dueLabel };
 }
 
+function buildMonthDates(year: number, month: number): string[] {
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  return Array.from({ length: daysInMonth }, (_, i) => {
+    const d = i + 1;
+    return `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+  });
+}
+
+function formatMonthLabel(year: number, month: number): string {
+  return new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(
+    new Date(year, month, 1)
+  );
+}
+
 function ReflectionEditor({
   initialReflection,
   onSave,
@@ -595,6 +609,10 @@ export default function HomePage() {
   const [quickLogDraft, setQuickLogDraft] = useState("");
   const [activeGoalId, setActiveGoalId] = useState<string | null>(null);
   const [showCreateArc, setShowCreateArc] = useState(false);
+  const [viewedMonth, setViewedMonth] = useState<{ year: number; month: number }>(() => {
+    const now = new Date();
+    return { year: now.getFullYear(), month: now.getMonth() };
+  });
   const currentTime = useLiveClock();
 
   const dayTodos = missions
@@ -625,6 +643,24 @@ export default function HomePage() {
     ...continuationDates,
     ...Array.from({ length: trailingCalendarSlots }, () => null),
   ];
+
+  // Month-navigation calendar
+  const monthDates = buildMonthDates(viewedMonth.year, viewedMonth.month);
+  const monthLeadingSlots = (new Date(`${monthDates[0]}T12:00:00`).getDay() + 6) % 7;
+  const monthTrailingSlots = (7 - ((monthLeadingSlots + monthDates.length) % 7)) % 7;
+  const monthCalendarDates = [
+    ...Array.from({ length: monthLeadingSlots }, () => null),
+    ...monthDates,
+    ...Array.from({ length: monthTrailingSlots }, () => null),
+  ];
+  const monthStart = monthDates[0];
+  const monthEnd = monthDates[monthDates.length - 1];
+  const arcsThisMonth = arcGoals.filter((goal) => {
+    const arcStart = goal.date;
+    const arcEnd = goal.endDate ?? shiftDate(goal.date, 21);
+    return arcStart <= monthEnd && arcEnd >= monthStart;
+  });
+
   const personaDateLabel = formatShortDayDate(new Date(`${selectedDate}T12:00:00`));
 
   const completedTodos = dayTodos.filter((mission) => isMissionComplete(mission)).length;
@@ -1113,21 +1149,60 @@ export default function HomePage() {
         <SectionShell
           eyebrow="04 Calendar"
           title="Calendar"
-          description="A sharp current-month grid for the continuation from May 12 onward."
+          description="Navigate months to see arcs and daily entries."
         >
-          <div className="mb-4 flex items-end justify-between border-b border-[var(--surface-border)] pb-3">
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--text-secondary)]">
-                Continuation
-              </p>
-              <p className="mt-2 text-lg font-semibold tracking-[-0.04em] text-[var(--text-primary)] md:text-xl">
-                {formatCalendarRange(rangeStartDate, rangeEndDate)}
-              </p>
-            </div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--text-secondary)]">
-              {continuationDates.length} days
+          {/* Month navigation header */}
+          <div className="mb-4 flex items-center justify-between border-b border-[var(--surface-border)] pb-3">
+            <button
+              type="button"
+              onClick={() => setViewedMonth(({ year, month }) => {
+                const d = new Date(year, month - 1, 1);
+                return { year: d.getFullYear(), month: d.getMonth() };
+              })}
+              aria-label="Previous month"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--surface-border)] bg-[var(--bg-panel)] text-sm text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-panel-strong)] hover:text-[var(--text-primary)]"
+            >
+              ‹
+            </button>
+            <p className="text-base font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
+              {formatMonthLabel(viewedMonth.year, viewedMonth.month)}
             </p>
+            <button
+              type="button"
+              onClick={() => setViewedMonth(({ year, month }) => {
+                const d = new Date(year, month + 1, 1);
+                return { year: d.getFullYear(), month: d.getMonth() };
+              })}
+              aria-label="Next month"
+              disabled={
+                viewedMonth.year > new Date().getFullYear() ||
+                (viewedMonth.year === new Date().getFullYear() && viewedMonth.month >= new Date().getMonth())
+              }
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--surface-border)] bg-[var(--bg-panel)] text-sm text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-panel-strong)] hover:text-[var(--text-primary)] disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              ›
+            </button>
           </div>
+
+          {/* Arcs active this month */}
+          {arcsThisMonth.length > 0 && (
+            <div className="mb-4 flex flex-col gap-1.5">
+              <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[var(--text-secondary)] mb-1">Arcs this month</p>
+              {arcsThisMonth.map((arc) => (
+                <div key={arc.id} className="flex overflow-hidden rounded-lg border border-[var(--surface-border)] bg-[var(--bg-panel)]">
+                  <div className="w-[3px] shrink-0" style={{ background: getArcStripeColor(arc.rank) }} />
+                  <div className="flex flex-1 items-center justify-between gap-3 px-3 py-2">
+                    <span className="text-xs font-semibold text-[var(--text-primary)] truncate">{arc.title}</span>
+                    <span className="shrink-0 text-[9px] text-[var(--text-secondary)]">
+                      {formatCalendarRange(arc.date, arc.endDate ?? shiftDate(arc.date, 21))}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Calendar grid */}
           <div className="grid grid-cols-7 border-l border-t border-[var(--surface-border)] bg-[var(--bg-panel)]">
             {WEEKDAY_LABELS.map((label) => (
               <div
@@ -1138,7 +1213,7 @@ export default function HomePage() {
                 <span className="md:hidden">{label.slice(0, 1)}</span>
               </div>
             ))}
-            {calendarDates.map((date, index) => {
+            {monthCalendarDates.map((date, index) => {
               if (!date) {
                 return (
                   <div
@@ -1151,6 +1226,10 @@ export default function HomePage() {
 
               const isSelected = date === selectedDate;
               const isCurrent = date === currentDate;
+              const isInArc = arcsThisMonth.some((arc) => {
+                const arcEnd = arc.endDate ?? shiftDate(arc.date, 21);
+                return date >= arc.date && date <= arcEnd;
+              });
               const dailyTodoCount = missions.filter((mission) => mission.date === date).length;
               const hasLog = records.some(
                 (record) => record.date === date && (record.entries.length > 0 || record.reflection),
@@ -1167,12 +1246,14 @@ export default function HomePage() {
               return (
                 <button
                   key={date}
-                  onClick={() => selectDate(date)}
+                  onClick={() => useContinuationStore.setState({ selectedDate: date })}
                   aria-label={formatHumanDate(date)}
                   className={`group relative aspect-square border-r border-b border-[var(--surface-border)] px-1.5 py-1.5 text-left transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] md:px-2 md:py-2 ${
                     isSelected
                       ? "bg-[color:color-mix(in_srgb,var(--bg-panel)_86%,white)]"
-                      : "bg-[var(--bg-panel)] hover:bg-[var(--bg-panel-strong)]"
+                      : isInArc
+                        ? "bg-[color:color-mix(in_srgb,var(--bg-panel)_94%,#5ea2ff)]"
+                        : "bg-[var(--bg-panel)] hover:bg-[var(--bg-panel-strong)]"
                   }`}
                 >
                   {isSelected ? (
