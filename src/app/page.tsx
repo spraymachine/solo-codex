@@ -9,7 +9,7 @@ import {
   getStatusSnapshot,
   isMissionComplete,
 } from "@/lib/home-dashboard";
-import { formatShortDayDate } from "@/lib/utils";
+import { formatShortDayDate, shiftDate, todayDate } from "@/lib/utils";
 import { getAllowedPersonas } from "@/lib/persona-access";
 import { buildCampaignDates, useCampaignStore } from "@/lib/stores/campaign-store";
 import { buildContinuationDates, useContinuationStore } from "@/lib/stores/continuation-store";
@@ -213,6 +213,29 @@ function getGoalRankTone(rank: Gate["rank"]) {
     default:
       return "text-[var(--text-primary)]";
   }
+}
+
+function getArcStripeColor(rank: Gate["rank"]) {
+  switch (rank) {
+    case "S": return "linear-gradient(180deg,#c8a000,#e8c840)";
+    case "A": return "linear-gradient(180deg,#1f6c9f,#5ea2ff)";
+    case "B": return "linear-gradient(180deg,#346538,#61c78c)";
+    case "C": return "linear-gradient(180deg,#956400,#c8a000)";
+    case "D": return "linear-gradient(180deg,#9f2f2d,#e05c5a)";
+    case "E": return "linear-gradient(180deg,#6c5b4f,#a89080)";
+    default:  return "linear-gradient(180deg,#999,#ccc)";
+  }
+}
+
+function getArcTimeProgress(startDate: string, endDate: string | null): { pct: number; dueLabel: string } {
+  const end = endDate ? new Date(`${endDate}T12:00:00`) : new Date(new Date(`${startDate}T12:00:00`).getTime() + 21 * 86400000);
+  const start = new Date(`${startDate}T12:00:00`);
+  const now = new Date();
+  const total = end.getTime() - start.getTime();
+  const elapsed = now.getTime() - start.getTime();
+  const pct = Math.min(100, Math.max(0, Math.round((elapsed / total) * 100)));
+  const dueLabel = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(end);
+  return { pct, dueLabel };
 }
 
 function ReflectionEditor({
@@ -456,6 +479,84 @@ function GoalPlannerModal({
   );
 }
 
+function CreateArcModal({
+  open,
+  today,
+  onClose,
+  onCreate,
+}: {
+  open: boolean;
+  today: string;
+  onClose: () => void;
+  onCreate: (title: string, rank: Gate["rank"], startDate: string, endDate: string) => Promise<void>;
+}) {
+  const ranks = ["S", "A", "B", "C", "D", "E"] as const;
+  const [title, setTitle] = useState("");
+  const [rank, setRank] = useState<Gate["rank"]>("A");
+  const [startDate, setStartDate] = useState(today);
+  const [endDate, setEndDate] = useState(shiftDate(today, 21));
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleSubmit() {
+    if (!title.trim() || !startDate || !endDate || endDate <= startDate) return;
+    setSubmitting(true);
+    await onCreate(title.trim(), rank, startDate, endDate);
+    setTitle("");
+    setRank("A");
+    setStartDate(today);
+    setEndDate(shiftDate(today, 21));
+    setSubmitting(false);
+    onClose();
+  }
+
+  return (
+    <Modal open={open} onClose={onClose} title="CREATE ARC">
+      <div className="space-y-5">
+        <div className="grid gap-2">
+          <label className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--text-secondary)]">Arc name</label>
+          <input
+            value={title}
+            onChange={e => setTitle(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter") void handleSubmit(); }}
+            className="w-full rounded-xl border border-[var(--surface-border)] bg-[var(--bg-panel)] px-4 py-3 text-base font-medium text-[var(--text-primary)] outline-none focus:border-[var(--accent-solid)]"
+            placeholder="e.g. Self-Improv"
+            autoFocus
+          />
+        </div>
+        <div className="grid gap-2">
+          <label className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--text-secondary)]">Rank</label>
+          <div className="grid grid-cols-6 gap-2">
+            {ranks.map(r => (
+              <button key={r} type="button" onClick={() => setRank(r)}
+                className={`h-11 border text-sm font-semibold transition-colors duration-300 ${
+                  rank === r
+                    ? "border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--bg-panel)]"
+                    : "border-[var(--surface-border)] bg-[var(--bg-panel)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                }`}
+              >{r}</button>
+            ))}
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="grid gap-2">
+            <label className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--text-secondary)]">Start date</label>
+            <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
+              className="w-full rounded-xl border border-[var(--surface-border)] bg-[var(--bg-panel)] px-4 py-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent-solid)]" />
+          </div>
+          <div className="grid gap-2">
+            <label className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--text-secondary)]">End date</label>
+            <input type="date" value={endDate} min={startDate} onChange={e => setEndDate(e.target.value)}
+              className="w-full rounded-xl border border-[var(--surface-border)] bg-[var(--bg-panel)] px-4 py-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent-solid)]" />
+          </div>
+        </div>
+        <ActionButton onClick={() => void handleSubmit()} disabled={submitting || !title.trim() || !endDate || endDate <= startDate} className="w-full">
+          {submitting ? "Creating…" : "Create arc"}
+        </ActionButton>
+      </div>
+    </Modal>
+  );
+}
+
 export default function HomePage() {
   const { user } = useAuth();
   const activePersona = usePersonaStore((state) => state.activePersona);
@@ -478,6 +579,7 @@ export default function HomePage() {
   const deleteMission = useMissionsStore((state) => state.deleteMission);
 
   const gates = useGatesStore((state) => state.gates);
+  const createGate = useGatesStore((state) => state.createGate);
   const updateGate = useGatesStore((state) => state.updateGate);
   const deleteGate = useGatesStore((state) => state.deleteGate);
 
@@ -492,6 +594,7 @@ export default function HomePage() {
   const [gratitudeDraft, setGratitudeDraft] = useState("");
   const [quickLogDraft, setQuickLogDraft] = useState("");
   const [activeGoalId, setActiveGoalId] = useState<string | null>(null);
+  const [showCreateArc, setShowCreateArc] = useState(false);
   const currentTime = useLiveClock();
 
   const dayTodos = missions
@@ -506,23 +609,11 @@ export default function HomePage() {
 
       return left.createdAt.localeCompare(right.createdAt);
     });
-  const campaignGoals = gates
-    .filter((gate) => campaignDates.includes(gate.date))
-    .sort((left, right) => {
-      const rankDifference = GOAL_RANK_ORDER[left.rank] - GOAL_RANK_ORDER[right.rank];
-
-      if (rankDifference !== 0) {
-        return rankDifference;
-      }
-
-      const dateDifference = left.date.localeCompare(right.date);
-      if (dateDifference !== 0) {
-        return dateDifference;
-      }
-
-      return left.createdAt.localeCompare(right.createdAt);
-    });
-  const activeGoal = campaignGoals.find((goal) => goal.id === activeGoalId) ?? null;
+  const arcGoals = [...gates].sort((a, b) => {
+    const rankDiff = GOAL_RANK_ORDER[a.rank] - GOAL_RANK_ORDER[b.rank];
+    return rankDiff !== 0 ? rankDiff : a.createdAt.localeCompare(b.createdAt);
+  });
+  const activeGoal = arcGoals.find((goal) => goal.id === activeGoalId) ?? null;
   const dayRecord = records.find((record) => record.date === selectedDate) ?? null;
   const rangeStartDate = continuationDates[0];
   const rangeEndDate = continuationDates.at(-1) ?? continuationDates[0];
@@ -537,12 +628,13 @@ export default function HomePage() {
   const personaDateLabel = formatShortDayDate(new Date(`${selectedDate}T12:00:00`));
 
   const completedTodos = dayTodos.filter((mission) => isMissionComplete(mission)).length;
-  const completedGoals = campaignGoals.filter((goal) => goal.status === "cleared").length;
+  const completedArcs = arcGoals.filter((goal) => goal.status === "cleared").length;
+  const totalArcs = arcGoals.length;
   const status = getStatusSnapshot({
     totalTodos: dayTodos.length,
     completedTodos,
-    completedGoals,
-    totalGoals: campaignGoals.length,
+    completedGoals: completedArcs,
+    totalGoals: totalArcs,
     hasJournalEntry: Boolean(dayRecord?.entries.length || dayRecord?.reflection),
     streakCount: profile?.streakCount ?? 0,
   });
@@ -837,93 +929,95 @@ export default function HomePage() {
       </SectionShell>
 
       <SectionShell
-        eyebrow="02 Finished arc"
-        description="The original three-week run stays locked here as its own record."
+        eyebrow="02 Arcs"
+        description="Each arc is a goal with a time window and trackable steps."
       >
-        <div className="border-b border-[var(--surface-border)] pb-4">
-          <p className="text-sm font-medium text-[var(--text-primary)]">
-            Locked campaign: {formatCalendarRange(campaignDates[0], campaignDates.at(-1) ?? campaignDates[0])}
+        <div className="flex items-center justify-between mb-6">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--text-secondary)]">
+            {arcGoals.length} arc{arcGoals.length !== 1 ? "s" : ""}
           </p>
-          <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
-            This arc is independent from the May continuation calendar below.
-          </p>
+          <ActionButton onClick={() => setShowCreateArc(true)}>
+            New arc
+          </ActionButton>
         </div>
-
-        <div className="mt-6 grid gap-3 md:grid-cols-2">
-          {campaignGoals.length === 0 ? (
+        <div className="grid gap-3 md:grid-cols-2">
+          {arcGoals.length === 0 ? (
             <div className="rounded-[1rem] border border-dashed border-[var(--surface-border)] bg-[var(--bg-panel)] px-4 py-6 text-sm text-[var(--text-secondary)] md:col-span-2">
-              No 3-week goals yet. Add the outcomes that should still matter by the end of this cycle.
+              No arcs yet. Create one to start tracking.
             </div>
           ) : (
-            campaignGoals.map((goal) => (
-              (() => {
-                const goalIsComplete = goal.subTodos.length > 0 && goal.subTodos.every((subTodo) => subTodo.completed);
-
-                return (
+            arcGoals.map((goal) => {
+              const { pct: timePct, dueLabel } = getArcTimeProgress(goal.date, goal.endDate ?? null);
+              const completedSteps = goal.subTodos.filter(s => s.completed).length;
+              const totalSteps = goal.subTodos.length;
+              const stepsPct = totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : 0;
+              const remaining = totalSteps - completedSteps;
+              return (
+                <div
+                  key={goal.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setActiveGoalId(goal.id)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      setActiveGoalId(goal.id);
+                    }
+                  }}
+                  className="relative cursor-pointer overflow-hidden rounded-[1rem] border border-[var(--surface-border)] bg-[var(--bg-panel)] transition-colors duration-300 hover:bg-[var(--bg-panel-strong)] flex"
+                >
+                  {/* Rank stripe */}
                   <div
-                    key={goal.id}
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => setActiveGoalId(goal.id)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" || event.key === " ") {
-                        event.preventDefault();
-                        setActiveGoalId(goal.id);
-                      }
-                    }}
-                    className="relative cursor-pointer overflow-hidden rounded-[1rem] border border-[var(--surface-border)] bg-[var(--bg-panel)] px-4 py-4 transition-colors duration-300 hover:bg-[var(--bg-panel-strong)]"
-                  >
-                    {goalIsComplete ? (
-                      <svg
-                        aria-hidden="true"
-                        viewBox="0 0 100 100"
-                        preserveAspectRatio="none"
-                        className="pointer-events-none absolute inset-[2px] z-10 h-[calc(100%-4px)] w-[calc(100%-4px)] overflow-visible text-[color:color-mix(in_srgb,var(--text-primary)_72%,transparent)] opacity-70"
-                      >
-                        <path
-                          d="M10 14 90 86"
-                          className="drop-shadow-[0_1px_0_rgba(255,255,255,0.35)]"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeLinecap="round"
-                          strokeWidth="4.5"
-                        />
-                        <path
-                          d="M90 14 10 86"
-                          className="drop-shadow-[0_1px_0_rgba(255,255,255,0.35)]"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeLinecap="round"
-                          strokeWidth="4.5"
-                        />
-                        <circle cx="50" cy="50" r="6" fill="currentColor" opacity="0.12" />
-                      </svg>
-                    ) : null}
-                    <div className="relative z-20 flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="text-xl font-semibold tracking-[-0.05em] text-[var(--text-primary)] md:text-2xl">
-                          {goal.title}
-                        </p>
-                      </div>
-                      <span
-                        className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] ${
-                          goal.status === "cleared"
-                            ? "bg-[#edf3ec] text-[#346538]"
-                            : "bg-[#e1f3fe] text-[#1f6c9f]"
-                        }`}
-                      >
+                    className="w-[5px] shrink-0"
+                    style={{ background: getArcStripeColor(goal.rank) }}
+                  />
+
+                  <div className="flex-1 px-4 py-4">
+                    {/* Header */}
+                    <div className="flex items-start justify-between gap-3 mb-2">
+                      <p className="text-xl font-semibold tracking-[-0.05em] text-[var(--text-primary)] md:text-2xl">
+                        {goal.title}
+                      </p>
+                      <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] ${
+                        goal.status === "cleared" ? "bg-[#edf3ec] text-[#346538]" : "bg-[#e1f3fe] text-[#1f6c9f]"
+                      }`}>
                         {goal.status === "cleared" ? "Cleared" : "Active"}
                       </span>
                     </div>
-                    <div className="relative z-20 mt-4 flex items-end justify-between gap-3">
-                      <div className="flex items-end gap-2">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--text-secondary)]">
-                          Rank
-                        </p>
-                        <span className={`text-xl font-semibold leading-none tracking-[-0.05em] ${getGoalRankTone(goal.rank)}`}>
-                          {goal.rank}
-                        </span>
+
+                    {/* Date + rank label */}
+                    <p className="text-[10px] text-[var(--text-secondary)] mb-3 tracking-[0.04em]">
+                      {formatCalendarRange(goal.date, goal.endDate ?? shiftDate(goal.date, 21))} · {goal.rank} Rank
+                    </p>
+
+                    {/* Stat tiles */}
+                    <div className="grid grid-cols-2 gap-2">
+                      {/* Time tile */}
+                      <div className="rounded-[0.625rem] bg-[var(--bg-secondary)] px-3 py-2.5">
+                        <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[var(--text-secondary)] mb-1.5">Time elapsed</p>
+                        <p className="text-lg font-semibold tracking-[-0.04em] text-[var(--text-primary)] mb-1.5">{timePct}%</p>
+                        <div className="h-1 rounded-full bg-[var(--surface-soft)] overflow-hidden">
+                          <div className="h-full rounded-full bg-[var(--text-primary)] transition-all duration-500" style={{ width: `${Math.max(timePct, 2)}%` }} />
+                        </div>
+                        <p className="text-[9px] text-[var(--text-secondary)] mt-1.5">Due {dueLabel}</p>
                       </div>
+                      {/* Steps tile */}
+                      <div className="rounded-[0.625rem] bg-[#f0f6ff] px-3 py-2.5">
+                        <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#5ea2ff] mb-1.5">Steps done</p>
+                        <p className="text-lg font-semibold tracking-[-0.04em] text-[var(--text-primary)] mb-1.5">
+                          {totalSteps === 0 ? "—" : `${completedSteps}/${totalSteps}`}
+                        </p>
+                        <div className="h-1 rounded-full bg-[#d0e6ff] overflow-hidden">
+                          <div className="h-full rounded-full bg-[#5ea2ff] transition-all duration-500" style={{ width: `${Math.max(stepsPct, totalSteps > 0 ? 2 : 0)}%` }} />
+                        </div>
+                        <p className="text-[9px] text-[#5ea2ff] mt-1.5">
+                          {totalSteps === 0 ? "No steps added" : `${remaining} remaining`}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Delete button */}
+                    <div className="mt-3 flex justify-end">
                       <GhostButton
                         onClick={(event) => {
                           event.stopPropagation();
@@ -934,9 +1028,9 @@ export default function HomePage() {
                       </GhostButton>
                     </div>
                   </div>
-                );
-              })()
-            ))
+                </div>
+              );
+            })
           )}
         </div>
       </SectionShell>
@@ -951,6 +1045,18 @@ export default function HomePage() {
         onToggleSubTodo={handleToggleGoalSubTodo}
         onDeleteSubTodo={handleDeleteGoalSubTodo}
         onPushSubTodo={handlePushGoalSubTodo}
+      />
+      <CreateArcModal
+        open={showCreateArc}
+        today={todayDate()}
+        onClose={() => setShowCreateArc(false)}
+        onCreate={async (title, rank, startDate, endDate) => {
+          await createGate(title, rank, {
+            date: startDate,
+            endDate,
+            why: getPersonaWhy(activePersona),
+          });
+        }}
       />
 
       <SectionShell
@@ -1151,13 +1257,13 @@ export default function HomePage() {
             </div>
             <div className="rounded-[1rem] border border-[var(--surface-border)] bg-[var(--bg-panel)] px-4 py-4">
               <p className="text-[10px] uppercase tracking-[0.2em] text-[var(--text-secondary)]">
-                Three-week progress
+                Arcs progress
               </p>
               <p className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
                 {status.goalsCompletionLabel}
               </p>
               <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
-                Goals cleared out of the current campaign window.
+                Arcs cleared.
               </p>
             </div>
           </div>
