@@ -118,6 +118,7 @@ async function pushToTables(
           rank: g.rank,
           date: g.date,
           why: g.why,
+          end_date: g.endDate ?? null,
           sub_todos: g.subTodos,
           status: g.status,
           cleared_at: g.clearedAt,
