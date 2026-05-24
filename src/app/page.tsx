@@ -11,8 +11,7 @@ import {
 } from "@/lib/home-dashboard";
 import { formatShortDayDate, shiftDate, todayDate } from "@/lib/utils";
 import { getAllowedPersonas } from "@/lib/persona-access";
-import { buildCampaignDates, useCampaignStore } from "@/lib/stores/campaign-store";
-import { buildContinuationDates, useContinuationStore } from "@/lib/stores/continuation-store";
+import { useContinuationStore } from "@/lib/stores/continuation-store";
 import { useGatesStore } from "@/lib/stores/gates-store";
 import { personaMeta, usePersonaStore } from "@/lib/stores/persona-store";
 import { usePlayerStore } from "@/lib/stores/player-store";
@@ -233,7 +232,7 @@ function getArcTimeProgress(startDate: string, endDate: string | null): { pct: n
   const now = new Date();
   const total = end.getTime() - start.getTime();
   const elapsed = now.getTime() - start.getTime();
-  const pct = Math.min(100, Math.max(0, Math.round((elapsed / total) * 100)));
+  const pct = total <= 0 ? 0 : Math.min(100, Math.max(0, Math.round((elapsed / total) * 100)));
   const dueLabel = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(end);
   return { pct, dueLabel };
 }
@@ -580,12 +579,7 @@ export default function HomePage() {
   const currentDate = useContinuationStore((state) => state.currentDate);
   const continuationStartDate = useContinuationStore((state) => state.startDate);
   const continuationTotalDays = useContinuationStore((state) => state.totalDays);
-  const selectDate = useContinuationStore((state) => state.selectDate);
   const selectCurrentDate = useContinuationStore((state) => state.selectCurrentDate);
-  const campaignStartDate = useCampaignStore((state) => state.startDate);
-  const campaignTotalDays = useCampaignStore((state) => state.totalDays);
-  const campaignDates = buildCampaignDates(campaignStartDate, campaignTotalDays);
-  const continuationDates = buildContinuationDates(continuationStartDate, continuationTotalDays);
 
   const missions = useMissionsStore((state) => state.missions);
   const createMission = useMissionsStore((state) => state.createMission);
@@ -633,17 +627,6 @@ export default function HomePage() {
   });
   const activeGoal = arcGoals.find((goal) => goal.id === activeGoalId) ?? null;
   const dayRecord = records.find((record) => record.date === selectedDate) ?? null;
-  const rangeStartDate = continuationDates[0];
-  const rangeEndDate = continuationDates.at(-1) ?? continuationDates[0];
-  const leadingCalendarSlots =
-    (new Date(`${rangeStartDate}T12:00:00`).getDay() + 6) % 7;
-  const trailingCalendarSlots = (7 - ((leadingCalendarSlots + continuationDates.length) % 7)) % 7;
-  const calendarDates = [
-    ...Array.from({ length: leadingCalendarSlots }, () => null),
-    ...continuationDates,
-    ...Array.from({ length: trailingCalendarSlots }, () => null),
-  ];
-
   // Month-navigation calendar
   const monthDates = buildMonthDates(viewedMonth.year, viewedMonth.month);
   const monthLeadingSlots = (new Date(`${monthDates[0]}T12:00:00`).getDay() + 6) % 7;
@@ -792,6 +775,8 @@ export default function HomePage() {
   async function handleSaveReflection(nextReflection: Reflection) {
     await saveReflection(nextReflection, selectedDate);
   }
+
+  const now = new Date();
 
   if (!allowedPersonas.includes(activePersona)) {
     return (
@@ -1175,8 +1160,8 @@ export default function HomePage() {
               })}
               aria-label="Next month"
               disabled={
-                viewedMonth.year > new Date().getFullYear() ||
-                (viewedMonth.year === new Date().getFullYear() && viewedMonth.month >= new Date().getMonth())
+                viewedMonth.year > now.getFullYear() ||
+                (viewedMonth.year === now.getFullYear() && viewedMonth.month >= now.getMonth())
               }
               className="flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--surface-border)] bg-[var(--bg-panel)] text-sm text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-panel-strong)] hover:text-[var(--text-primary)] disabled:opacity-40 disabled:cursor-not-allowed"
             >
