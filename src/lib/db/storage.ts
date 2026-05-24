@@ -68,6 +68,7 @@ export const storage = {
     title: string;
     rank: Rank;
     date?: string;
+    endDate?: string;
     why?: string;
   }): Promise<Gate> {
     const db = getDb();
@@ -76,6 +77,7 @@ export const storage = {
       title: input.title,
       rank: input.rank,
       date: input.date ?? todayDate(),
+      endDate: input.endDate ?? null,
       why: input.why ?? "",
       subTodos: [],
       status: "active",
