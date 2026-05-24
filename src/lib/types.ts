@@ -33,6 +33,7 @@ export interface Gate {
   title: string;
   rank: Rank;
   date: string;
+  endDate: string | null;
   why: string;
   subTodos: SubQuest[];
   status: GateStatus;
