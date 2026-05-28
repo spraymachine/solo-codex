@@ -1,0 +1,1020 @@
+{
+  "SoloLevelingDB": {
+    "gates": [],
+    "gymStats": [],
+    "hunterRecords": [],
+    "inventory": [],
+    "missions": [],
+    "profile": [],
+    "quests": [],
+    "xpLog": []
+  },
+  "SoloLevelingDB-harti": {
+    "gates": [
+      {
+        "id": "3ebfb61b-e522-44f1-8fdb-51d676185a2d",
+        "why": "Consistency",
+        "date": "2026-04-20",
+        "rank": "B",
+        "title": "Discipline and commitment",
+        "status": "active",
+        "subTodos": [
+          {
+            "id": "0d237498-0055-49bc-9170-1826f14fbc02",
+            "title": "Reducing screen time",
+            "completed": false
+          },
+          {
+            "id": "5e08f103-8112-476b-afa5-a043a4ae5d51",
+            "title": "Waking up early 😴",
+            "completed": false
+          },
+          {
+            "id": "d43e0e09-077b-4738-a512-3d2f6a880625",
+            "title": "Controlling sugar carving 🫩",
+            "completed": false
+          },
+          {
+            "id": "8c0e0c5f-8ee9-436b-9be2-63e83e4efc8d",
+            "title": "Meditation 🧘‍♀️",
+            "completed": false
+          },
+          {
+            "id": "c6d0a92d-0544-4079-8554-5b7da1eb0b93",
+            "title": "Hitting the gym 😭",
+            "completed": false
+          },
+          {
+            "id": "dcaf9268-6dc5-4f3b-972e-afceed2ca28a",
+            "title": "Book reading 🤭",
+            "completed": false
+          }
+        ],
+        "clearedAt": null,
+        "createdAt": "2026-04-20T10:51:12.749Z"
+      }
+    ],
+    "gymStats": [],
+    "hunterRecords": [
+      {
+        "date": "2026-04-20",
+        "entries": [
+          {
+            "text": "Fog",
+            "timestamp": "2026-04-19T18:10:41.603Z"
+          },
+          {
+            "text": "sleepy",
+            "timestamp": "2026-04-20T05:33:40.529Z"
+          },
+          {
+            "text": "Feeling hungry",
+            "timestamp": "2026-04-20T07:40:47.809Z"
+          },
+          {
+            "text": "Sleepy",
+            "timestamp": "2026-04-20T10:31:25.511Z"
+          },
+          {
+            "text": "Thinking about my bavaa.😏😭",
+            "timestamp": "2026-04-20T11:04:52.970Z"
+          }
+        ],
+        "gratitude": [
+          "Bava(for taking to me the temple 😏😏)"
+        ],
+        "reflection": {
+          "reflect": "Had a really peaceful, good day…\nEnding it with a happy heart… now waiting for what day 2 brings ✨"
+        },
+        "penaltyApplied": false
+      },
+      {
+        "date": "2026-04-21",
+        "entries": [
+          {
+            "text": "Thinking about my man😏",
+            "timestamp": "2026-04-21T08:57:16.677Z"
+          },
+          {
+            "text": "Potty osthundi 😖",
+            "timestamp": "2026-04-21T10:15:49.467Z"
+          },
+          {
+            "text": "Ahhh im feeling hungry",
+            "timestamp": "2026-04-21T16:11:44.601Z"
+          }
+        ],
+        "gratitude": [],
+        "reflection": null,
+        "penaltyApplied": false
+      }
+    ],
+    "inventory": [],
+    "missions": [
+      {
+        "id": "1afff91f-fff9-450d-ba69-cb187381ce36",
+        "why": "Consistency",
+        "date": "2026-04-21",
+        "rank": "D",
+        "unit": "done",
+        "title": "2L water",
+        "deadline": "2026-04-21",
+        "createdAt": "2026-04-21T08:59:28.401Z",
+        "completedAt": null,
+        "targetValue": 1,
+        "currentValue": 0,
+        "targetMetric": "Checklist",
+        "linkedGateIds": []
+      },
+      {
+        "id": "22cabdf4-6379-487d-b004-1cebed3f1455",
+        "why": "Consistency",
+        "date": "2026-04-21",
+        "rank": "D",
+        "unit": "done",
+        "title": "No junk",
+        "deadline": "2026-04-21",
+        "createdAt": "2026-04-21T08:57:42.102Z",
+        "completedAt": "2026-04-21T14:26:26.144Z",
+        "targetValue": 1,
+        "currentValue": 1,
+        "targetMetric": "Checklist",
+        "linkedGateIds": []
+      },
+      {
+        "id": "2adcaebe-32a2-4816-8829-9180cc343db0",
+        "why": "Consistency",
+        "date": "2026-04-21",
+        "rank": "D",
+        "unit": "done",
+        "title": "Book reading",
+        "deadline": "2026-04-21",
+        "createdAt": "2026-04-21T08:57:56.126Z",
+        "completedAt": null,
+        "targetValue": 1,
+        "currentValue": 0,
+        "targetMetric": "Checklist",
+        "linkedGateIds": []
+      },
+      {
+        "id": "2c976003-4c35-469c-9a61-6a00efc16af2",
+        "why": "Consistency",
+        "date": "2026-04-20",
+        "rank": "D",
+        "unit": "done",
+        "title": "Reducing screen time",
+        "deadline": "2026-04-20",
+        "createdAt": "2026-04-20T10:32:51.466Z",
+        "completedAt": "2026-04-20T17:34:56.888Z",
+        "targetValue": 1,
+        "currentValue": 1,
+        "targetMetric": "Checklist",
+        "linkedGateIds": []
+      },
+      {
+        "id": "5115313e-d003-4fed-aed9-58e40fd31e82",
+        "why": "Consistency",
+        "date": "2026-04-21",
+        "rank": "D",
+        "unit": "done",
+        "title": "No sugars",
+        "deadline": "2026-04-21",
+        "createdAt": "2026-04-21T08:57:47.555Z",
+        "completedAt": "2026-04-21T14:26:27.294Z",
+        "targetValue": 1,
+        "currentValue": 1,
+        "targetMetric": "Checklist",
+        "linkedGateIds": []
+      },
+      {
+        "id": "63bdbe91-977d-4f80-8576-22e503eb1553",
+        "why": "Consistency",
+        "date": "2026-04-21",
+        "rank": "B",
+        "unit": "done",
+        "title": "Reducing screen time",
+        "deadline": "2026-04-21",
+        "createdAt": "2026-04-21T10:13:47.914Z",
+        "completedAt": "2026-04-21T14:26:33.461Z",
+        "targetValue": 1,
+        "currentValue": 1,
+        "targetMetric": "Checklist",
+        "linkedGateIds": [
+          "3ebfb61b-e522-44f1-8fdb-51d676185a2d"
+        ]
+      },
+      {
+        "id": "7484eb76-35ac-4b9e-a489-a08fc571ff48",
+        "why": "Consistency",
+        "date": "2026-04-21",
+        "rank": "D",
+        "unit": "done",
+        "title": "10k steps",
+        "deadline": "2026-04-21",
+        "createdAt": "2026-04-21T08:58:18.428Z",
+        "completedAt": null,
+        "targetValue": 1,
+        "currentValue": 0,
+        "targetMetric": "Checklist",
+        "linkedGateIds": []
+      },
+      {
+        "id": "86d32f05-36ef-4828-a82a-233d8a4095c8",
+        "why": "Consistency",
+        "date": "2026-04-20",
+        "rank": "D",
+        "unit": "done",
+        "title": "Hitting the gym",
+        "deadline": "2026-04-20",
+        "createdAt": "2026-04-20T10:32:26.069Z",
+        "completedAt": "2026-04-20T17:19:15.331Z",
+        "targetValue": 1,
+        "currentValue": 1,
+        "targetMetric": "Checklist",
+        "linkedGateIds": []
+      },
+      {
+        "id": "88f77b51-cac4-4dea-9f52-00b2a27a27ed",
+        "why": "Consistency",
+        "date": "2026-04-20",
+        "rank": "D",
+        "unit": "done",
+        "title": "Gita",
+        "deadline": "2026-04-20",
+        "createdAt": "2026-04-20T10:48:19.598Z",
+        "completedAt": "2026-04-20T23:43:40.271Z",
+        "targetValue": 1,
+        "currentValue": 1,
+        "targetMetric": "Checklist",
+        "linkedGateIds": []
+      },
+      {
+        "id": "890732fd-5f87-4051-8e7a-dafab37ee9e5",
+        "why": "Consistency",
+        "date": "2026-04-20",
+        "rank": "D",
+        "unit": "done",
+        "title": "Meditation",
+        "deadline": "2026-04-20",
+        "createdAt": "2026-04-20T10:48:06.183Z",
+        "completedAt": "2026-04-20T17:19:17.099Z",
+        "targetValue": 1,
+        "currentValue": 1,
+        "targetMetric": "Checklist",
+        "linkedGateIds": []
+      },
+      {
+        "id": "942d9705-8dbb-4ea0-83d6-8445509f4ca3",
+        "why": "Consistency",
+        "date": "2026-04-20",
+        "rank": "D",
+        "unit": "done",
+        "title": "10k steps",
+        "deadline": "2026-04-20",
+        "createdAt": "2026-04-20T10:32:12.686Z",
+        "completedAt": "2026-04-20T17:50:08.150Z",
+        "targetValue": 1,
+        "currentValue": 1,
+        "targetMetric": "Checklist",
+        "linkedGateIds": []
+      },
+      {
+        "id": "af6fc6cd-8213-4681-9bfe-5f0f2a1de16f",
+        "why": "Consistency",
+        "date": "2026-04-21",
+        "rank": "D",
+        "unit": "done",
+        "title": "Wake up early",
+        "deadline": "2026-04-21",
+        "createdAt": "2026-04-21T08:57:35.421Z",
+        "completedAt": "2026-04-21T09:31:14.090Z",
+        "targetValue": 1,
+        "currentValue": 1,
+        "targetMetric": "Checklist",
+        "linkedGateIds": []
+      },
+      {
+        "id": "bbcc7232-6d0d-4390-83c8-5c5598d1268a",
+        "why": "Consistency",
+        "date": "2026-04-21",
+        "rank": "D",
+        "unit": "done",
+        "title": "Gym",
+        "deadline": "2026-04-21",
+        "createdAt": "2026-04-21T08:58:13.479Z",
+        "completedAt": "2026-04-21T14:26:37.728Z",
+        "targetValue": 1,
+        "currentValue": 1,
+        "targetMetric": "Checklist",
+        "linkedGateIds": []
+      },
+      {
+        "id": "c59f0e68-64fb-41ae-ae2c-f2e0b903cbce",
+        "why": "Consistency",
+        "date": "2026-04-20",
+        "rank": "D",
+        "unit": "done",
+        "title": "Book reading",
+        "deadline": "2026-04-20",
+        "createdAt": "2026-04-20T10:32:38.748Z",
+        "completedAt": "2026-04-20T17:34:55.513Z",
+        "targetValue": 1,
+        "currentValue": 1,
+        "targetMetric": "Checklist",
+        "linkedGateIds": []
+      },
+      {
+        "id": "c604fe69-acf1-4df7-a941-f63b1672d3b2",
+        "why": "Consistency",
+        "date": "2026-04-21",
+        "rank": "D",
+        "unit": "done",
+        "title": "Gita",
+        "deadline": "2026-04-21",
+        "createdAt": "2026-04-21T08:58:00.433Z",
+        "completedAt": null,
+        "targetValue": 1,
+        "currentValue": 0,
+        "targetMetric": "Checklist",
+        "linkedGateIds": []
+      },
+      {
+        "id": "dc62c465-65ac-4a8c-aabc-492471e4d841",
+        "why": "Consistency",
+        "date": "2026-04-20",
+        "rank": "D",
+        "unit": "done",
+        "title": "No sugars",
+        "deadline": "2026-04-20",
+        "createdAt": "2026-04-20T10:32:19.210Z",
+        "completedAt": "2026-04-20T17:19:09.586Z",
+        "targetValue": 1,
+        "currentValue": 1,
+        "targetMetric": "Checklist",
+        "linkedGateIds": []
+      },
+      {
+        "id": "decf8bbe-eb3c-478a-a530-5f4c30f698c9",
+        "why": "Consistency",
+        "date": "2026-04-21",
+        "rank": "D",
+        "unit": "done",
+        "title": "Meditation",
+        "deadline": "2026-04-21",
+        "createdAt": "2026-04-21T08:57:51.308Z",
+        "completedAt": null,
+        "targetValue": 1,
+        "currentValue": 0,
+        "targetMetric": "Checklist",
+        "linkedGateIds": []
+      },
+      {
+        "id": "e1656163-db8f-4e45-ac5a-6de373e51dbe",
+        "why": "Consistency",
+        "date": "2026-04-29",
+        "rank": "D",
+        "unit": "done",
+        "title": "bnb time 👀",
+        "deadline": "2026-04-29",
+        "createdAt": "2026-04-21T14:22:35.649Z",
+        "completedAt": null,
+        "targetValue": 1,
+        "currentValue": 0,
+        "targetMetric": "Checklist",
+        "linkedGateIds": []
+      },
+      {
+        "id": "f5cc5625-5e86-4116-9bed-2ff6be8bbb4a",
+        "why": "Consistency",
+        "date": "2026-04-21",
+        "rank": "D",
+        "unit": "done",
+        "title": "Music class",
+        "deadline": "2026-04-21",
+        "createdAt": "2026-04-21T08:58:44.032Z",
+        "completedAt": "2026-04-21T14:26:29.778Z",
+        "targetValue": 1,
+        "currentValue": 1,
+        "targetMetric": "Checklist",
+        "linkedGateIds": []
+      }
+    ],
+    "profile": [
+      {
+        "xp": 30,
+        "name": "Hunter",
+        "rank": "E",
+        "level": 1,
+        "lastLogDate": "2026-04-21",
+        "streakCount": 2,
+        "_id": 1
+      }
+    ],
+    "quests": [],
+    "xpLog": [
+      {
+        "id": "2b18bc8d-c503-42bf-8138-f9327faa7b18",
+        "amount": 15,
+        "reason": "Daily log completed",
+        "source": "record",
+        "timestamp": "2026-04-19T18:10:41.615Z"
+      },
+      {
+        "id": "d7cf73ad-5999-44da-9ac1-b4a00500ae5c",
+        "amount": 15,
+        "reason": "Daily log completed",
+        "source": "record",
+        "timestamp": "2026-04-21T08:57:16.701Z"
+      }
+    ]
+  },
+  "SoloLevelingDB-mani": {
+    "gates": [
+      {
+        "id": "51dd5fce-3607-4ecf-97e2-24429ab666d2",
+        "why": "Self-worth",
+        "date": "2026-04-20",
+        "rank": "S",
+        "title": "Self-Improv",
+        "status": "active",
+        "subTodos": [
+          {
+            "id": "cace9318-d47f-4896-a95d-60be81fa2fc7",
+            "title": "Read",
+            "completed": false
+          },
+          {
+            "id": "412126a2-201e-4783-b30c-fe5ab4e10e76",
+            "title": "Meditate",
+            "completed": false
+          },
+          {
+            "id": "db437667-a014-4227-a998-3ea7369f6bc4",
+            "title": "Gym",
+            "completed": false
+          },
+          {
+            "id": "44ae34f1-6e1e-4636-9029-de59e50bea08",
+            "title": "Journal",
+            "completed": false
+          },
+          {
+            "id": "3b2523e7-03ce-4097-b512-3b8b9578c7ef",
+            "title": "Gratitude",
+            "completed": false
+          }
+        ],
+        "clearedAt": null,
+        "createdAt": "2026-04-20T05:06:02.708Z"
+      },
+      {
+        "id": "c4909045-5479-4c3c-996b-ce19c4b930cb",
+        "why": "Self-worth",
+        "date": "2026-04-21",
+        "rank": "C",
+        "title": "Space Portfolio",
+        "status": "active",
+        "subTodos": [
+          {
+            "id": "b5ddf2e7-c92a-4622-9a69-efe1af63387b",
+            "title": "Space front end",
+            "completed": false
+          },
+          {
+            "id": "337889bf-5194-4193-834f-1bc5013d655b",
+            "title": "Space back end",
+            "completed": false
+          },
+          {
+            "id": "4b81b811-18bb-4f28-950a-9d3c5536a1d2",
+            "title": "Space performance optimisation",
+            "completed": false
+          },
+          {
+            "id": "dddec63d-3225-4226-ad88-1fa6a1f01565",
+            "title": "Space hosting",
+            "completed": false
+          },
+          {
+            "id": "50b79a4d-00f8-4fe1-bec8-5364e96a59e3",
+            "title": "Space domain",
+            "completed": false
+          },
+          {
+            "id": "3758f799-b499-45de-92f8-f75397a7f3af",
+            "title": "Professional email",
+            "completed": false
+          }
+        ],
+        "clearedAt": null,
+        "createdAt": "2026-04-21T03:10:11.654Z"
+      },
+      {
+        "id": "cd3cee20-f6e3-4025-91bc-87bec353c345",
+        "why": "Self-worth",
+        "date": "2026-04-21",
+        "rank": "B",
+        "title": "Sailor Social Media",
+        "status": "active",
+        "subTodos": [
+          {
+            "id": "d2a09fa5-28d0-47e2-b6eb-e08499bdc2d1",
+            "title": "Any integrations?",
+            "completed": false
+          },
+          {
+            "id": "dc1b1ca3-82e0-42a7-9ff7-0b6b10f58526",
+            "title": "Sailor Frontend",
+            "completed": false
+          },
+          {
+            "id": "bc0c1da1-e304-4139-b19e-c24fb57ded0d",
+            "title": "Sailor Backend",
+            "completed": false
+          },
+          {
+            "id": "9c736e89-996a-42ea-8dc8-d4309bbf86c4",
+            "title": "beam -> glowing dot",
+            "completed": true
+          },
+          {
+            "id": "5e22d8c9-38f0-4f34-a7b7-f37d70a72ee9",
+            "title": "make day visible on earth model where there is daylight",
+            "completed": true
+          },
+          {
+            "id": "1cd33da8-cb41-453b-9fdb-16bc19442bde",
+            "title": "add upload voyage functionality",
+            "completed": false
+          },
+          {
+            "id": "21756068-ede8-404b-8efe-198b0600c26a",
+            "title": "scrape the port locations around the world",
+            "completed": false
+          },
+          {
+            "id": "b529ba4e-3e3c-4abb-9a04-7a604362e095",
+            "title": "public/private view",
+            "completed": false
+          }
+        ],
+        "clearedAt": null,
+        "createdAt": "2026-04-20T23:46:46.931Z"
+      },
+      {
+        "id": "cf4648f7-9ef9-48c6-8a6b-94032599abf5",
+        "why": "Self-worth",
+        "date": "2026-04-20",
+        "rank": "A",
+        "title": "PowerBI Cert",
+        "status": "active",
+        "subTodos": [
+          {
+            "id": "b8b43e4c-7ef2-4185-af36-1bfbecd2ce30",
+            "title": "Guy in a cube youtube",
+            "completed": false
+          }
+        ],
+        "clearedAt": null,
+        "createdAt": "2026-04-20T05:07:48.525Z"
+      }
+    ],
+    "gymStats": [],
+    "hunterRecords": [
+      {
+        "date": "2026-04-20",
+        "entries": [
+          {
+            "text": "hi",
+            "timestamp": "2026-04-19T17:51:49.806Z"
+          },
+          {
+            "text": "feeling great, empathetic and blessed",
+            "timestamp": "2026-04-20T05:03:34.784Z"
+          },
+          {
+            "text": "too many things to doooo",
+            "timestamp": "2026-04-20T06:17:06.413Z"
+          },
+          {
+            "text": "Woke up from sleep",
+            "timestamp": "2026-04-20T10:26:10.086Z"
+          },
+          {
+            "text": "done gym and back home",
+            "timestamp": "2026-04-20T15:33:52.398Z"
+          },
+          {
+            "text": "confused",
+            "timestamp": "2026-04-20T15:34:03.654Z"
+          },
+          {
+            "text": "meditated again",
+            "timestamp": "2026-04-20T15:45:12.019Z"
+          },
+          {
+            "text": "talking to harti",
+            "timestamp": "2026-04-20T17:28:37.861Z"
+          },
+          {
+            "text": "telling her to chase her goals harder",
+            "timestamp": "2026-04-20T17:28:48.260Z"
+          },
+          {
+            "text": "love you hartiiiii ammaaa",
+            "timestamp": "2026-04-20T17:28:57.104Z"
+          }
+        ],
+        "gratitude": [
+          "Harti",
+          "God",
+          "Simhachalam security",
+          "Sridhar Maya",
+          "Dad",
+          "Mom <3"
+        ],
+        "reflection": {
+          "reflect": "Had a great day overall. start of a new life and mindset. the temple visit was very smooth, we got fast tracked into seeing God's actual form in Simhachalam. Harti asked me not to sleep but i slept off hehe. we had a great workout and post that i went to meet manish and murshida was there, harti wasnt happy about this. she went to myz uno but she didnt have a good time coz she was worried :( but we resolved it later and now we are fine. i ticked off all my goals for today. we are gonna wake up at 5am tmrw and go for a jog at the beach. cant wait. GG"
+        },
+        "penaltyApplied": false
+      },
+      {
+        "date": "2026-04-21",
+        "entries": [
+          {
+            "text": "Almost ready to head to beach",
+            "timestamp": "2026-04-20T23:45:22.063Z"
+          },
+          {
+            "text": "Gonna start my day soon, lit the deepam as well",
+            "timestamp": "2026-04-21T03:08:09.111Z"
+          },
+          {
+            "text": "Feeling lil tired and distracted",
+            "timestamp": "2026-04-21T03:11:58.429Z"
+          },
+          {
+            "text": "working on the contact form design is so frustrating",
+            "timestamp": "2026-04-21T06:05:24.779Z"
+          },
+          {
+            "text": "thinking of taking a nap",
+            "timestamp": "2026-04-21T06:05:34.676Z"
+          },
+          {
+            "text": "updated testimonials and contact",
+            "timestamp": "2026-04-21T06:44:33.333Z"
+          },
+          {
+            "text": "prolly gonna nap or one piece",
+            "timestamp": "2026-04-21T06:44:53.964Z"
+          },
+          {
+            "text": "ate biriyani a while ago and now multi tasking",
+            "timestamp": "2026-04-21T10:24:23.262Z"
+          },
+          {
+            "text": "space portfolio and sailor socials",
+            "timestamp": "2026-04-21T10:24:45.599Z"
+          },
+          {
+            "text": "quite happy with how the space portfolio is turning out",
+            "timestamp": "2026-04-21T10:43:06.942Z"
+          },
+          {
+            "text": "Feeling content, inspired and cant wait for tmrw",
+            "timestamp": "2026-04-21T16:16:35.430Z"
+          }
+        ],
+        "gratitude": [
+          "New day and my goals",
+          "Harti",
+          "mom",
+          "god",
+          "dad",
+          "my laptop",
+          "my time",
+          "my intention"
+        ],
+        "reflection": {
+          "reflect": "Today was a great day, Im so content. Went for a jog with Harti we woke up at 5am😌. I did all my work today ticked off everything. Ate salad wow for dinner. The gym sesh was very good too. I can feel the effects from not smoking within 2 days. I have way more endurance and stamina and i feel like im stronger. We went to a new Cafe near Cafooze the waiter guy was so chill. One weird aunty kept giving us looks. Harti was being naughty near the Gluttons spot😋 cant wait for 8 more days to be done and ill have all of her😏. Gonna read and talk to her now and pass out. Manish said he’ll wake up by 5 then he was like nah wake me up at 8:30. We are gonna meet and discuss about the website. The space portfolio is coming together extremely well as well about time i host it. I want to be featured on awwwards or godly or anything. Ik this website will be a worthy contender just like i am gonna be. Gg"
+        },
+        "penaltyApplied": false
+      }
+    ],
+    "inventory": [],
+    "missions": [
+      {
+        "id": "061301fc-4e0f-4f80-a5c0-905dc05834c8",
+        "why": "Self-worth",
+        "date": "2026-04-21",
+        "rank": "C",
+        "unit": "done",
+        "title": "Space front end",
+        "deadline": "2026-04-21",
+        "createdAt": "2026-04-21T06:04:54.831Z",
+        "completedAt": "2026-04-21T13:43:46.150Z",
+        "targetValue": 1,
+        "currentValue": 1,
+        "targetMetric": "Checklist",
+        "linkedGateIds": [
+          "c4909045-5479-4c3c-996b-ce19c4b930cb"
+        ]
+      },
+      {
+        "id": "3cea8cd5-2425-47e7-9acd-e01668e4b85a",
+        "why": "Self-worth",
+        "date": "2026-04-20",
+        "rank": "S",
+        "unit": "done",
+        "title": "Gym",
+        "deadline": "2026-04-20",
+        "createdAt": "2026-04-20T15:35:53.707Z",
+        "completedAt": "2026-04-20T15:58:25.729Z",
+        "targetValue": 1,
+        "currentValue": 1,
+        "targetMetric": "Checklist",
+        "linkedGateIds": [
+          "51dd5fce-3607-4ecf-97e2-24429ab666d2"
+        ]
+      },
+      {
+        "id": "453b9be4-5408-4173-956e-f8c2fd76bc30",
+        "why": "Self-worth",
+        "date": "2026-04-21",
+        "rank": "S",
+        "unit": "done",
+        "title": "Read",
+        "deadline": "2026-04-21",
+        "createdAt": "2026-04-20T23:44:46.253Z",
+        "completedAt": null,
+        "targetValue": 1,
+        "currentValue": 0,
+        "targetMetric": "Checklist",
+        "linkedGateIds": [
+          "51dd5fce-3607-4ecf-97e2-24429ab666d2"
+        ]
+      },
+      {
+        "id": "48b6f2b8-ef84-4206-93bf-30c7a540dcea",
+        "why": "Self-worth",
+        "date": "2026-04-29",
+        "rank": "D",
+        "unit": "done",
+        "title": "bnb time👀",
+        "deadline": "2026-04-29",
+        "createdAt": "2026-04-21T14:21:45.217Z",
+        "completedAt": null,
+        "targetValue": 1,
+        "currentValue": 0,
+        "targetMetric": "Checklist",
+        "linkedGateIds": []
+      },
+      {
+        "id": "4a9210a0-01b9-4330-baff-6fd19a72b270",
+        "why": "Self-worth",
+        "date": "2026-04-21",
+        "rank": "D",
+        "unit": "done",
+        "title": "Gmat algebra",
+        "deadline": "2026-04-21",
+        "createdAt": "2026-04-21T03:08:22.042Z",
+        "completedAt": "2026-04-21T05:51:51.938Z",
+        "targetValue": 1,
+        "currentValue": 1,
+        "targetMetric": "Checklist",
+        "linkedGateIds": []
+      },
+      {
+        "id": "59d7ae17-a693-4bcb-bd36-abe619da977a",
+        "why": "Self-worth",
+        "date": "2026-04-21",
+        "rank": "S",
+        "unit": "done",
+        "title": "Meditate",
+        "deadline": "2026-04-21",
+        "createdAt": "2026-04-20T23:44:47.300Z",
+        "completedAt": "2026-04-21T05:51:53.988Z",
+        "targetValue": 1,
+        "currentValue": 1,
+        "targetMetric": "Checklist",
+        "linkedGateIds": [
+          "51dd5fce-3607-4ecf-97e2-24429ab666d2"
+        ]
+      },
+      {
+        "id": "5d4178b4-48d0-4632-98ce-23d92415523d",
+        "why": "Self-worth",
+        "date": "2026-04-21",
+        "rank": "B",
+        "unit": "done",
+        "title": "Sailor Frontend",
+        "deadline": "2026-04-21",
+        "createdAt": "2026-04-20T23:47:38.647Z",
+        "completedAt": "2026-04-21T16:10:39.160Z",
+        "targetValue": 1,
+        "currentValue": 1,
+        "targetMetric": "Checklist",
+        "linkedGateIds": [
+          "cd3cee20-f6e3-4025-91bc-87bec353c345"
+        ]
+      },
+      {
+        "id": "62d4135b-ddd8-47eb-92a4-c26880930eb8",
+        "why": "Self-worth",
+        "date": "2026-04-20",
+        "rank": "D",
+        "unit": "done",
+        "title": "Space portfolio",
+        "deadline": "2026-04-20",
+        "createdAt": "2026-04-20T05:03:56.820Z",
+        "completedAt": "2026-04-20T10:26:35.511Z",
+        "targetValue": 1,
+        "currentValue": 1,
+        "targetMetric": "Checklist",
+        "linkedGateIds": []
+      },
+      {
+        "id": "62f7eeff-9fd0-43b4-9937-c5180c861854",
+        "why": "Self-worth",
+        "date": "2026-04-20",
+        "rank": "S",
+        "unit": "done",
+        "title": "Read",
+        "deadline": "2026-04-20",
+        "createdAt": "2026-04-20T15:35:52.193Z",
+        "completedAt": "2026-04-20T17:26:24.563Z",
+        "targetValue": 1,
+        "currentValue": 1,
+        "targetMetric": "Checklist",
+        "linkedGateIds": [
+          "51dd5fce-3607-4ecf-97e2-24429ab666d2"
+        ]
+      },
+      {
+        "id": "b6bf8ce9-00e8-4c3c-b1ec-260f73733e2e",
+        "why": "Self-worth",
+        "date": "2026-04-20",
+        "rank": "D",
+        "unit": "done",
+        "title": "Simhachalam",
+        "deadline": "2026-04-20",
+        "createdAt": "2026-04-20T05:03:46.273Z",
+        "completedAt": "2026-04-20T05:32:15.092Z",
+        "targetValue": 1,
+        "currentValue": 1,
+        "targetMetric": "Checklist",
+        "linkedGateIds": []
+      },
+      {
+        "id": "bbf1d0f5-af30-47c1-8b1c-bfd10dcfc582",
+        "why": "Self-worth",
+        "date": "2026-04-21",
+        "rank": "S",
+        "unit": "done",
+        "title": "Journal",
+        "deadline": "2026-04-21",
+        "createdAt": "2026-04-20T23:44:50.858Z",
+        "completedAt": "2026-04-21T16:16:40.265Z",
+        "targetValue": 1,
+        "currentValue": 1,
+        "targetMetric": "Checklist",
+        "linkedGateIds": [
+          "51dd5fce-3607-4ecf-97e2-24429ab666d2"
+        ]
+      },
+      {
+        "id": "bd5d182d-0b98-47e3-b8a4-9787c736d765",
+        "why": "Self-worth",
+        "date": "2026-04-20",
+        "rank": "D",
+        "unit": "done",
+        "title": "Gratitude",
+        "deadline": "2026-04-20",
+        "createdAt": "2026-04-20T17:23:52.335Z",
+        "completedAt": "2026-04-20T17:23:55.105Z",
+        "targetValue": 1,
+        "currentValue": 1,
+        "targetMetric": "Checklist",
+        "linkedGateIds": []
+      },
+      {
+        "id": "becb808e-3908-4433-be80-d8d12ec4b7a8",
+        "why": "Self-worth",
+        "date": "2026-04-20",
+        "rank": "S",
+        "unit": "done",
+        "title": "Meditate",
+        "deadline": "2026-04-20",
+        "createdAt": "2026-04-20T15:35:58.792Z",
+        "completedAt": "2026-04-20T15:58:36.594Z",
+        "targetValue": 1,
+        "currentValue": 1,
+        "targetMetric": "Checklist",
+        "linkedGateIds": [
+          "51dd5fce-3607-4ecf-97e2-24429ab666d2"
+        ]
+      },
+      {
+        "id": "c2304ec3-e5ee-494e-be70-9cf3bfd49e35",
+        "why": "Self-worth",
+        "date": "2026-04-20",
+        "rank": "D",
+        "unit": "done",
+        "title": "gmat algebra",
+        "deadline": "2026-04-20",
+        "createdAt": "2026-04-20T05:05:40.189Z",
+        "completedAt": "2026-04-20T17:16:19.516Z",
+        "targetValue": 1,
+        "currentValue": 1,
+        "targetMetric": "Checklist",
+        "linkedGateIds": []
+      },
+      {
+        "id": "c2412772-336b-4fac-bbc3-53b5e469573f",
+        "why": "Self-worth",
+        "date": "2026-04-21",
+        "rank": "D",
+        "unit": "done",
+        "title": "Wake up at 5",
+        "deadline": "2026-04-21",
+        "createdAt": "2026-04-20T23:45:03.091Z",
+        "completedAt": "2026-04-20T23:45:04.602Z",
+        "targetValue": 1,
+        "currentValue": 1,
+        "targetMetric": "Checklist",
+        "linkedGateIds": []
+      },
+      {
+        "id": "cffcb448-b821-4e92-a374-f26d91c4bbc5",
+        "why": "Self-worth",
+        "date": "2026-04-21",
+        "rank": "S",
+        "unit": "done",
+        "title": "Gratitude",
+        "deadline": "2026-04-21",
+        "createdAt": "2026-04-20T23:44:51.908Z",
+        "completedAt": "2026-04-21T05:52:29.987Z",
+        "targetValue": 1,
+        "currentValue": 1,
+        "targetMetric": "Checklist",
+        "linkedGateIds": [
+          "51dd5fce-3607-4ecf-97e2-24429ab666d2"
+        ]
+      },
+      {
+        "id": "e9d440ec-85bc-40eb-a189-8a822f6aa113",
+        "why": "Self-worth",
+        "date": "2026-04-21",
+        "rank": "S",
+        "unit": "done",
+        "title": "Gym",
+        "deadline": "2026-04-21",
+        "createdAt": "2026-04-20T23:44:49.058Z",
+        "completedAt": "2026-04-21T16:10:37.115Z",
+        "targetValue": 1,
+        "currentValue": 1,
+        "targetMetric": "Checklist",
+        "linkedGateIds": [
+          "51dd5fce-3607-4ecf-97e2-24429ab666d2"
+        ]
+      },
+      {
+        "id": "fa71e4d3-b833-4f5a-aab9-6761c2b4bdf3",
+        "why": "Self-worth",
+        "date": "2026-04-20",
+        "rank": "D",
+        "unit": "done",
+        "title": "Journal",
+        "deadline": "2026-04-20",
+        "createdAt": "2026-04-20T17:23:48.493Z",
+        "completedAt": "2026-04-20T17:23:54.513Z",
+        "targetValue": 1,
+        "currentValue": 1,
+        "targetMetric": "Checklist",
+        "linkedGateIds": []
+      }
+    ],
+    "profile": [
+      {
+        "xp": 15,
+        "name": "Hunter",
+        "rank": "E",
+        "level": 1,
+        "lastLogDate": "2026-04-20",
+        "streakCount": 1,
+        "_id": 1
+      }
+    ],
+    "quests": [],
+    "xpLog": [
+      {
+        "id": "797cece9-ca7d-438c-8b1f-52f25221f17d",
+        "amount": 15,
+        "reason": "Daily log completed",
+        "source": "record",
+        "timestamp": "2026-04-19T17:51:49.826Z"
+      }
+    ]
+  }
+}

@@ -1,0 +1,15 @@
+2026/04/21-21:53:58.664 2607 Reusing MANIFEST /Users/mani/Library/Application Support/Google/Chrome/Default/IndexedDB/http_localhost_3001.indexeddb.leveldb/MANIFEST-000001
+2026/04/21-21:53:58.664 2607 Recovering log #4
+2026/04/21-21:53:58.665 2607 Reusing old log /Users/mani/Library/Application Support/Google/Chrome/Default/IndexedDB/http_localhost_3001.indexeddb.leveldb/000004.log 
+2026/04/21-22:08:13.422 2607 Level-0 table #8: started
+2026/04/21-22:08:13.432 2607 Level-0 table #8: 546938 bytes OK
+2026/04/21-22:08:13.433 2607 Delete type=0 #4
+2026/04/21-22:08:13.434 2607 Manual compaction at level-0 from (begin) .. (end); will stop at (end)
+2026/04/21-22:08:13.434 2607 Manual compaction at level-1 from (begin) .. (end); will stop at '\x00\x03\x08\x1f\x01\x18\x002\x000\x002\x006\x00-\x000\x004\x00-\x002\x001\x00T\x000\x008\x00:\x005\x007\x00:\x001\x006\x00.\x007\x000\x001\x00Z\x00\x01$\x00d\x007\x00c\x00f\x007\x003\x00a\x00d\x00-\x005\x009\x009\x009\x00-\x004\x004\x00d\x00a\x00-\x009\x00a\x00c\x001\x00-\x00b\x004\x00a\x000\x000\x005\x000\x000\x00a\x00e\x005\x00c' @ 1539 : 1
+2026/04/21-22:08:13.435 2607 Compacting 1@1 + 1@2 files
+2026/04/21-22:08:13.440 2607 Generated table #9@1: 536 keys, 26519 bytes
+2026/04/21-22:08:13.440 2607 Compacted 1@1 + 1@2 files => 26519 bytes
+2026/04/21-22:08:13.441 2607 compacted to: files[ 0 0 1 0 0 0 0 ]
+2026/04/21-22:08:13.441 2607 Delete type=2 #5
+2026/04/21-22:08:13.441 2607 Delete type=2 #8
+2026/04/21-22:08:13.443 2607 Manual compaction at level-1 from '\x00\x03\x08\x1f\x01\x18\x002\x000\x002\x006\x00-\x000\x004\x00-\x002\x001\x00T\x000\x008\x00:\x005\x007\x00:\x001\x006\x00.\x007\x000\x001\x00Z\x00\x01$\x00d\x007\x00c\x00f\x007\x003\x00a\x00d\x00-\x005\x009\x009\x009\x00-\x004\x004\x00d\x00a\x00-\x009\x00a\x00c\x001\x00-\x00b\x004\x00a\x000\x000\x005\x000\x000\x00a\x00e\x005\x00c' @ 1539 : 1 .. (end); will stop at (end)

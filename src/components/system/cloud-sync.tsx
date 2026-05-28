@@ -395,18 +395,23 @@ async function syncNow(
 ): Promise<boolean> {
   const state = await storage.exportSnapshot({ persona });
 
-  const { error } = await supabase.from("solo_snapshots").upsert(
-    {
-      user_id: userId,
-      persona,
-      state,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: "user_id,persona" },
-  );
+  try {
+    const { error } = await supabase.from("solo_snapshots").upsert(
+      {
+        user_id: userId,
+        persona,
+        state,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id,persona" },
+    );
 
-  if (error) {
-    console.error("[CloudSync] snapshot save failed:", error.message);
+    if (error) {
+      console.error("[CloudSync] snapshot save failed:", error.message);
+      return false;
+    }
+  } catch (err) {
+    console.error("[CloudSync] snapshot save failed:", err instanceof Error ? err.message : err);
     return false;
   }
 

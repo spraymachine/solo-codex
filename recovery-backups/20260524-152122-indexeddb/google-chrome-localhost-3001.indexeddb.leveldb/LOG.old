@@ -1,0 +1,6 @@
+2026/04/19-13:05:55.644 db9a Creating DB /Users/mani/Library/Application Support/Google/Chrome/Default/IndexedDB/http_localhost_3001.indexeddb.leveldb since it was missing.
+2026/04/19-13:05:55.649 db9a Reusing MANIFEST /Users/mani/Library/Application Support/Google/Chrome/Default/IndexedDB/http_localhost_3001.indexeddb.leveldb/MANIFEST-000001
+2026/04/19-20:53:15.104 db9d Level-0 table #5: started
+2026/04/19-20:53:15.107 db9d Level-0 table #5: 16415 bytes OK
+2026/04/19-20:53:15.109 db9d Delete type=0 #3
+2026/04/19-20:53:15.110 db9d Manual compaction at level-0 from (begin) .. (end); will stop at (end)

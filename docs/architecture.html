@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>DuoArc — Architecture</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  :root {
+    --bg: #0f1117;
+    --bg2: #161b27;
+    --bg3: #1e2535;
+    --border: rgba(99,130,255,0.18);
+    --accent: #5b8cff;
+    --accent2: #7dd3fc;
+    --text: #e8eaf0;
+    --text2: #8b92a8;
+    --green: #4ade80;
+    --amber: #fbbf24;
+    --red: #f87171;
+    --violet: #a78bfa;
+    --teal: #2dd4bf;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, sans-serif; }
+  body { padding: 48px 32px 80px; max-width: 1440px; margin: 0 auto; }
+
+  h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.04em; color: var(--text); margin-bottom: 6px; }
+  .subtitle { color: var(--text2); font-size: 14px; margin-bottom: 48px; }
+  h2 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.18em; color: var(--text2); margin-bottom: 20px; }
+
+  .section { margin-bottom: 64px; }
+
+  /* ── Nav tabs ──────────────────────────────────────────────────────── */
+  .tabs { display: flex; gap: 4px; margin-bottom: 40px; border-bottom: 1px solid var(--border); padding-bottom: 0; }
+  .tab { padding: 10px 18px; font-size: 13px; font-weight: 500; color: var(--text2); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.2s; white-space: nowrap; }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent2); border-bottom-color: var(--accent2); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* ── Cards ──────────────────────────────────────────────────────────── */
+  .card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; }
+  .card-grid { display: grid; gap: 16px; }
+  .card-grid.cols-2 { grid-template-columns: 1fr 1fr; }
+  .card-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .card-grid.cols-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+  .card h3 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.14em; color: var(--text2); margin-bottom: 12px; }
+  .card .title { font-size: 16px; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 8px; }
+
+  /* ── Layer diagram ──────────────────────────────────────────────────── */
+  .layer-stack { display: flex; flex-direction: column; gap: 3px; }
+  .layer { border-radius: 10px; padding: 16px 20px; display: flex; align-items: center; gap: 16px; }
+  .layer-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.18em; min-width: 100px; color: var(--text2); }
+  .layer-items { display: flex; flex-wrap: wrap; gap: 8px; flex: 1; }
+  .pill { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; border: 1px solid; white-space: nowrap; }
+  .pill-blue   { background: rgba(91,140,255,0.12); border-color: rgba(91,140,255,0.3);  color: #93b4ff; }
+  .pill-green  { background: rgba(74,222,128,0.10); border-color: rgba(74,222,128,0.28); color: #86efac; }
+  .pill-amber  { background: rgba(251,191,36,0.10); border-color: rgba(251,191,36,0.28); color: #fcd34d; }
+  .pill-violet { background: rgba(167,139,250,0.12);border-color: rgba(167,139,250,0.3); color: #c4b5fd; }
+  .pill-teal   { background: rgba(45,212,191,0.10); border-color: rgba(45,212,191,0.28); color: #5eead4; }
+  .pill-red    { background: rgba(248,113,113,0.10);border-color: rgba(248,113,113,0.28);color: #fca5a5; }
+  .pill-gray   { background: rgba(139,146,168,0.10);border-color: rgba(139,146,168,0.22);color: #b0b8cc; }
+
+  .layer-browser  { background: rgba(91,140,255,0.06);  border: 1px solid rgba(91,140,255,0.14); }
+  .layer-next     { background: rgba(74,222,128,0.05);  border: 1px solid rgba(74,222,128,0.12); }
+  .layer-supabase { background: rgba(45,212,191,0.05);  border: 1px solid rgba(45,212,191,0.12); }
+  .layer-external { background: rgba(167,139,250,0.05); border: 1px solid rgba(167,139,250,0.12); }
+
+  .arrow { text-align: center; color: var(--text2); font-size: 18px; line-height: 1; padding: 2px 0; }
+
+  /* ── Schema ────────────────────────────────────────────────────────── */
+  .schema-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+  .table-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .table-header { padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); }
+  .table-name { font-size: 13px; font-weight: 600; letter-spacing: -0.01em; }
+  .table-badge { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.14em; padding: 2px 7px; border-radius: 20px; }
+  .badge-core    { background: rgba(91,140,255,0.15); color: #93b4ff; }
+  .badge-auth    { background: rgba(74,222,128,0.12); color: #86efac; }
+  .badge-journal { background: rgba(251,191,36,0.12); color: #fcd34d; }
+  .badge-sync    { background: rgba(45,212,191,0.12); color: #5eead4; }
+  .badge-cal     { background: rgba(167,139,250,0.12);color: #c4b5fd; }
+  .field-list { padding: 10px 0; }
+  .field { padding: 5px 14px; display: flex; align-items: baseline; gap: 10px; font-size: 12px; }
+  .field:hover { background: rgba(255,255,255,0.03); }
+  .field-name { color: var(--text); font-weight: 500; min-width: 130px; }
+  .field-type { color: var(--text2); font-size: 11px; }
+  .field-pk  { color: var(--amber); }
+  .field-fk  { color: var(--accent2); }
+  .field-idx { color: var(--green); }
+
+  /* ── Stores ─────────────────────────────────────────────────────────── */
+  .store-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+  .store-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+  .store-name { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+  .store-meta { font-size: 11px; color: var(--text2); margin-bottom: 8px; }
+  .store-actions { font-size: 11px; color: var(--text2); line-height: 1.8; }
+
+  /* ── Dependencies ───────────────────────────────────────────────────── */
+  .dep-group { margin-bottom: 32px; }
+  .dep-group h3 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.16em; color: var(--text2); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  .dep-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 8px; }
+  .dep-item { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; display: flex; align-items: flex-start; gap: 12px; }
+  .dep-name { font-size: 13px; font-weight: 600; color: var(--text); }
+  .dep-version { font-size: 11px; color: var(--text2); margin-top: 1px; }
+  .dep-desc { font-size: 11px; color: var(--text2); margin-top: 3px; line-height: 1.5; }
+  .dep-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 3px; }
+
+  /* ── Data flow ──────────────────────────────────────────────────────── */
+  .flow-mermaid { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 32px; overflow-x: auto; }
+  .flow-mermaid .mermaid { min-width: 600px; }
+
+  /* ── Mermaid override ───────────────────────────────────────────────── */
+  .mermaid svg { max-width: 100%; }
+
+  /* ── Responsive ─────────────────────────────────────────────────────── */
+  @media (max-width: 900px) {
+    .card-grid.cols-3, .card-grid.cols-4 { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 600px) {
+    body { padding: 24px 16px 60px; }
+    .card-grid.cols-2, .card-grid.cols-3, .card-grid.cols-4 { grid-template-columns: 1fr; }
+    .tabs { overflow-x: auto; }
+  }
+</style>
+</head>
+<body>
+
+<h1>DuoArc — Architecture</h1>
+<p class="subtitle">High-level system overview · DB schema · State stores · Dependencies · Data flow</p>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('overview')">System Overview</div>
+  <div class="tab" onclick="switchTab('schema')">DB Schema</div>
+  <div class="tab" onclick="switchTab('stores')">State Stores</div>
+  <div class="tab" onclick="switchTab('flow')">Data Flow</div>
+  <div class="tab" onclick="switchTab('deps')">Dependencies</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ OVERVIEW -->
+<div id="tab-overview" class="tab-content active">
+
+  <div class="section">
+    <h2>System Layers</h2>
+    <div class="layer-stack">
+
+      <div class="layer layer-browser">
+        <span class="layer-label">Browser</span>
+        <div class="layer-items">
+          <span class="pill pill-blue">Next.js 16 App Router</span>
+          <span class="pill pill-blue">React 19</span>
+          <span class="pill pill-blue">Zustand v5 (state)</span>
+          <span class="pill pill-blue">Dexie v4 (IndexedDB)</span>
+          <span class="pill pill-blue">Framer Motion</span>
+          <span class="pill pill-blue">Tailwind CSS v4</span>
+          <span class="pill pill-blue">Recharts</span>
+          <span class="pill pill-blue">Geist + JetBrains Mono</span>
+        </div>
+      </div>
+
+      <div class="arrow">↕</div>
+
+      <div class="layer layer-next">
+        <span class="layer-label">Next.js Server</span>
+        <div class="layer-items">
+          <span class="pill pill-green">API Routes (App Router)</span>
+          <span class="pill pill-green">/auth/callback — OAuth exchange</span>
+          <span class="pill pill-green">/api/calendar/feed — ICS endpoint</span>
+          <span class="pill pill-green">/api/calendar/google/auth</span>
+          <span class="pill pill-green">/api/calendar/sync</span>
+          <span class="pill pill-green">Server Actions (future)</span>
+        </div>
+      </div>
+
+      <div class="arrow">↕</div>
+
+      <div class="layer layer-supabase">
+        <span class="layer-label">Supabase</span>
+        <div class="layer-items">
+          <span class="pill pill-teal">Auth (email + Google/Apple/Discord/GitHub SSO)</span>
+          <span class="pill pill-teal">Postgres DB (12 tables)</span>
+          <span class="pill pill-teal">Row-Level Security</span>
+          <span class="pill pill-teal">Realtime (snapshots channel)</span>
+          <span class="pill pill-teal">Edge Functions (token refresh)</span>
+        </div>
+      </div>
+
+      <div class="arrow">↕</div>
+
+      <div class="layer layer-external">
+        <span class="layer-label">External</span>
+        <div class="layer-items">
+          <span class="pill pill-violet">Google Calendar API</span>
+          <span class="pill pill-violet">Apple CalDAV</span>
+          <span class="pill pill-violet">Outlook / MS Graph</span>
+          <span class="pill pill-violet">Google OAuth2</span>
+          <span class="pill pill-violet">Apple OAuth2</span>
+          <span class="pill pill-violet">Discord OAuth2</span>
+          <span class="pill pill-violet">GitHub OAuth2</span>
+          <span class="pill pill-violet">Vercel (hosting)</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Core Modules</h2>
+    <div class="card-grid cols-3">
+
+      <div class="card">
+        <h3>Auth &amp; Space</h3>
+        <div class="title">Identity + Pair Model</div>
+        <p style="font-size:13px;color:var(--text2);line-height:1.7">
+          Supabase Auth handles all identity. Each pair of users shares one <strong>Space</strong>.
+          Two <strong>Persona slots</strong> (A/B) per space — user-named, accent-colored.
+          Invite system: creator gets link/code, partner joins and claims slot B.
+        </p>
+        <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:6px">
+          <span class="pill pill-green">AuthGate</span>
+          <span class="pill pill-green">AuthPanel (SSO + email)</span>
+          <span class="pill pill-green">OAuthButton</span>
+          <span class="pill pill-green">SetupWizard</span>
+          <span class="pill pill-green">InviteAccept</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Arc System</h3>
+        <div class="title">Time-boxed Goals</div>
+        <p style="font-size:13px;color:var(--text2);line-height:1.7">
+          Core feature. Each Arc has user-set start/end dates, rank (S/A/B = difficulty 1/2/3),
+          and a step checklist. 3–5 active arcs max per persona. Two progress bars per card:
+          time elapsed + steps done. Partner-visible by default, hideable per arc.
+        </p>
+        <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:6px">
+          <span class="pill pill-blue">ArcCard (dual bars)</span>
+          <span class="pill pill-blue">ArcForm</span>
+          <span class="pill pill-blue">ArcStepList</span>
+          <span class="pill pill-blue">ArcLimitBanner</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Sync Engine</h3>
+        <div class="title">Local-first + Cloud</div>
+        <p style="font-size:13px;color:var(--text2);line-height:1.7">
+          IndexedDB (Dexie) is the primary store. All writes hit Dexie first.
+          CloudSync debounces 700ms then pushes to Supabase snapshot + individual tables.
+          Realtime subscription pulls partner updates live. Offline queue in localStorage,
+          flushed on reconnect.
+        </p>
+        <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:6px">
+          <span class="pill pill-teal">Dexie (IndexedDB)</span>
+          <span class="pill pill-teal">CloudSync component</span>
+          <span class="pill pill-teal">solo_snapshots</span>
+          <span class="pill pill-teal">Realtime channel</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Daily Record</h3>
+        <div class="title">Journal + Mood</div>
+        <p style="font-size:13px;color:var(--text2);line-height:1.7">
+          Quick log entries (timestamped), reflection, gratitude list, and a
+          <strong>pug mood sticker</strong> (great/good/okay/bad/could-do-better).
+          Each item has a public/private toggle. Partner sees public items live.
+          First log of day awards XP + updates streak.
+        </p>
+        <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:6px">
+          <span class="pill pill-amber">MoodPicker (5 pug stickers)</span>
+          <span class="pill pill-amber">QuickLogInput</span>
+          <span class="pill pill-amber">ReflectionEditor</span>
+          <span class="pill pill-amber">GratitudeList</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Spark + Mascot</h3>
+        <div class="title">Daily Message</div>
+        <p style="font-size:13px;color:var(--text2);line-height:1.7">
+          One quote or message per persona per day, delivered by the pug mascot.
+          Unique constraint enforces the daily limit. Mascot has idle state
+          (no spark yet) and active state (spark waiting). Sent sparks lock
+          for the day.
+        </p>
+        <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:6px">
+          <span class="pill pill-violet">PugMascot (SVG/Lottie)</span>
+          <span class="pill pill-violet">SparkCompose</span>
+          <span class="pill pill-violet">SparkDisplay</span>
+          <span class="pill pill-violet">sparks table (unique/day)</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Calendar Integration</h3>
+        <div class="title">V3 — External Sync</div>
+        <p style="font-size:13px;color:var(--text2);line-height:1.7">
+          Phased delivery. 23a: ICS export + subscribe URL (no OAuth).
+          23b: Google Calendar direct push via OAuth2.
+          23c: Apple via CalDAV. 23d: Outlook via MS Graph.
+          Tokens server-side only (edge functions), never in browser.
+        </p>
+        <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:6px">
+          <span class="pill pill-gray">ICS generator</span>
+          <span class="pill pill-gray">Google Calendar API</span>
+          <span class="pill pill-gray">CalDAV client</span>
+          <span class="pill pill-gray">calendar_connections table</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Privacy Model</h2>
+    <div class="card-grid cols-4">
+      <div class="card">
+        <h3>Arcs</h3>
+        <p style="font-size:13px;color:var(--text2);line-height:1.7"><code>visibleToPartner: boolean</code><br/>Toggle per arc. Default <span style="color:var(--green)">visible</span>. Hidden arcs invisible in all partner views. Owner sees own hidden arcs with [hidden] badge.</p>
+      </div>
+      <div class="card">
+        <h3>Todos</h3>
+        <p style="font-size:13px;color:var(--text2);line-height:1.7"><code>visibleToPartner: boolean</code><br/>Toggle per item (inline 👁 icon). Default <span style="color:var(--green)">visible</span>. Partner sees count of hidden items: "[N] hidden today".</p>
+      </div>
+      <div class="card">
+        <h3>Journal</h3>
+        <p style="font-size:13px;color:var(--text2);line-height:1.7"><code>isPublic: boolean</code> per entry, per gratitude item, per reflection.<br/>Default <span style="color:var(--green)">public</span>. Private items shown with 🔒 to owner only.</p>
+      </div>
+      <div class="card">
+        <h3>Mood</h3>
+        <p style="font-size:13px;color:var(--text2);line-height:1.7"><code>moodIsPublic: boolean</code><br/>Default <span style="color:var(--green)">public</span>. Partner sees your pug sticker for the day. Also shown as mini sticker on calendar cells.</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ════════════════════════════════════════════════════════════ SCHEMA -->
+<div id="tab-schema" class="tab-content">
+
+  <div class="section">
+    <h2>Entity Relationship (Mermaid)</h2>
+    <div class="flow-mermaid">
+      <div class="mermaid">
+erDiagram
+  spaces {
+    uuid id PK
+    text invite_code UK
+    timestamptz created_at
+  }
+  space_members {
+    uuid space_id FK
+    uuid user_id FK
+    text slot
+    text display_name
+    text accent_color
+    timestamptz joined_at
+  }
+  arcs {
+    text id PK
+    uuid space_id FK
+    text owner_slot
+    text title
+    text rank
+    text start_date
+    text end_date
+    text why
+    jsonb steps
+    text status
+    boolean visible_to_partner
+    text calendar_event_id
+    text calendar_provider
+    timestamptz cleared_at
+    timestamptz created_at
+  }
+  todos {
+    text id PK
+    uuid space_id FK
+    text owner_slot
+    text title
+    text date
+    boolean completed
+    boolean visible_to_partner
+    text linked_arc_id FK
+    text calendar_event_id
+    timestamptz created_at
+  }
+  daily_records {
+    uuid space_id FK
+    text owner_slot
+    text date PK
+    text reflection
+    boolean reflection_is_public
+    jsonb gratitude
+    text mood
+    boolean mood_is_public
+    boolean penalty_applied
+  }
+  journal_entries {
+    text id PK
+    uuid space_id FK
+    text owner_slot
+    text date
+    text timestamp
+    text text
+    boolean is_public
+  }
+  sparks {
+    text id PK
+    uuid space_id FK
+    text from_slot
+    text to_slot
+    text text
+    text date
+    timestamptz created_at
+  }
+  stats {
+    text id PK
+    uuid space_id FK
+    text owner_slot
+    text name
+    text unit
+    jsonb entries
+  }
+  solo_snapshots {
+    uuid space_id FK
+    text slot
+    jsonb state
+    timestamptz updated_at
+  }
+  calendar_connections {
+    uuid id PK
+    uuid space_id FK
+    text slot
+    text provider
+    text access_token
+    text refresh_token
+    timestamptz token_expiry
+    text calendar_id
+    boolean sync_arcs
+    boolean sync_todos
+    timestamptz last_synced_at
+  }
+
+  spaces ||--o{ space_members : "has 2"
+  spaces ||--o{ arcs : "contains"
+  spaces ||--o{ todos : "contains"
+  spaces ||--o{ daily_records : "contains"
+  spaces ||--o{ journal_entries : "contains"
+  spaces ||--o{ sparks : "sends"
+  spaces ||--o{ stats : "tracks"
+  spaces ||--o{ solo_snapshots : "snapshots"
+  spaces ||--o{ calendar_connections : "integrates"
+  arcs ||--o{ todos : "linked via"
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Table Reference</h2>
+    <div class="schema-grid">
+
+      <div class="table-card">
+        <div class="table-header">
+          <span class="table-name">spaces</span>
+          <span class="table-badge badge-auth">Auth</span>
+        </div>
+        <div class="field-list">
+          <div class="field"><span class="field-name field-pk">id</span><span class="field-type">uuid PK</span></div>
+          <div class="field"><span class="field-name">invite_code</span><span class="field-type">text UNIQUE</span></div>
+          <div class="field"><span class="field-name">created_at</span><span class="field-type">timestamptz</span></div>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-header">
+          <span class="table-name">space_members</span>
+          <span class="table-badge badge-auth">Auth</span>
+        </div>
+        <div class="field-list">
+          <div class="field"><span class="field-name field-fk">space_id</span><span class="field-type">uuid FK → spaces</span></div>
+          <div class="field"><span class="field-name field-fk">user_id</span><span class="field-type">uuid FK → auth.users</span></div>
+          <div class="field"><span class="field-name">slot</span><span class="field-type">text — 'A' | 'B'</span></div>
+          <div class="field"><span class="field-name">display_name</span><span class="field-type">text</span></div>
+          <div class="field"><span class="field-name">accent_color</span><span class="field-type">text (hex)</span></div>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-header">
+          <span class="table-name">arcs</span>
+          <span class="table-badge badge-core">Core</span>
+        </div>
+        <div class="field-list">
+          <div class="field"><span class="field-name field-pk">id</span><span class="field-type">text PK</span></div>
+          <div class="field"><span class="field-name field-fk">space_id</span><span class="field-type">uuid FK</span></div>
+          <div class="field"><span class="field-name">owner_slot</span><span class="field-type">text</span></div>
+          <div class="field"><span class="field-name">title, rank</span><span class="field-type">text</span></div>
+          <div class="field"><span class="field-name">start_date, end_date</span><span class="field-type">text YYYY-MM-DD</span></div>
+          <div class="field"><span class="field-name">steps</span><span class="field-type">jsonb — ArcStep[]</span></div>
+          <div class="field"><span class="field-name">status</span><span class="field-type">active|cleared|failed|paused</span></div>
+          <div class="field"><span class="field-name">visible_to_partner</span><span class="field-type">boolean default true</span></div>
+          <div class="field"><span class="field-name">calendar_event_id</span><span class="field-type">text nullable</span></div>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-header">
+          <span class="table-name">todos</span>
+          <span class="table-badge badge-core">Core</span>
+        </div>
+        <div class="field-list">
+          <div class="field"><span class="field-name field-pk">id</span><span class="field-type">text PK</span></div>
+          <div class="field"><span class="field-name field-fk">space_id</span><span class="field-type">uuid FK</span></div>
+          <div class="field"><span class="field-name">owner_slot, title</span><span class="field-type">text</span></div>
+          <div class="field"><span class="field-name field-idx">date</span><span class="field-type">text YYYY-MM-DD</span></div>
+          <div class="field"><span class="field-name">completed</span><span class="field-type">boolean</span></div>
+          <div class="field"><span class="field-name">visible_to_partner</span><span class="field-type">boolean default true</span></div>
+          <div class="field"><span class="field-name field-fk">linked_arc_id</span><span class="field-type">text nullable FK → arcs</span></div>
+          <div class="field"><span class="field-name">calendar_event_id</span><span class="field-type">text nullable</span></div>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-header">
+          <span class="table-name">daily_records</span>
+          <span class="table-badge badge-journal">Journal</span>
+        </div>
+        <div class="field-list">
+          <div class="field"><span class="field-name field-pk">space_id + slot + date</span><span class="field-type">composite PK</span></div>
+          <div class="field"><span class="field-name">reflection</span><span class="field-type">text nullable</span></div>
+          <div class="field"><span class="field-name">reflection_is_public</span><span class="field-type">boolean</span></div>
+          <div class="field"><span class="field-name">gratitude</span><span class="field-type">jsonb — [{text, isPublic}]</span></div>
+          <div class="field"><span class="field-name">mood</span><span class="field-type">great|good|okay|bad|could-do-better</span></div>
+          <div class="field"><span class="field-name">mood_is_public</span><span class="field-type">boolean default true</span></div>
+          <div class="field"><span class="field-name">penalty_applied</span><span class="field-type">boolean</span></div>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-header">
+          <span class="table-name">journal_entries</span>
+          <span class="table-badge badge-journal">Journal</span>
+        </div>
+        <div class="field-list">
+          <div class="field"><span class="field-name field-pk">id</span><span class="field-type">text PK</span></div>
+          <div class="field"><span class="field-name field-fk">space_id</span><span class="field-type">uuid FK</span></div>
+          <div class="field"><span class="field-name">owner_slot, date</span><span class="field-type">text</span></div>
+          <div class="field"><span class="field-name">timestamp</span><span class="field-type">text ISO</span></div>
+          <div class="field"><span class="field-name">text</span><span class="field-type">text</span></div>
+          <div class="field"><span class="field-name">is_public</span><span class="field-type">boolean default true</span></div>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-header">
+          <span class="table-name">sparks</span>
+          <span class="table-badge badge-core">Core</span>
+        </div>
+        <div class="field-list">
+          <div class="field"><span class="field-name field-pk">id</span><span class="field-type">text PK</span></div>
+          <div class="field"><span class="field-name field-fk">space_id</span><span class="field-type">uuid FK</span></div>
+          <div class="field"><span class="field-name">from_slot, to_slot</span><span class="field-type">text</span></div>
+          <div class="field"><span class="field-name">text</span><span class="field-type">text</span></div>
+          <div class="field"><span class="field-name field-idx">date</span><span class="field-type">text YYYY-MM-DD</span></div>
+          <div class="field"><span class="field-name" style="color:var(--amber)">UNIQUE</span><span class="field-type">(space_id, from_slot, date)</span></div>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-header">
+          <span class="table-name">solo_snapshots</span>
+          <span class="table-badge badge-sync">Sync</span>
+        </div>
+        <div class="field-list">
+          <div class="field"><span class="field-name field-pk">space_id + slot</span><span class="field-type">composite PK</span></div>
+          <div class="field"><span class="field-name">state</span><span class="field-type">jsonb — full AppSnapshot</span></div>
+          <div class="field"><span class="field-name">updated_at</span><span class="field-type">timestamptz</span></div>
+          <div class="field"><span class="field-name" style="color:var(--teal)">Realtime</span><span class="field-type">subscribed — partner sync</span></div>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-header">
+          <span class="table-name">calendar_connections</span>
+          <span class="table-badge badge-cal">Calendar</span>
+        </div>
+        <div class="field-list">
+          <div class="field"><span class="field-name field-pk">id</span><span class="field-type">uuid PK</span></div>
+          <div class="field"><span class="field-name field-fk">space_id</span><span class="field-type">uuid FK</span></div>
+          <div class="field"><span class="field-name">slot, provider</span><span class="field-type">text</span></div>
+          <div class="field"><span class="field-name" style="color:var(--red)">access_token</span><span class="field-type">text encrypted at rest</span></div>
+          <div class="field"><span class="field-name" style="color:var(--red)">refresh_token</span><span class="field-type">text encrypted at rest</span></div>
+          <div class="field"><span class="field-name">calendar_id</span><span class="field-type">text (target cal)</span></div>
+          <div class="field"><span class="field-name">sync_arcs, sync_todos</span><span class="field-type">boolean</span></div>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-header">
+          <span class="table-name">stats</span>
+          <span class="table-badge badge-core">Core</span>
+        </div>
+        <div class="field-list">
+          <div class="field"><span class="field-name field-pk">id</span><span class="field-type">text PK</span></div>
+          <div class="field"><span class="field-name field-fk">space_id</span><span class="field-type">uuid FK</span></div>
+          <div class="field"><span class="field-name">owner_slot</span><span class="field-type">text</span></div>
+          <div class="field"><span class="field-name">name, unit</span><span class="field-type">text</span></div>
+          <div class="field"><span class="field-name">entries</span><span class="field-type">jsonb — [{value, date}]</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- ════════════════════════════════════════════════════════════ STORES -->
+<div id="tab-stores" class="tab-content">
+
+  <div class="section">
+    <h2>Zustand Stores</h2>
+    <div class="store-grid">
+
+      <div class="store-card">
+        <div class="store-name" style="color:var(--blue)">useArcsStore</div>
+        <div class="store-meta">No persist · Dexie-backed</div>
+        <div class="store-actions">
+          load() · createArc() · updateArc()<br/>
+          deleteArc() · getArcProgress()<br/>
+          arcs: Arc[]
+        </div>
+      </div>
+
+      <div class="store-card">
+        <div class="store-name" style="color:var(--blue)">useTodosStore</div>
+        <div class="store-meta">No persist · Dexie-backed</div>
+        <div class="store-actions">
+          load() · createTodo()<br/>
+          updateTodo() · deleteTodo()<br/>
+          todos: Todo[]
+        </div>
+      </div>
+
+      <div class="store-card">
+        <div class="store-name" style="color:var(--amber)">useRecordsStore</div>
+        <div class="store-meta">No persist · Dexie-backed</div>
+        <div class="store-actions">
+          load() · addEntry()<br/>
+          saveReflection() · addGratitude()<br/>
+          setMood() · applyPenalty()<br/>
+          records: DailyRecord[]
+        </div>
+      </div>
+
+      <div class="store-card">
+        <div class="store-name" style="color:var(--violet)">useSparksStore</div>
+        <div class="store-meta">No persist · Dexie-backed</div>
+        <div class="store-actions">
+          load() · sendSpark()<br/>
+          getTodaysSpark()<br/>
+          sparks: Spark[]
+        </div>
+      </div>
+
+      <div class="store-card">
+        <div class="store-name" style="color:var(--green)">usePlayerStore</div>
+        <div class="store-meta">No persist · Dexie-backed</div>
+        <div class="store-actions">
+          load() · addXp()<br/>
+          saveProfile()<br/>
+          profile: PlayerProfile<br/>
+          xpLog: XpLogEntry[]
+        </div>
+      </div>
+
+      <div class="store-card">
+        <div class="store-name" style="color:var(--green)">useStatsStore</div>
+        <div class="store-meta">No persist · Dexie-backed</div>
+        <div class="store-actions">
+          load() · createStat()<br/>
+          addEntry() · deleteStat()<br/>
+          gymStats: Stat[]
+        </div>
+      </div>
+
+      <div class="store-card">
+        <div class="store-name" style="color:var(--green)">useInventoryStore</div>
+        <div class="store-meta">No persist · Dexie-backed</div>
+        <div class="store-actions">
+          load() · createItem()<br/>
+          updateItem() · deleteItem()<br/>
+          promoteToArc()<br/>
+          items: InventoryItem[]
+        </div>
+      </div>
+
+      <div class="store-card">
+        <div class="store-name" style="color:var(--teal)">useSpaceStore</div>
+        <div class="store-meta">No persist · Dexie-backed</div>
+        <div class="store-actions">
+          load() · setSpace()<br/>
+          space: Space<br/>
+          partnerProfile: PersonaProfile
+        </div>
+      </div>
+
+      <div class="store-card" style="border-color:rgba(91,140,255,0.35)">
+        <div class="store-name" style="color:var(--accent2)">useTimerStore</div>
+        <div class="store-meta">✦ Persisted · localStorage</div>
+        <div class="store-actions">
+          startTimer() · stopTimer()<br/>
+          completeTimer()<br/>
+          active, endTime, questTitle
+        </div>
+      </div>
+
+      <div class="store-card" style="border-color:rgba(91,140,255,0.35)">
+        <div class="store-name" style="color:var(--accent2)">usePersonaStore</div>
+        <div class="store-meta">✦ Persisted · localStorage</div>
+        <div class="store-actions">
+          setActivePersona()<br/>
+          activePersona: 'A' | 'B'
+        </div>
+      </div>
+
+      <div class="store-card" style="border-color:rgba(91,140,255,0.35)">
+        <div class="store-name" style="color:var(--accent2)">useSystemStore</div>
+        <div class="store-meta">✦ Persisted · localStorage</div>
+        <div class="store-actions">
+          toggleTheme() · setReminder()<br/>
+          themeMode, notificationsEnabled<br/>
+          reminderTime
+        </div>
+      </div>
+
+      <div class="store-card" style="border-color:rgba(91,140,255,0.35)">
+        <div class="store-name" style="color:var(--accent2)">useDateStore</div>
+        <div class="store-meta">✦ Persisted · localStorage</div>
+        <div class="store-actions">
+          selectDate() · selectToday()<br/>
+          selectedDate: string<br/>
+          currentDate: string
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ DATA FLOW -->
+<div id="tab-flow" class="tab-content">
+
+  <div class="section">
+    <h2>Write Path — User Action → Supabase</h2>
+    <div class="flow-mermaid">
+      <div class="mermaid">
+flowchart LR
+  A([User Action]) --> B[Zustand Store\naction called]
+  B --> C[(Dexie\nIndexedDB)]
+  C --> D[In-memory state\nupdated]
+  D --> E{CloudSync\n700ms debounce}
+  E -->|online| F[(Supabase\nsolo_snapshots\nupsert)]
+  F --> G[Individual tables\nsynced in parallel]
+  E -->|offline| H[localStorage\npending flag]
+  H -->|back online| F
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Read Path — App Load &amp; Partner Sync</h2>
+    <div class="flow-mermaid">
+      <div class="mermaid">
+flowchart LR
+  A([App opens]) --> B{Supabase\nconfigured?}
+  B -->|yes| C[Fetch snapshot\nfor slot + space_id]
+  B -->|no| D[Load from\nDexie only]
+  C --> E[importSnapshot\nto Dexie]
+  E --> F[Reload all\nZustand stores]
+  F --> G([Dashboard\nrendered])
+  D --> F
+
+  H([Partner saves\non other device]) --> I[Realtime event\npostgres_changes]
+  I -->|own save\nin flight?| J[Skip — debounce\nprevents overwrite]
+  I -->|safe| E
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Auth Flow — SSO + Space Setup</h2>
+    <div class="flow-mermaid">
+      <div class="mermaid">
+sequenceDiagram
+  participant U as User
+  participant App as DuoArc
+  participant SB as Supabase Auth
+  participant Provider as OAuth Provider
+
+  U->>App: Click "Continue with Google"
+  App->>SB: supabase.auth.signInWithOAuth({provider:'google'})
+  SB->>Provider: Redirect to consent screen
+  Provider-->>App: Callback /auth/callback?code=...
+  App->>SB: Exchange code for session
+  SB-->>App: Session + user object
+  App->>App: Check — does user have a space?
+  alt No space yet
+    App->>App: Redirect to /setup (SetupWizard)
+    App->>SB: Create spaces row + space_members row (slot A)
+    App->>App: Generate invite code
+  else Has space
+    App->>App: Load snapshot, go to dashboard
+  end
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Calendar Sync Flow (V3)</h2>
+    <div class="flow-mermaid">
+      <div class="mermaid">
+flowchart TD
+  A[Arc created or updated] --> B{Calendar\nconnected?}
+  B -->|no| C[Skip]
+  B -->|yes| D{arc.visible\nToPartner?}
+  D -->|hidden| C
+  D -->|visible| E[Build ICS event\nfrom Arc data]
+  E --> F{Has existing\ncalendarEventId?}
+  F -->|yes| G[Edge Function:\nupdate event]
+  F -->|no| H[Edge Function:\ncreate event]
+  H --> I[Store eventId\nback on Arc]
+  G --> J[Done]
+  I --> J
+
+  K[Arc cleared or failed] --> L[Edge Function:\ndelete event]
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ DEPS -->
+<div id="tab-deps" class="tab-content">
+
+  <div class="section">
+
+    <div class="dep-group">
+      <h3>Framework &amp; Runtime</h3>
+      <div class="dep-list">
+        <div class="dep-item">
+          <div class="dep-dot" style="background:var(--green)"></div>
+          <div><div class="dep-name">next</div><div class="dep-version">16.2.4</div><div class="dep-desc">App Router, server components, API routes, OAuth callback handler</div></div>
+        </div>
+        <div class="dep-item">
+          <div class="dep-dot" style="background:var(--green)"></div>
+          <div><div class="dep-name">react + react-dom</div><div class="dep-version">19.2.4</div><div class="dep-desc">UI rendering, concurrent features, use() hook</div></div>
+        </div>
+        <div class="dep-item">
+          <div class="dep-dot" style="background:var(--green)"></div>
+          <div><div class="dep-name">typescript</div><div class="dep-version">^5</div><div class="dep-desc">Static typing across all stores, models, and components</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dep-group">
+      <h3>Styling &amp; Animation</h3>
+      <div class="dep-list">
+        <div class="dep-item">
+          <div class="dep-dot" style="background:var(--accent)"></div>
+          <div><div class="dep-name">tailwindcss</div><div class="dep-version">^4</div><div class="dep-desc">Utility-first CSS. v4 uses CSS-native cascade layers, no config file needed</div></div>
+        </div>
+        <div class="dep-item">
+          <div class="dep-dot" style="background:var(--accent)"></div>
+          <div><div class="dep-name">@tailwindcss/postcss</div><div class="dep-version">^4</div><div class="dep-desc">PostCSS plugin for Tailwind v4 compilation</div></div>
+        </div>
+        <div class="dep-item">
+          <div class="dep-dot" style="background:var(--accent)"></div>
+          <div><div class="dep-name">framer-motion</div><div class="dep-version">^12</div><div class="dep-desc">Arc card animations, pug mascot transitions, XP float-up effects, level-up flash</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dep-group">
+      <h3>State &amp; Data</h3>
+      <div class="dep-list">
+        <div class="dep-item">
+          <div class="dep-dot" style="background:var(--amber)"></div>
+          <div><div class="dep-name">zustand</div><div class="dep-version">^5</div><div class="dep-desc">12 stores. Persist middleware for timer, persona, system, date stores</div></div>
+        </div>
+        <div class="dep-item">
+          <div class="dep-dot" style="background:var(--amber)"></div>
+          <div><div class="dep-name">dexie</div><div class="dep-version">^4.4</div><div class="dep-desc">IndexedDB ORM. Primary local store for all app data. Transactional writes</div></div>
+        </div>
+        <div class="dep-item">
+          <div class="dep-dot" style="background:var(--amber)"></div>
+          <div><div class="dep-name">dexie-react-hooks</div><div class="dep-version">^4.4</div><div class="dep-desc">useLiveQuery for reactive Dexie reads (future use)</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dep-group">
+      <h3>Backend &amp; Auth</h3>
+      <div class="dep-list">
+        <div class="dep-item">
+          <div class="dep-dot" style="background:var(--teal)"></div>
+          <div><div class="dep-name">@supabase/supabase-js</div><div class="dep-version">^2</div><div class="dep-desc">Auth (email + OAuth), Postgres client, Realtime subscriptions, Edge Functions</div></div>
+        </div>
+        <div class="dep-item">
+          <div class="dep-dot" style="background:var(--teal)"></div>
+          <div><div class="dep-name">@supabase/ssr</div><div class="dep-version">^0 (add)</div><div class="dep-desc">Server-side session management for App Router — required for OAuth callback route</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dep-group">
+      <h3>Charts &amp; Visualisation</h3>
+      <div class="dep-list">
+        <div class="dep-item">
+          <div class="dep-dot" style="background:var(--violet)"></div>
+          <div><div class="dep-name">recharts</div><div class="dep-version">^3</div><div class="dep-desc">Gym stat trend line charts. LineChart + ResponsiveContainer + Tooltip</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dep-group">
+      <h3>Calendar Integration (V3 — add when needed)</h3>
+      <div class="dep-list">
+        <div class="dep-item">
+          <div class="dep-dot" style="background:var(--text2)"></div>
+          <div><div class="dep-name">tsdav</div><div class="dep-version">^2</div><div class="dep-desc">CalDAV client for Apple Calendar and generic CalDAV servers</div></div>
+        </div>
+        <div class="dep-item">
+          <div class="dep-dot" style="background:var(--text2)"></div>
+          <div><div class="dep-name">ical-generator</div><div class="dep-version">^4</div><div class="dep-desc">Generate .ics files and ICS feed responses for subscribe URL</div></div>
+        </div>
+        <div class="dep-item">
+          <div class="dep-dot" style="background:var(--text2)"></div>
+          <div><div class="dep-name">googleapis</div><div class="dep-version">^144</div><div class="dep-desc">Google Calendar API client — event create/update/delete</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dep-group">
+      <h3>Dev &amp; Testing</h3>
+      <div class="dep-list">
+        <div class="dep-item">
+          <div class="dep-dot" style="background:var(--red)"></div>
+          <div><div class="dep-name">vitest</div><div class="dep-version">^4</div><div class="dep-desc">Unit + integration test runner. Fast, Vite-native</div></div>
+        </div>
+        <div class="dep-item">
+          <div class="dep-dot" style="background:var(--red)"></div>
+          <div><div class="dep-name">@testing-library/react</div><div class="dep-version">^16</div><div class="dep-desc">Component tests. Stores, forms, arc logic</div></div>
+        </div>
+        <div class="dep-item">
+          <div class="dep-dot" style="background:var(--red)"></div>
+          <div><div class="dep-name">@vitejs/plugin-react</div><div class="dep-version">^6</div><div class="dep-desc">Vite React transform for test environment</div></div>
+        </div>
+        <div class="dep-item">
+          <div class="dep-dot" style="background:var(--red)"></div>
+          <div><div class="dep-name">fake-indexeddb</div><div class="dep-version">^6</div><div class="dep-desc">In-memory IndexedDB for Dexie tests (no browser required)</div></div>
+        </div>
+        <div class="dep-item">
+          <div class="dep-dot" style="background:var(--red)"></div>
+          <div><div class="dep-name">jsdom</div><div class="dep-version">^29</div><div class="dep-desc">DOM environment for component tests in Node</div></div>
+        </div>
+        <div class="dep-item">
+          <div class="dep-dot" style="background:var(--red)"></div>
+          <div><div class="dep-name">eslint + eslint-config-next</div><div class="dep-version">^9 / 16.2.4</div><div class="dep-desc">Linting with Next.js rules</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dep-group">
+      <h3>Fonts (Google via Next.js)</h3>
+      <div class="dep-list">
+        <div class="dep-item">
+          <div class="dep-dot" style="background:var(--accent)"></div>
+          <div><div class="dep-name">Geist</div><div class="dep-version">next/font/google</div><div class="dep-desc">Body / UI font. Variable weight, --font-sans CSS var</div></div>
+        </div>
+        <div class="dep-item">
+          <div class="dep-dot" style="background:var(--accent)"></div>
+          <div><div class="dep-name">JetBrains Mono</div><div class="dep-version">next/font/google</div><div class="dep-desc">Stats, timers, XP numbers, monospace labels. --font-mono CSS var</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dep-group">
+      <h3>Infrastructure</h3>
+      <div class="dep-list">
+        <div class="dep-item">
+          <div class="dep-dot" style="background:var(--teal)"></div>
+          <div><div class="dep-name">Vercel</div><div class="dep-version">Hosting</div><div class="dep-desc">Zero-config Next.js deploy. Edge network, preview deployments, env var management</div></div>
+        </div>
+        <div class="dep-item">
+          <div class="dep-dot" style="background:var(--teal)"></div>
+          <div><div class="dep-name">Supabase</div><div class="dep-version">BaaS</div><div class="dep-desc">Postgres DB, Auth, Realtime, Edge Functions, Row-Level Security, Storage</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dep-group">
+      <h3>Environment Variables</h3>
+      <div class="dep-list">
+        <div class="dep-item">
+          <div class="dep-dot" style="background:var(--amber)"></div>
+          <div><div class="dep-name">NEXT_PUBLIC_SUPABASE_URL</div><div class="dep-version">required</div><div class="dep-desc">Supabase project URL</div></div>
+        </div>
+        <div class="dep-item">
+          <div class="dep-dot" style="background:var(--amber)"></div>
+          <div><div class="dep-name">NEXT_PUBLIC_SUPABASE_ANON_KEY</div><div class="dep-version">required</div><div class="dep-desc">Supabase anon/public key</div></div>
+        </div>
+        <div class="dep-item">
+          <div class="dep-dot" style="background:var(--amber)"></div>
+          <div><div class="dep-name">NEXT_PUBLIC_SITE_URL</div><div class="dep-version">required</div><div class="dep-desc">Base URL for OAuth redirect (e.g. https://duoarc.app)</div></div>
+        </div>
+        <div class="dep-item">
+          <div class="dep-dot" style="background:var(--text2)"></div>
+          <div><div class="dep-name">GOOGLE_CLIENT_ID / SECRET</div><div class="dep-version">V3 calendar</div><div class="dep-desc">Google Calendar OAuth2 credentials (server-side only)</div></div>
+        </div>
+        <div class="dep-item">
+          <div class="dep-dot" style="background:var(--text2)"></div>
+          <div><div class="dep-name">SUPABASE_SERVICE_ROLE_KEY</div><div class="dep-version">V3 calendar</div><div class="dep-desc">For edge functions that read/write calendar tokens server-side</div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'dark',
+    themeVariables: {
+      background: '#161b27',
+      primaryColor: '#1e2535',
+      primaryTextColor: '#e8eaf0',
+      primaryBorderColor: '#5b8cff44',
+      lineColor: '#5b8cff',
+      secondaryColor: '#1e2535',
+      tertiaryColor: '#161b27',
+      edgeLabelBackground: '#161b27',
+      fontFamily: 'system-ui, -apple-system, sans-serif',
+      fontSize: '13px',
+    }
+  });
+
+  function switchTab(name) {
+    document.querySelectorAll('.tab').forEach((t, i) => {
+      const names = ['overview','schema','stores','flow','deps'];
+      t.classList.toggle('active', names[i] === name);
+    });
+    document.querySelectorAll('.tab-content').forEach(c => {
+      c.classList.toggle('active', c.id === 'tab-' + name);
+    });
+  }
+</script>
+
+</body>
+</html>

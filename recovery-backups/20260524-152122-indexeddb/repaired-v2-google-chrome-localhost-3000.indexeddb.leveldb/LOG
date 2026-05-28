@@ -1,0 +1,6 @@
+2026/05/24-15:27:17.435 3aa07b Reusing MANIFEST /private/tmp/solo-repair-v2-1779616636605/Default/IndexedDB/http_localhost_3000.indexeddb.leveldb/MANIFEST-000001
+2026/05/24-15:27:17.435 3aa07b Recovering log #70
+2026/05/24-15:27:17.445 3aa07b Reusing old log /private/tmp/solo-repair-v2-1779616636605/Default/IndexedDB/http_localhost_3000.indexeddb.leveldb/000070.log 
+2026/05/24-15:27:17.451 3aa08b Level-0 table #75: started
+2026/05/24-15:27:17.461 3aa08b Level-0 table #75: 1095824 bytes OK
+2026/05/24-15:27:17.463 3aa08b Delete type=0 #70

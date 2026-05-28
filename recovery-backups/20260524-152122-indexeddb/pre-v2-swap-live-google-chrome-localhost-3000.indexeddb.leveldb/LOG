@@ -1,0 +1,18 @@
+2026/05/24-15:26:19.931 33f859 Reusing MANIFEST /Users/mani/Library/Application Support/Google/Chrome/Default/IndexedDB/http_localhost_3000.indexeddb.leveldb/MANIFEST-000001
+2026/05/24-15:26:19.931 33f859 Recovering log #74
+2026/05/24-15:26:19.932 33f859 Reusing old log /Users/mani/Library/Application Support/Google/Chrome/Default/IndexedDB/http_localhost_3000.indexeddb.leveldb/000074.log 
+2026/05/24-15:26:20.440 33f859 Compacting 1@1 + 1@2 files
+2026/05/24-15:26:20.446 33f859 Generated table #77@1: 2042 keys, 179790 bytes
+2026/05/24-15:26:20.446 33f859 Compacted 1@1 + 1@2 files => 179790 bytes
+2026/05/24-15:26:20.448 33f859 compacted to: files[ 0 0 1 0 0 0 0 ]
+2026/05/24-15:26:20.448 33f859 Delete type=2 #75
+2026/05/24-15:26:20.448 33f859 Delete type=2 #72
+2026/05/24-15:26:24.189 33f859 Level-0 table #79: started
+2026/05/24-15:26:24.200 33f859 Level-0 table #79: 1023953 bytes OK
+2026/05/24-15:26:24.205 33f859 Delete type=0 #74
+2026/05/24-15:26:24.546 33f859 Compacting 1@1 + 1@2 files
+2026/05/24-15:26:24.552 33f859 Generated table #80@1: 2022 keys, 176415 bytes
+2026/05/24-15:26:24.552 33f859 Compacted 1@1 + 1@2 files => 176415 bytes
+2026/05/24-15:26:24.553 33f859 compacted to: files[ 0 0 1 0 0 0 0 ]
+2026/05/24-15:26:24.553 33f859 Delete type=2 #77
+2026/05/24-15:26:24.553 33f859 Delete type=2 #79

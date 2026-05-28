@@ -1,0 +1,6 @@
+2026/05/24-13:39:57.049 33f856 Reusing MANIFEST /Users/mani/Library/Application Support/Google/Chrome/Default/IndexedDB/http_localhost_3000.indexeddb.leveldb/MANIFEST-000001
+2026/05/24-13:39:57.049 33f856 Recovering log #41
+2026/05/24-13:39:57.057 33f856 Reusing old log /Users/mani/Library/Application Support/Google/Chrome/Default/IndexedDB/http_localhost_3000.indexeddb.leveldb/000041.log 
+2026/05/24-13:40:04.030 33f859 Level-0 table #46: started
+2026/05/24-13:40:04.055 33f859 Level-0 table #46: 1117363 bytes OK
+2026/05/24-13:40:04.058 33f859 Delete type=0 #41

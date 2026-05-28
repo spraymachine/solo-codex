@@ -1,0 +1,6 @@
+2026/05/24-15:25:35.595 3a925b Reusing MANIFEST /private/tmp/solo-codex-repair-profile-1779616534836/Default/IndexedDB/http_localhost_3000.indexeddb.leveldb/MANIFEST-000001
+2026/05/24-15:25:35.595 3a925b Recovering log #70
+2026/05/24-15:25:35.604 3a925b Reusing old log /private/tmp/solo-codex-repair-profile-1779616534836/Default/IndexedDB/http_localhost_3000.indexeddb.leveldb/000070.log 
+2026/05/24-15:25:35.608 3a925d Level-0 table #75: started
+2026/05/24-15:25:35.620 3a925d Level-0 table #75: 1095851 bytes OK
+2026/05/24-15:25:35.621 3a925d Delete type=0 #70
