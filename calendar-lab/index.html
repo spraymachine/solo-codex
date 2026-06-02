@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Calendar Lab — Arc Views</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Spline+Sans:wght@400;500;600&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --bg-primary: oklch(0.19 0.012 255);
+  --bg-panel: oklch(0.23 0.012 255);
+  --accent: #38bdf8;
+  --accent-2: #61c78c;
+  --warn: #f2b65a;
+  --bad: #f0766f;
+  --text-primary: oklch(0.94 0.01 255);
+  --text-secondary: oklch(0.74 0.01 255);
+  --text-faint: oklch(0.55 0.012 255);
+  --border: color-mix(in oklab, var(--accent) 16%, rgba(255,255,255,0.06));
+  --border-strong: color-mix(in oklab, var(--accent) 30%, rgba(255,255,255,0.12));
+  --space-xs:4px; --space-sm:8px; --space-md:12px; --space-lg:16px; --space-xl:24px; --space-2xl:32px; --space-3xl:48px;
+  --radius:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:"Spline Sans",sans-serif;
+  background:
+    radial-gradient(circle at 12% 8%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 30%),
+    radial-gradient(circle at 88% 4%, color-mix(in srgb, var(--accent-2) 14%, transparent), transparent 26%),
+    linear-gradient(180deg, color-mix(in srgb, var(--bg-primary) 90%, black) 0%, var(--bg-primary) 100%);
+  background-attachment:fixed;
+  color:var(--text-primary);
+  min-height:100vh;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  letter-spacing:-0.01em;
+}
+.mono{font-family:"Spline Sans Mono",monospace;font-variant-numeric:tabular-nums}
+.wrap{max-width:1080px;margin:0 auto;padding:var(--space-2xl) var(--space-xl) var(--space-3xl)}
+
+.masthead{display:flex;align-items:baseline;justify-content:space-between;gap:var(--space-lg);flex-wrap:wrap;margin-bottom:var(--space-xl)}
+.masthead h1{font-family:"Archivo",sans-serif;font-weight:800;font-size:clamp(1.6rem,3vw,2.4rem);letter-spacing:-0.03em;line-height:1}
+.masthead .sub{color:var(--text-faint);font-size:0.82rem;text-transform:uppercase;letter-spacing:0.14em;font-weight:600}
+.legend{display:flex;gap:var(--space-md);flex-wrap:wrap;font-size:0.74rem;color:var(--text-secondary)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.dot{width:9px;height:9px;border-radius:3px;display:inline-block}
+
+.tabs{display:flex;gap:var(--space-xs);flex-wrap:wrap;margin-bottom:var(--space-2xl);border-bottom:1px solid var(--border)}
+.tab{appearance:none;border:0;background:transparent;color:var(--text-faint);font-family:"Archivo",sans-serif;font-weight:600;font-size:0.86rem;letter-spacing:-0.01em;padding:var(--space-sm) var(--space-md) var(--space-md);cursor:pointer;position:relative;transition:color .18s cubic-bezier(.2,.7,.3,1)}
+.tab:hover{color:var(--text-secondary)}
+.tab[aria-selected="true"]{color:var(--text-primary)}
+.tab[aria-selected="true"]::after{content:"";position:absolute;left:var(--space-sm);right:var(--space-md);bottom:-1px;height:2px;background:var(--accent);border-radius:2px}
+.tab .num{font-family:"Spline Sans Mono",monospace;font-size:0.7rem;color:var(--text-faint);margin-right:6px}
+
+.panel{display:none;animation:rise .4s cubic-bezier(.2,.8,.2,1)}
+.panel.active{display:block}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.variant-head{display:flex;align-items:baseline;gap:var(--space-md);margin-bottom:var(--space-xs)}
+.variant-head h2{font-family:"Archivo",sans-serif;font-weight:700;font-size:1.3rem;letter-spacing:-0.02em}
+.variant-head .tag{font-size:0.68rem;text-transform:uppercase;letter-spacing:0.12em;color:var(--accent);font-weight:600;padding:2px 8px;border:1px solid var(--border-strong);border-radius:99px}
+.variant-desc{color:var(--text-secondary);font-size:0.9rem;max-width:64ch;margin-bottom:var(--space-2xl)}
+
+.card{background:linear-gradient(180deg,var(--bg-panel),color-mix(in srgb,var(--bg-panel) 90%,black));border:1px solid var(--border);border-radius:var(--radius);padding:var(--space-xl)}
+
+.hm-head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:var(--space-lg)}
+.hm-head .big{font-family:"Archivo";font-weight:800;font-size:2.6rem;line-height:.9;letter-spacing:-0.04em}
+.hm-head .big .unit{font-size:0.9rem;color:var(--text-faint);font-weight:600;letter-spacing:0}
+.hm-grid{display:grid;grid-template-columns:repeat(20,1fr);gap:5px}
+.hm-cell{aspect-ratio:1;border-radius:4px;background:color-mix(in srgb,var(--accent) 6%,transparent);border:1px solid rgba(255,255,255,0.04);transition:transform .12s ease}
+.hm-cell:hover{transform:scale(1.18);z-index:2;outline:1px solid var(--accent)}
+.hm-cell.l1{background:color-mix(in srgb,var(--accent) 22%,transparent)}
+.hm-cell.l2{background:color-mix(in srgb,var(--accent) 42%,transparent)}
+.hm-cell.l3{background:color-mix(in srgb,var(--accent) 66%,transparent)}
+.hm-cell.l4{background:var(--accent)}
+.hm-cell.miss{background:color-mix(in srgb,var(--bad) 30%,transparent)}
+.hm-foot{display:flex;justify-content:space-between;align-items:center;margin-top:var(--space-lg);font-size:0.74rem;color:var(--text-faint)}
+.hm-scale{display:flex;align-items:center;gap:5px}
+.hm-scale .hm-cell{width:13px;height:13px}
+
+.ribbon{display:flex;flex-direction:column;gap:var(--space-lg)}
+.arc-row{display:grid;grid-template-columns:140px 1fr 56px;align-items:center;gap:var(--space-lg)}
+.arc-label{font-family:"Archivo";font-weight:700;font-size:0.95rem}
+.arc-label small{display:block;color:var(--text-faint);font-weight:500;font-size:0.72rem;font-family:"Spline Sans"}
+.arc-track{position:relative;height:34px;background:color-mix(in srgb,white 4%,transparent);border-radius:8px;overflow:hidden}
+.arc-outline{position:absolute;top:0;bottom:0;border:1px solid var(--border-strong);border-radius:8px;pointer-events:none}
+.arc-fill{position:absolute;top:0;bottom:0;border-radius:8px;display:flex;align-items:center;padding:0 10px;font-size:0.7rem;font-weight:600;color:#04121f}
+.arc-fill.blue{background:linear-gradient(90deg,var(--accent),color-mix(in srgb,var(--accent) 70%,white))}
+.arc-fill.green{background:linear-gradient(90deg,var(--accent-2),color-mix(in srgb,var(--accent-2) 70%,white));color:#04140b}
+.arc-today{position:absolute;top:-4px;bottom:-4px;width:2px;background:#fff;box-shadow:0 0 8px #fff}
+.arc-pct{font-family:"Spline Sans Mono";font-weight:600;text-align:right;font-size:0.92rem}
+.ribbon-axis{display:flex;justify-content:space-between;margin:var(--space-sm) 0 0 156px;font-size:0.68rem;color:var(--text-faint);font-family:"Spline Sans Mono"}
+
+.orbit-wrap{display:flex;gap:var(--space-3xl);align-items:center;flex-wrap:wrap;justify-content:center}
+.orbit{position:relative;width:340px;height:340px;flex:none}
+.orbit-core{position:absolute;inset:0;margin:auto;width:150px;height:150px;border-radius:50%;background:radial-gradient(circle at 50% 40%,color-mix(in srgb,var(--accent) 30%,var(--bg-panel)),var(--bg-panel));border:1px solid var(--border-strong);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.orbit-core .d{font-family:"Archivo";font-weight:800;font-size:3.2rem;line-height:.85}
+.orbit-core .m{font-size:0.7rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--text-faint);margin-top:6px}
+.orbit-day{position:absolute;width:30px;height:30px;border-radius:50%;left:50%;top:50%;margin:-15px;display:flex;align-items:center;justify-content:center;font-size:0.68rem;font-family:"Spline Sans Mono";background:color-mix(in srgb,white 5%,transparent);border:1px solid var(--border);color:var(--text-secondary);transition:transform .15s}
+.orbit-day:hover{transform:scale(1.2)}
+.orbit-day.done{background:color-mix(in srgb,var(--accent) 60%,transparent);color:#04121f;border-color:transparent;font-weight:600}
+.orbit-day.partial{background:color-mix(in srgb,var(--warn) 45%,transparent);color:#1a1206;border-color:transparent}
+.orbit-day.miss{background:color-mix(in srgb,var(--bad) 38%,transparent);border-color:transparent}
+.orbit-day.today{outline:2px solid #fff;outline-offset:2px}
+.orbit-legend{display:flex;flex-direction:column;gap:var(--space-md);font-size:0.84rem;color:var(--text-secondary);min-width:160px}
+.orbit-legend b{font-family:"Archivo";color:var(--text-primary);display:block;font-size:1.5rem}
+
+.ledger{display:flex;flex-direction:column}
+.ledger-row{display:grid;grid-template-columns:64px 8px 1fr auto;align-items:center;gap:var(--space-lg);padding:var(--space-md) 0;border-top:1px solid var(--border)}
+.ledger-row:first-child{border-top:0}
+.ledger-row.today{background:color-mix(in srgb,var(--accent) 8%,transparent);margin:0 calc(-1*var(--space-xl));padding-left:var(--space-xl);padding-right:var(--space-xl);border-radius:8px;border-top-color:transparent}
+.ledger-date{font-family:"Spline Sans Mono";font-size:0.82rem}
+.ledger-date .dow{display:block;color:var(--text-faint);font-size:0.66rem}
+.ledger-tick{width:8px;height:8px;border-radius:50%;background:var(--text-faint)}
+.ledger-tick.done{background:var(--accent)}.ledger-tick.partial{background:var(--warn)}.ledger-tick.miss{background:var(--bad)}
+.ledger-body .t{font-weight:600;font-size:0.94rem}
+.ledger-body .ctx{color:var(--text-faint);font-size:0.8rem}
+.ledger-meta{font-family:"Spline Sans Mono";font-size:0.8rem;color:var(--text-secondary);text-align:right}
+.ledger-meta .xp{color:var(--accent)}
+.ledger-meta .xp.neg{color:var(--bad)}
+
+.month-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-lg)}
+.month-head h3{font-family:"Archivo";font-weight:700;font-size:1.25rem}
+.nav-btn{appearance:none;background:color-mix(in srgb,white 5%,transparent);border:1px solid var(--border);color:var(--text-secondary);width:34px;height:34px;border-radius:9px;cursor:pointer;font-size:1rem;transition:.15s}
+.nav-btn:hover{border-color:var(--border-strong);color:var(--text-primary)}
+.dow-head{display:grid;grid-template-columns:repeat(7,1fr);gap:var(--space-sm);margin-bottom:var(--space-sm)}
+.dow-head span{text-align:center;font-size:0.66rem;text-transform:uppercase;letter-spacing:0.12em;color:var(--text-faint);font-weight:600}
+.month-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:var(--space-sm)}
+.mcell{aspect-ratio:1;border-radius:10px;border:1px solid var(--border);padding:7px;display:flex;flex-direction:column;background:color-mix(in srgb,white 2%,transparent);transition:.15s}
+.mcell:hover{border-color:var(--border-strong)}
+.mcell.empty{border-color:transparent;background:transparent}
+.mcell .n{font-family:"Spline Sans Mono";font-size:0.78rem;color:var(--text-secondary)}
+.mcell.today{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent)}
+.mcell.today .n{color:var(--text-primary);font-weight:600}
+.mcell .pips{display:flex;gap:3px;margin-top:auto}
+.pip{width:6px;height:6px;border-radius:50%}
+.pip.done{background:var(--accent)}.pip.partial{background:var(--warn)}.pip.miss{background:var(--bad)}.pip.green{background:var(--accent-2)}
+
+.foot{margin-top:var(--space-3xl);color:var(--text-faint);font-size:0.74rem;text-align:center}
+@media(max-width:640px){
+  .arc-row{grid-template-columns:96px 1fr 44px;gap:var(--space-sm)}
+  .ribbon-axis{margin-left:108px}
+  .ledger-row{grid-template-columns:54px 8px 1fr;gap:var(--space-md)}
+  .ledger-meta{grid-column:3;text-align:left;margin-top:2px}
+  .hm-grid{grid-template-columns:repeat(14,1fr)}
+  .orbit{width:300px;height:300px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="masthead">
+    <div>
+      <h1>Calendar Lab</h1>
+      <div class="sub">Arc views · brainstorm</div>
+    </div>
+    <div class="legend">
+      <span><i class="dot" style="background:var(--accent)"></i>Cleared</span>
+      <span><i class="dot" style="background:var(--warn)"></i>Partial</span>
+      <span><i class="dot" style="background:var(--bad)"></i>Missed</span>
+      <span><i class="dot" style="background:var(--accent-2)"></i>Harti</span>
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist" id="tabs"></nav>
+
+  <section class="panel" data-name="Heatmap" data-tag="density" data-desc="A contribution grid for momentum at a glance. Each square is a day; intensity reads as activity. Misses surface as the only warm-red squares, so a broken streak is impossible to miss. Best for the 'am I keeping the rhythm' question.">
+    <div class="card">
+      <div class="hm-head">
+        <div><div class="big">23<span class="unit"> day streak</span></div></div>
+        <div style="text-align:right;font-size:0.8rem;color:var(--text-secondary)">
+          <div class="mono" style="font-size:1.4rem;color:var(--text-primary)">87%</div>clear rate · 60d
+        </div>
+      </div>
+      <div class="hm-grid" id="hm"></div>
+      <div class="hm-foot">
+        <span>9 weeks</span>
+        <div class="hm-scale">less
+          <i class="hm-cell"></i><i class="hm-cell l1"></i><i class="hm-cell l2"></i><i class="hm-cell l3"></i><i class="hm-cell l4"></i>
+          more</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" data-name="Arc Ribbon" data-tag="timeline" data-desc="Arcs are date ranges, so show them as ranges. Each bar is one arc's span with a fill for progress and a live 'today' marker cutting across all of them. You see what's running, how far along, and where you stand in each — the operational picture, not just one day.">
+    <div class="card">
+      <div class="ribbon" id="ribbon"></div>
+      <div class="ribbon-axis"><span>May 1</span><span>May 14</span><span>May 28</span><span>Jun 10</span><span>Jun 24</span></div>
+    </div>
+  </section>
+
+  <section class="panel" data-name="Orbit" data-tag="focus" data-desc="The current month bent into a ring with today's number anchored at the center. Reads as a dial — a glance tells you how much of the month is spent and how the recent days went. Distinctive and compact; trades dense scanning for a strong focal point.">
+    <div class="card">
+      <div class="orbit-wrap">
+        <div class="orbit" id="orbit">
+          <div class="orbit-core"><div class="d">28</div><div class="m">May</div></div>
+        </div>
+        <div class="orbit-legend">
+          <div><b>28<span style="color:var(--text-faint);font-size:1rem">/31</span></b>days elapsed</div>
+          <div><b style="color:var(--accent)">19</b>cleared this month</div>
+          <div><b style="color:var(--bad)">2</b>missed</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" data-name="Ledger" data-tag="agenda" data-desc="Left-aligned vertical log, newest in view, today pinned. Each row carries its context inline — the 'why' sits next to the day, never in a modal. Highest signal density; this is the mission-control reading view for someone who wants the story, not a grid.">
+    <div class="card"><div class="ledger" id="ledger"></div></div>
+  </section>
+
+  <section class="panel" data-name="Month" data-tag="classic" data-desc="A refined true-month grid with navigation and status pips per day — blue for Mani, green for Harti, so a shared day shows both. Familiar enough to scan instantly, disciplined enough to not feel like a generic SaaS widget.">
+    <div class="card">
+      <div class="month-head">
+        <button class="nav-btn" aria-label="Previous month">&lsaquo;</button>
+        <h3>May 2026</h3>
+        <button class="nav-btn" aria-label="Next month">&rsaquo;</button>
+      </div>
+      <div class="dow-head"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+      <div class="month-grid" id="month"></div>
+    </div>
+  </section>
+
+  <p class="foot">5 directions · synthetic data · isolated from <span class="mono">src/</span></p>
+</div>
+
+<script>
+const rnd = (s=>()=>(s=Math.sin(s*9301+49297)*233280, s-Math.floor(s)))(7);
+function el(tag, cls, txt){const e=document.createElement(tag); if(cls)e.className=cls; if(txt!=null)e.textContent=txt; return e;}
+
+// V1 heatmap
+const hm=document.getElementById('hm');
+for(let i=0;i<180;i++){
+  const c=el('div','hm-cell');
+  if(i<170){
+    const r=rnd();
+    if(r<0.05)c.classList.add('miss');
+    else if(r<0.2)c.classList.add('l1');
+    else if(r<0.45)c.classList.add('l2');
+    else if(r<0.75)c.classList.add('l3');
+    else c.classList.add('l4');
+  }
+  hm.appendChild(c);
+}
+
+// V2 ribbon
+const arcs=[
+  {n:'Strength Arc',s:'Lift + recovery',start:2,end:88,pct:74,c:'blue'},
+  {n:'Deep Work',s:'Codex shipping',start:14,end:70,pct:55,c:'blue'},
+  {n:'Stillness',s:'Harti · meditation',start:0,end:100,pct:62,c:'green'},
+  {n:'Read 12',s:'books this arc',start:30,end:96,pct:33,c:'green'},
+  {n:'Sleep Reset',s:'23:00 lights out',start:44,end:82,pct:41,c:'blue'},
+];
+const rb=document.getElementById('ribbon');
+const todayPct=58;
+arcs.forEach(a=>{
+  const row=el('div','arc-row');
+  const lab=el('div','arc-label'); lab.append(document.createTextNode(a.n), el('small',null,a.s));
+  const track=el('div','arc-track');
+  const fill=el('div','arc-fill '+a.c, a.pct+'%');
+  fill.style.left=a.start+'%'; fill.style.width=((a.end-a.start)*a.pct/100)+'%';
+  const outline=el('div','arc-outline'); outline.style.left=a.start+'%'; outline.style.width=(a.end-a.start)+'%';
+  track.append(fill, outline);
+  if(a.start<=todayPct && a.end>=todayPct){const t=el('div','arc-today'); t.style.left=todayPct+'%'; track.appendChild(t);}
+  row.append(lab, track, el('div','arc-pct',a.pct+'%'));
+  rb.appendChild(row);
+});
+
+// V3 orbit
+const orbit=document.getElementById('orbit');
+const N=31,R=150,cx=170,cy=170;
+for(let i=0;i<N;i++){
+  const ang=(i/N)*2*Math.PI - Math.PI/2;
+  const day=i+1;
+  const d=el('div','orbit-day',String(day));
+  if(day<28){const r=rnd(); d.classList.add(r<0.1?'miss':r<0.28?'partial':'done');}
+  if(day===28)d.classList.add('today','done');
+  d.style.left=(cx+Math.cos(ang)*R)+'px';
+  d.style.top=(cy+Math.sin(ang)*R)+'px';
+  orbit.appendChild(d);
+}
+
+// V4 ledger
+const items=[
+  {dd:'28',dow:'THU',st:'',t:'Today — 3 gates open',ctx:'Strength · Deep Work · Stillness',xp:'+0',today:true},
+  {dd:'27',dow:'WED',st:'done',t:'All clear',ctx:'Lifted, shipped sync fix, 20m sit',xp:'+120'},
+  {dd:'26',dow:'TUE',st:'partial',t:'2 of 3',ctx:'Skipped reading — late session',xp:'+80'},
+  {dd:'25',dow:'MON',st:'done',t:'All clear',ctx:'Deload day, full routine held',xp:'+120'},
+  {dd:'24',dow:'SUN',st:'miss',t:'Penalty',ctx:'Missed lights-out window',xp:'-40'},
+  {dd:'23',dow:'SAT',st:'done',t:'All clear',ctx:'Long run + recovery logged',xp:'+140'},
+  {dd:'22',dow:'FRI',st:'partial',t:'2 of 3',ctx:'Travel — meditation only',xp:'+70'},
+];
+const lg=document.getElementById('ledger');
+items.forEach(it=>{
+  const row=el('div','ledger-row'+(it.today?' today':''));
+  const date=el('div','ledger-date'); date.append(document.createTextNode(it.dd), el('span','dow',it.dow));
+  const tick=el('div','ledger-tick '+it.st);
+  const body=el('div','ledger-body'); body.append(el('div','t',it.t), el('div','ctx',it.ctx));
+  const meta=el('div','ledger-meta'); meta.append(el('span','xp'+(it.xp.startsWith('-')?' neg':''), it.xp+' xp'));
+  row.append(date, tick, body, meta);
+  lg.appendChild(row);
+});
+
+// V5 month — May 2026, 1st is Friday => Mon-based index 4
+const mg=document.getElementById('month');
+for(let i=0;i<4;i++)mg.appendChild(el('div','mcell empty'));
+for(let day=1;day<=31;day++){
+  const c=el('div','mcell'+(day===28?' today':''));
+  c.appendChild(el('span','n',String(day)));
+  const pips=el('div','pips');
+  if(day<=28){
+    const r=rnd();
+    pips.appendChild(el('span','pip '+(r<0.12?'miss':r<0.3?'partial':'done')));
+    if(rnd()<0.6)pips.appendChild(el('span','pip green'));
+  }
+  c.appendChild(pips);
+  mg.appendChild(c);
+}
+
+// Tabs + injected heads
+const panels=[...document.querySelectorAll('.panel')];
+const tabs=document.getElementById('tabs');
+panels.forEach((p,i)=>{
+  const b=el('button','tab'); b.setAttribute('role','tab'); b.setAttribute('aria-selected', i===0?'true':'false');
+  b.append(el('span','num','0'+(i+1)), document.createTextNode(p.dataset.name));
+  b.onclick=()=>select(i);
+  tabs.appendChild(b);
+  const head=el('div','variant-head'); head.append(el('h2',null,p.dataset.name), el('span','tag',p.dataset.tag));
+  const desc=el('p','variant-desc',p.dataset.desc);
+  p.prepend(desc); p.prepend(head);
+});
+function select(i){
+  panels.forEach((p,j)=>p.classList.toggle('active',i===j));
+  [...tabs.children].forEach((t,j)=>t.setAttribute('aria-selected',i===j?'true':'false'));
+}
+select(0);
+</script>
+</body>
+</html>
