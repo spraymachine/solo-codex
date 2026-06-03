@@ -10,7 +10,7 @@ interface GatesState {
   quests: Record<string, Quest[]>;
   loaded: boolean;
   load: (persona?: Persona) => Promise<void>;
-  createGate: (title: string, rank: Rank, options?: { date?: string; why?: string; endDate?: string }) => Promise<Gate>;
+  createGate: (title: string, rank: Rank, options?: { date?: string; why?: string; endDate?: string; difficulty?: 1 | 2 | 3 }) => Promise<Gate>;
   updateGate: (id: string, updates: Partial<Gate>) => Promise<void>;
   deleteGate: (id: string) => Promise<void>;
   createQuest: (

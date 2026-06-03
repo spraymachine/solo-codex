@@ -32,6 +32,7 @@ export interface Gate {
   id: string;
   title: string;
   rank: Rank;
+  difficulty: 1 | 2 | 3;
   date: string;
   endDate: string | null;
   why: string;

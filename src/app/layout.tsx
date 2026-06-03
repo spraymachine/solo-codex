@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, JetBrains_Mono } from "next/font/google";
+import { Barlow_Condensed, Geist, JetBrains_Mono } from "next/font/google";
 import { AuthGate } from "@/components/auth/auth-gate";
 import { SiteHeader } from "@/components/layout/site-header";
 import { StoreInitializer } from "@/components/store-initializer";
@@ -20,6 +20,12 @@ const jetbrainsMono = JetBrains_Mono({
   variable: "--font-mono",
 });
 
+const barlowCondensed = Barlow_Condensed({
+  subsets: ["latin"],
+  weight: ["600", "700"],
+  variable: "--font-display",
+});
+
 export const metadata: Metadata = {
   title: "Solo system",
   description:
@@ -35,7 +41,7 @@ export default function RootLayout({
     <html
       lang="en"
       data-scroll-behavior="smooth"
-      className={`${geist.variable} ${jetbrainsMono.variable}`}
+      className={`${geist.variable} ${jetbrainsMono.variable} ${barlowCondensed.variable}`}
     >
       <body className="font-sans antialiased">
         <AuthGate>

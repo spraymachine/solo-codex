@@ -23,14 +23,14 @@ export const personaMeta: Record<
 > = {
   mani: {
     label: "Mani",
-    accent: "#38bdf8",
-    secondary: "#7dd3fc",
+    accent: "#3b82f6",
+    secondary: "#60a5fa",
     description: "Planning, structure, and high-focus systems.",
   },
   harti: {
     label: "Harti",
-    accent: "#61c78c",
-    secondary: "#b8ebca",
+    accent: "#22c55e",
+    secondary: "#86efac",
     description: "Growth, rhythm, and steady daily momentum.",
   },
 };

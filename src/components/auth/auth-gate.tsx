@@ -111,7 +111,7 @@ export function AuthGate({ children }: PropsWithChildren) {
   if (loading) {
     return (
       <div className="flex min-h-[100dvh] items-center justify-center px-4">
-        <p className="font-mono text-xs uppercase tracking-[0.25em] text-[var(--text-secondary)]">
+        <p className="font-[family-name:var(--font-display)] text-[0.625rem] uppercase tracking-[0.18em] text-[var(--text-secondary)]">
           loading...
         </p>
       </div>

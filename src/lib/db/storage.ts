@@ -72,6 +72,7 @@ export const storage = {
   async createGate(input: {
     title: string;
     rank: Rank;
+    difficulty?: 1 | 2 | 3;
     date?: string;
     endDate?: string;
     why?: string;
@@ -81,6 +82,7 @@ export const storage = {
       id: generateId(),
       title: input.title,
       rank: input.rank,
+      difficulty: input.difficulty ?? 1,
       date: input.date ?? todayDate(),
       endDate: input.endDate ?? null,
       why: input.why ?? "",

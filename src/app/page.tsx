@@ -2,6 +2,7 @@
 
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 import { useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "@/components/auth/auth-gate";
 import { Modal } from "@/components/ui/modal";
 import {
@@ -34,16 +35,14 @@ const PERSONA_CARD_STYLE: Record<
   { activeBorder: string; activeShadow: string; heroBackground: string }
 > = {
   mani: {
-    activeBorder: "border-[#8dbdff]",
-    activeShadow: "shadow-[0_18px_44px_rgba(94,162,255,0.18)]",
-    heroBackground:
-      "bg-[linear-gradient(135deg,rgba(94,162,255,0.3),rgba(255,253,250,0.92)_40%,rgba(180,210,255,0.28))]",
+    activeBorder: "border-[#3b82f6]",
+    activeShadow: "shadow-[0_0_0_1px_rgba(59,130,246,0.35),0_18px_44px_rgba(59,130,246,0.1)]",
+    heroBackground: "bg-[linear-gradient(135deg,rgba(59,130,246,0.12),transparent_60%)]",
   },
   harti: {
-    activeBorder: "border-[#9ed8b4]",
-    activeShadow: "shadow-[0_18px_44px_rgba(97,199,140,0.18)]",
-    heroBackground:
-      "bg-[linear-gradient(135deg,rgba(97,199,140,0.3),rgba(255,253,250,0.92)_40%,rgba(184,235,202,0.28))]",
+    activeBorder: "border-[#22c55e]",
+    activeShadow: "shadow-[0_0_0_1px_rgba(34,197,94,0.35),0_18px_44px_rgba(34,197,94,0.1)]",
+    heroBackground: "bg-[linear-gradient(135deg,rgba(34,197,94,0.12),transparent_60%)]",
   },
 };
 
@@ -52,32 +51,38 @@ function SectionShell({
   title,
   children,
   className = "",
+  glowFrom = "top left",
 }: {
   eyebrow: string;
   title?: string;
   description: string;
   children: ReactNode;
   className?: string;
+  glowFrom?: string;
 }) {
   return (
     <section
-      className={`rounded-[1.5rem] border border-[var(--surface-border)] bg-[var(--bg-secondary)] p-2 ${className}`}
+      className={`section-dots overflow-hidden rounded-xl border border-[var(--surface-border)] ${className}`}
+      style={{
+        background: `radial-gradient(ellipse at ${glowFrom}, color-mix(in srgb, var(--accent-solid) 9%, var(--bg-panel)) 0%, var(--bg-panel) 55%)`,
+      }}
     >
-      <div className="rounded-[1.1rem] border border-[var(--surface-highlight)] bg-[var(--bg-panel-strong)] px-4 py-5 md:px-6 md:py-6">
-        <div className={`${title ? "mb-6 space-y-2" : "mb-6"} border-b border-[var(--surface-border)] pb-5`}>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--text-secondary)]">
-            {eyebrow}
-          </p>
-          {title ? (
-            <div className="space-y-1">
-              <h2 className="text-xl font-semibold tracking-[-0.03em] text-[var(--text-primary)] md:text-2xl">
-                {title}
-              </h2>
-            </div>
-          ) : null}
-        </div>
-        {children}
+      <div
+        className="border-b border-[var(--surface-border)] px-5 py-4 md:px-6"
+        style={{
+          background: `color-mix(in srgb, var(--accent-solid) 5%, var(--bg-panel-strong))`,
+        }}
+      >
+        <p className="font-[family-name:var(--font-display)] text-[0.625rem] font-bold uppercase tracking-[0.16em] text-[var(--accent-solid)]">
+          {eyebrow}
+        </p>
+        {title ? (
+          <h2 className="mt-1 font-[family-name:var(--font-display)] text-xl font-bold tracking-[0.02em] text-[var(--text-primary)] md:text-2xl">
+            {title}
+          </h2>
+        ) : null}
       </div>
+      <div className="px-5 py-5 md:px-6 md:py-6">{children}</div>
     </section>
   );
 }
@@ -89,7 +94,7 @@ function ActionButton({
 }: ButtonHTMLAttributes<HTMLButtonElement> & { className?: string }) {
   return (
     <button
-      className={`inline-flex items-center justify-center rounded-md border border-[var(--surface-border)] bg-[var(--text-primary)] px-4 py-2 text-sm font-medium text-[var(--bg-panel)] transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:opacity-90 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+      className={`inline-flex items-center justify-center rounded-lg bg-[var(--accent-solid)] px-4 py-2 text-sm font-semibold text-white transition-all duration-200 hover:opacity-85 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 ${className}`}
       {...props}
     >
       {children}
@@ -104,7 +109,7 @@ function GhostButton({
 }: ButtonHTMLAttributes<HTMLButtonElement> & { className?: string }) {
   return (
     <button
-      className={`inline-flex items-center justify-center rounded-md border border-[var(--surface-border)] bg-[var(--bg-panel)] px-3 py-2 text-sm font-medium text-[var(--text-primary)] transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-[var(--bg-panel-strong)] active:scale-[0.98] ${className}`}
+      className={`inline-flex items-center justify-center rounded-lg border border-[var(--surface-border)] bg-transparent px-3 py-2 text-sm font-medium text-[var(--text-secondary)] transition-colors duration-200 hover:border-[var(--accent-solid)]/40 hover:text-[var(--text-primary)] active:scale-[0.98] ${className}`}
       {...props}
     >
       {children}
@@ -134,7 +139,7 @@ function ResponsiveEntryField({
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
         rows={2}
-        className="min-h-[64px] w-full resize-none rounded-2xl border border-[var(--textarea-border)] bg-[var(--textarea-bg)] px-6 py-3 text-sm leading-6 text-[var(--text-primary)] shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] placeholder:text-[var(--text-secondary)] outline-none transition-all duration-300 focus:bg-[var(--bg-panel)] focus:border-[var(--accent-solid)] md:hidden"
+        className="min-h-[64px] w-full resize-none rounded-2xl border border-[var(--textarea-border)] bg-[var(--textarea-bg)] px-6 py-3 text-sm leading-6 text-[var(--text-primary)] shadow-none placeholder:text-[var(--text-secondary)] outline-none transition-all duration-300 focus:bg-[var(--bg-panel)] focus:border-[var(--accent-solid)] md:hidden"
       />
       <input
         value={value}
@@ -198,19 +203,31 @@ function formatCalendarRange(startDate: string, endDate: string) {
 function getGoalRankTone(rank: Gate["rank"]) {
   switch (rank) {
     case "S":
-      return "text-[#7a4a00]";
+      return "text-[#f5c842]";
     case "A":
-      return "text-[#1f6c9f]";
+      return "text-[#60a5fa]";
     case "B":
-      return "text-[#346538]";
+      return "text-[#4ade80]";
     case "C":
-      return "text-[#956400]";
+      return "text-[#fb923c]";
     case "D":
-      return "text-[#9f2f2d]";
+      return "text-[#f87171]";
     case "E":
-      return "text-[#6c5b4f]";
+      return "text-[#9ca3af]";
     default:
       return "text-[var(--text-primary)]";
+  }
+}
+
+function getArcRankColor(rank: Gate["rank"]) {
+  switch (rank) {
+    case "S": return "#e8c840";
+    case "A": return "#5ea2ff";
+    case "B": return "#61c78c";
+    case "C": return "#c8a000";
+    case "D": return "#e05c5a";
+    case "E": return "#a89080";
+    default:  return "#ccc";
   }
 }
 
@@ -235,6 +252,54 @@ function getArcTimeProgress(startDate: string, endDate: string | null): { pct: n
   const pct = total <= 0 ? 0 : Math.min(100, Math.max(0, Math.round((elapsed / total) * 100)));
   const dueLabel = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(end);
   return { pct, dueLabel };
+}
+
+function ArcLegend() {
+  const rankColors: Record<Gate["rank"], string> = {
+    S: "#e8c840",
+    A: "#5ea2ff",
+    E: "#a89080",
+    B: "#61c78c",
+    C: "#c8a000",
+    D: "#e05c5a",
+  };
+
+  return (
+    <div className="space-y-3">
+      <div>
+        <p className="text-[0.625rem] font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)] mb-2">Priority</p>
+        <div className="grid grid-cols-3 gap-1.5">
+          {[
+            { rank: "S" as const, label: "S - Critical" },
+            { rank: "A" as const, label: "A - High" },
+            { rank: "E" as const, label: "E - Normal" },
+          ].map(({ rank, label }) => (
+            <div key={rank} className="text-[0.625rem] flex items-center gap-1.5">
+              <div
+                className="h-2 w-2 rounded-full shrink-0"
+                style={{ backgroundColor: rankColors[rank] }}
+              />
+              <span className="text-[var(--text-secondary)]">{label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <p className="text-[0.625rem] font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)] mb-2">Difficulty</p>
+        <div className="space-y-1">
+          {[
+            { level: 1, label: "1 - Easy" },
+            { level: 2, label: "2 - Medium" },
+            { level: 3, label: "3 - Hard" },
+          ].map(({ level, label }) => (
+            <div key={level} className="text-[0.625rem] text-[var(--text-secondary)]">
+              {label}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function buildMonthDates(year: number, month: number): string[] {
@@ -274,13 +339,13 @@ function ReflectionEditor({
 
   if (!isEditing && initialReflection?.reflect) {
     return (
-      <div className="rounded-[1.3rem] border border-[var(--surface-border)] bg-[var(--bg-panel)] px-5 py-5 md:px-6 md:py-6">
+      <div className="rounded-xl border border-[var(--surface-border)] bg-[var(--bg-secondary)] px-5 py-5 md:px-6 md:py-6">
         <div className="flex items-start justify-between gap-4 border-b border-[var(--surface-border)] pb-4">
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--text-secondary)]">
+            <p className="text-[0.625rem] font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)]">
               Saved reflection
             </p>
-            <p className="mt-2 text-lg font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
+            <p className="mt-2 font-[family-name:var(--font-display)] text-xl font-bold tracking-[0.02em] text-[var(--text-primary)]">
               Journal entry captured
             </p>
           </div>
@@ -301,7 +366,7 @@ function ReflectionEditor({
         value={reflect}
         onChange={(event) => setReflect(event.target.value)}
         placeholder="Reflect on the day…"
-        className="min-h-[220px] w-full resize-none rounded-2xl border border-[var(--textarea-border)] bg-[var(--textarea-bg)] px-5 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] md:px-4 md:py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] outline-none transition-all duration-300 focus:bg-[var(--bg-panel)] focus:border-[var(--accent-solid)]"
+        className="min-h-[220px] w-full resize-none rounded-2xl border border-[var(--textarea-border)] bg-[var(--textarea-bg)] px-5 py-4 shadow-none md:px-4 md:py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] outline-none transition-all duration-300 focus:bg-[var(--bg-panel)] focus:border-[var(--accent-solid)]"
       />
       <ActionButton onClick={() => void handleSave()} className="self-start">
         Save
@@ -337,13 +402,11 @@ function GoalPlannerModal({
     return null;
   }
 
-  const ranks = ["S", "A", "B", "C", "D", "E"] as const;
-
   return (
     <Modal open={Boolean(goal)} onClose={onClose} title="GOAL PLANNER">
       <div className="space-y-5">
         <div className="grid gap-2">
-          <label className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--text-secondary)]">
+          <label className="text-[0.625rem] font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)]">
             Main task
           </label>
           <input
@@ -354,35 +417,10 @@ function GoalPlannerModal({
           />
         </div>
 
-        <div className="grid gap-2">
-          <label className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--text-secondary)]">
-            Rank
-          </label>
-          <div className="grid grid-cols-6 gap-2">
-            {ranks.map((rank) => {
-              const active = goal.rank === rank;
-              return (
-                <button
-                  key={rank}
-                  type="button"
-                  onClick={() => void onUpdateGoal(goal.id, { rank })}
-                  className={`h-11 border text-sm font-semibold transition-colors duration-300 ${
-                    active
-                      ? "border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--bg-panel)]"
-                      : "border-[var(--surface-border)] bg-[var(--bg-panel)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                  }`}
-                >
-                  {rank}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
         <div className="grid gap-3">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--text-secondary)]">
+              <p className="text-[0.625rem] font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)]">
                 Goal steps
               </p>
               <p className="mt-1 text-xs text-[var(--text-secondary)]">
@@ -424,7 +462,7 @@ function GoalPlannerModal({
 
           <div className="space-y-2">
             {goal.subTodos.length === 0 ? (
-              <div className="border border-dashed border-[var(--surface-border)] bg-[var(--bg-panel)] px-4 py-4 text-sm text-[var(--text-secondary)]">
+              <div className="rounded-lg border border-dashed border-[var(--surface-border)] bg-[var(--bg-secondary)] px-4 py-4 text-sm text-[var(--text-secondary)]">
                 No steps yet. Add the parts of this goal that you want to send into daily todos.
               </div>
             ) : (
@@ -434,7 +472,7 @@ function GoalPlannerModal({
                 return (
                   <div
                     key={subTodo.id}
-                    className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-3 border border-[var(--surface-border)] bg-[var(--bg-panel)] px-3 py-3 sm:px-4"
+                    className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-3 rounded-lg border border-[var(--surface-border)] bg-[var(--bg-secondary)] px-3 py-3 sm:px-4"
                   >
                     <button
                       type="button"
@@ -442,8 +480,8 @@ function GoalPlannerModal({
                       onClick={() => void onToggleSubTodo(goal.id, subTodo.id)}
                       className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors duration-300 ${
                         subTodo.completed
-                          ? "border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--bg-panel)]"
-                          : "border-black/12 bg-white text-transparent"
+                          ? "border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--bg-primary)]"
+                          : "border-[var(--checkbox-border)] bg-transparent text-transparent"
                       }`}
                     >
                       <svg viewBox="0 0 16 16" className="h-3.5 w-3.5 fill-none stroke-current">
@@ -501,11 +539,13 @@ function CreateArcModal({
   open: boolean;
   today: string;
   onClose: () => void;
-  onCreate: (title: string, rank: Gate["rank"], startDate: string, endDate: string) => Promise<void>;
+  onCreate: (title: string, rank: Gate["rank"], difficulty: Gate["difficulty"], startDate: string, endDate: string) => Promise<void>;
 }) {
-  const ranks = ["S", "A", "B", "C", "D", "E"] as const;
+  const ranks = ["S", "A", "E"] as const;
+  const difficulties = [1, 2, 3] as const;
   const [title, setTitle] = useState("");
   const [rank, setRank] = useState<Gate["rank"]>("A");
+  const [difficulty, setDifficulty] = useState<Gate["difficulty"]>(1);
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(shiftDate(today, 21));
   const [submitting, setSubmitting] = useState(false);
@@ -513,9 +553,10 @@ function CreateArcModal({
   async function handleSubmit() {
     if (!title.trim() || !startDate || !endDate || endDate <= startDate) return;
     setSubmitting(true);
-    await onCreate(title.trim(), rank, startDate, endDate);
+    await onCreate(title.trim(), rank, difficulty, startDate, endDate);
     setTitle("");
     setRank("A");
+    setDifficulty(1);
     setStartDate(today);
     setEndDate(shiftDate(today, 21));
     setSubmitting(false);
@@ -526,7 +567,7 @@ function CreateArcModal({
     <Modal open={open} onClose={onClose} title="CREATE ARC">
       <div className="space-y-5">
         <div className="grid gap-2">
-          <label className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--text-secondary)]">Arc name</label>
+          <label className="text-[0.625rem] font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)]">Arc name</label>
           <input
             value={title}
             onChange={e => setTitle(e.target.value)}
@@ -537,8 +578,8 @@ function CreateArcModal({
           />
         </div>
         <div className="grid gap-2">
-          <label className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--text-secondary)]">Rank</label>
-          <div className="grid grid-cols-6 gap-2">
+          <label className="text-[0.625rem] font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)]">Priority rank</label>
+          <div className="grid grid-cols-3 gap-2">
             {ranks.map(r => (
               <button key={r} type="button" onClick={() => setRank(r)}
                 className={`h-11 border text-sm font-semibold transition-colors duration-300 ${
@@ -550,20 +591,123 @@ function CreateArcModal({
             ))}
           </div>
         </div>
+        <div className="grid gap-2">
+          <label className="text-[0.625rem] font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)]">Difficulty</label>
+          <div className="grid grid-cols-3 gap-2">
+            {difficulties.map(d => (
+              <button key={d} type="button" onClick={() => setDifficulty(d)}
+                className={`h-11 border text-sm font-semibold transition-colors duration-300 ${
+                  difficulty === d
+                    ? "border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--bg-panel)]"
+                    : "border-[var(--surface-border)] bg-[var(--bg-panel)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                }`}
+              >{d}</button>
+            ))}
+          </div>
+        </div>
         <div className="grid grid-cols-2 gap-4">
           <div className="grid gap-2">
-            <label className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--text-secondary)]">Start date</label>
+            <label className="text-[0.625rem] font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)]">Start date</label>
             <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
               className="w-full rounded-xl border border-[var(--surface-border)] bg-[var(--bg-panel)] px-4 py-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent-solid)]" />
           </div>
           <div className="grid gap-2">
-            <label className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--text-secondary)]">End date</label>
+            <label className="text-[0.625rem] font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)]">End date</label>
             <input type="date" value={endDate} min={startDate} onChange={e => setEndDate(e.target.value)}
               className="w-full rounded-xl border border-[var(--surface-border)] bg-[var(--bg-panel)] px-4 py-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent-solid)]" />
           </div>
         </div>
         <ActionButton onClick={() => void handleSubmit()} disabled={submitting || !title.trim() || !endDate || endDate <= startDate} className="w-full">
           {submitting ? "Creating…" : "Create arc"}
+        </ActionButton>
+      </div>
+    </Modal>
+  );
+}
+
+function EditArcModal({
+  arc,
+  onClose,
+  onUpdate,
+}: {
+  arc: Gate | null;
+  onClose: () => void;
+  onUpdate: (arcId: string, updates: Partial<Gate>) => Promise<void>;
+}) {
+  const ranks = ["S", "A", "E"] as const;
+  const difficulties = [1, 2, 3] as const;
+  const [title, setTitle] = useState(arc?.title ?? "");
+  const [rank, setRank] = useState<Gate["rank"]>(arc?.rank ?? "A");
+  const [difficulty, setDifficulty] = useState<Gate["difficulty"]>(arc?.difficulty ?? 1);
+  const [startDate, setStartDate] = useState(arc?.date ?? "");
+  const [endDate, setEndDate] = useState(arc?.endDate ?? "");
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleSubmit() {
+    if (!arc || !title.trim() || !startDate || !endDate || endDate <= startDate) return;
+    setSubmitting(true);
+    await onUpdate(arc.id, { title: title.trim(), rank, difficulty, date: startDate, endDate });
+    setSubmitting(false);
+    onClose();
+  }
+
+  if (!arc) return null;
+
+  return (
+    <Modal open={Boolean(arc)} onClose={onClose} title="EDIT ARC">
+      <div className="space-y-5">
+        <div className="grid gap-2">
+          <label className="text-[0.625rem] font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)]">Arc name</label>
+          <input
+            value={title}
+            onChange={e => setTitle(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter") void handleSubmit(); }}
+            className="w-full rounded-xl border border-[var(--surface-border)] bg-[var(--bg-panel)] px-4 py-3 text-base font-medium text-[var(--text-primary)] outline-none focus:border-[var(--accent-solid)]"
+            autoFocus
+          />
+        </div>
+        <div className="grid gap-2">
+          <label className="text-[0.625rem] font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)]">Priority rank</label>
+          <div className="grid grid-cols-3 gap-2">
+            {ranks.map(r => (
+              <button key={r} type="button" onClick={() => setRank(r)}
+                className={`h-11 border text-sm font-semibold transition-colors duration-300 ${
+                  rank === r
+                    ? "border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--bg-panel)]"
+                    : "border-[var(--surface-border)] bg-[var(--bg-panel)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                }`}
+              >{r}</button>
+            ))}
+          </div>
+        </div>
+        <div className="grid gap-2">
+          <label className="text-[0.625rem] font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)]">Difficulty</label>
+          <div className="grid grid-cols-3 gap-2">
+            {difficulties.map(d => (
+              <button key={d} type="button" onClick={() => setDifficulty(d)}
+                className={`h-11 border text-sm font-semibold transition-colors duration-300 ${
+                  difficulty === d
+                    ? "border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--bg-panel)]"
+                    : "border-[var(--surface-border)] bg-[var(--bg-panel)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                }`}
+              >{d}</button>
+            ))}
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="grid gap-2">
+            <label className="text-[0.625rem] font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)]">Start date</label>
+            <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
+              className="w-full rounded-xl border border-[var(--surface-border)] bg-[var(--bg-panel)] px-4 py-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent-solid)]" />
+          </div>
+          <div className="grid gap-2">
+            <label className="text-[0.625rem] font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)]">End date</label>
+            <input type="date" value={endDate} min={startDate} onChange={e => setEndDate(e.target.value)}
+              className="w-full rounded-xl border border-[var(--surface-border)] bg-[var(--bg-panel)] px-4 py-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent-solid)]" />
+          </div>
+        </div>
+        <ActionButton onClick={() => void handleSubmit()} disabled={submitting || !title.trim() || !endDate || endDate <= startDate} className="w-full">
+          {submitting ? "Updating…" : "Update arc"}
         </ActionButton>
       </div>
     </Modal>
@@ -602,6 +746,7 @@ export default function HomePage() {
   const [gratitudeDraft, setGratitudeDraft] = useState("");
   const [quickLogDraft, setQuickLogDraft] = useState("");
   const [activeGoalId, setActiveGoalId] = useState<string | null>(null);
+  const [editingArcId, setEditingArcId] = useState<string | null>(null);
   const [showCreateArc, setShowCreateArc] = useState(false);
   const [viewedMonth, setViewedMonth] = useState<{ year: number; month: number }>(() => {
     const now = new Date();
@@ -781,9 +926,17 @@ export default function HomePage() {
   if (!allowedPersonas.includes(activePersona)) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <p className="font-mono text-xs uppercase tracking-[0.25em] text-[var(--text-secondary)]">
-          loading page...
-        </p>
+        <div className="flex flex-col items-center gap-3">
+          <motion.div
+            className="h-[2px] w-14 rounded-full bg-[var(--accent-solid)]"
+            animate={{ scaleX: [0.2, 1, 0.2], opacity: [0.4, 1, 0.4] }}
+            transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+            style={{ originX: 0.5 }}
+          />
+          <p className="font-[family-name:var(--font-display)] text-[0.625rem] uppercase tracking-[0.18em] text-[var(--text-secondary)]">
+            initializing
+          </p>
+        </div>
       </div>
     );
   }
@@ -791,66 +944,77 @@ export default function HomePage() {
   return (
     <div className="mx-auto max-w-[1220px] space-y-8 pb-8 md:space-y-10">
       <section
-        className={`rounded-[2rem] border border-[var(--surface-border)] p-2 transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] ${PERSONA_CARD_STYLE[activePersona].heroBackground}`}
+        className={`section-dots overflow-hidden rounded-2xl border transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] ${PERSONA_CARD_STYLE[activePersona].heroBackground} border-[var(--surface-border)]`}
+        style={{
+          background: `radial-gradient(ellipse at top left, color-mix(in srgb, var(--accent-solid) 14%, var(--bg-panel)) 0%, var(--bg-panel) 55%)`,
+        }}
       >
-        <div className="rounded-[1.6rem] border border-[var(--surface-highlight)] bg-[var(--bg-panel-strong)] px-4 py-5 md:px-6 md:py-6">
-          <div className="grid gap-3 md:grid-cols-2">
-            {allowedPersonas.map((persona) => {
-              const meta = personaMeta[persona];
-              const isActive = activePersona === persona;
-              const accentClasses = isActive
-                ? `${PERSONA_CARD_STYLE[persona].activeBorder} bg-[color:color-mix(in_srgb,var(--accent-solid)_16%,var(--bg-panel))]`
-                : "border-[var(--surface-border)] bg-[var(--bg-panel)]";
-              const glowClasses = isActive
-                ? PERSONA_CARD_STYLE[persona].activeShadow
-                : "shadow-[0_10px_24px_rgba(0,0,0,0.03)]";
+        <div className="grid gap-2 p-3 md:grid-cols-2 md:p-4">
+          {allowedPersonas.map((persona) => {
+            const meta = personaMeta[persona];
+            const isActive = activePersona === persona;
+            const accentClasses = isActive
+              ? `${PERSONA_CARD_STYLE[persona].activeBorder} border-2 bg-[var(--bg-panel-strong)]`
+              : "border border-[var(--surface-border)] bg-[var(--bg-secondary)]";
+            const glowClasses = isActive
+              ? PERSONA_CARD_STYLE[persona].activeShadow
+              : "";
 
-              return (
-                <button
-                  type="button"
-                  key={persona}
-                  onClick={(event) => {
-                    setActivePersona(persona);
-                    if (event.detail >= 2) {
-                      selectCurrentDate();
-                    }
-                  }}
-                  onDoubleClick={() => selectCurrentDate()}
-                  className={`rounded-[1.35rem] border px-4 py-5 text-left transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.99] md:px-6 md:py-6 ${accentClasses} ${glowClasses}`}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--text-secondary)]">
-                      {meta.label}
-                    </p>
-                    <span
-                      className="h-2 w-6 rounded-full"
-                      style={{ backgroundColor: meta.accent }}
-                    />
-                  </div>
-                  <p className="mt-3 text-4xl font-semibold tracking-[-0.04em] text-[var(--text-primary)] md:text-5xl">
-                    {getPersonaWhy(persona)}
+            return (
+              <button
+                type="button"
+                key={persona}
+                onClick={(event) => {
+                  setActivePersona(persona);
+                  if (event.detail >= 2) {
+                    selectCurrentDate();
+                  }
+                }}
+                onDoubleClick={() => selectCurrentDate()}
+                className={`rounded-xl px-5 py-5 text-left transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.99] md:px-6 md:py-6 ${accentClasses} ${glowClasses}`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <p className="font-[family-name:var(--font-display)] text-[0.625rem] font-bold uppercase tracking-[0.16em] text-[var(--text-secondary)]">
+                    {meta.label}
                   </p>
-                  <p className="mt-2 text-right text-base font-semibold tracking-[-0.02em] text-black md:text-lg">
-                    {personaDateLabel}
-                  </p>
-                </button>
-              );
-            })}
-          </div>
+                  <span
+                    className="mt-0.5 h-1.5 w-1.5 rounded-full"
+                    style={{ backgroundColor: meta.accent }}
+                  />
+                </div>
+                <p className="mt-4 font-[family-name:var(--font-display)] text-6xl font-bold tracking-[0.01em] text-[var(--text-primary)] leading-none md:text-7xl">
+                  {getPersonaWhy(persona)}
+                </p>
+                <p className="mt-3 font-mono text-xs tabular-nums text-[var(--text-secondary)]">
+                  {personaDateLabel}
+                </p>
+              </button>
+            );
+          })}
         </div>
       </section>
 
       {/* ── Quick log ──────────────────────────────────────────────────────── */}
-      <section className="rounded-[1.5rem] border border-[var(--surface-border)] bg-[var(--bg-secondary)] p-2">
-        <div className="rounded-[1.1rem] border border-[var(--surface-highlight)] bg-[var(--bg-panel-strong)] px-4 py-4 md:px-6 md:py-5">
-          <div className="mb-3 flex items-center justify-between">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--text-secondary)]">
-              Quick log
-            </p>
-            <p className="font-mono text-[10px] tabular-nums text-[var(--text-secondary)]">
-              {currentTime}
-            </p>
-          </div>
+      <section
+        className="section-dots overflow-hidden rounded-xl border border-[var(--surface-border)]"
+        style={{
+          background: `radial-gradient(ellipse at top right, color-mix(in srgb, var(--accent-solid) 9%, var(--bg-panel)) 0%, var(--bg-panel) 55%)`,
+        }}
+      >
+        <div
+          className="flex items-center justify-between border-b border-[var(--surface-border)] px-5 py-4 md:px-6"
+          style={{
+            background: `color-mix(in srgb, var(--accent-solid) 5%, var(--bg-panel-strong))`,
+          }}
+        >
+          <p className="font-[family-name:var(--font-display)] text-[0.625rem] font-bold uppercase tracking-[0.16em] text-[var(--accent-solid)]">
+            Quick log
+          </p>
+          <p className="font-mono text-[10px] tabular-nums text-[var(--text-secondary)]">
+            {currentTime}
+          </p>
+        </div>
+        <div className="px-5 py-5 md:px-6 md:py-5">
           <div className="flex flex-col gap-4 md:flex-row md:gap-3">
             <ResponsiveEntryField
               value={quickLogDraft}
@@ -884,8 +1048,9 @@ export default function HomePage() {
       </section>
 
       <SectionShell
-        eyebrow="01 Daily list"
-        description="Everything here belongs to the selected date only. Add it, cross it off, or remove it without leaking into another day."
+        eyebrow="Daily"
+        description="Everything here belongs to the selected date only."
+        glowFrom="top right"
       >
         <div className="flex flex-col gap-4 md:flex-row md:gap-3">
           <ResponsiveEntryField
@@ -901,8 +1066,9 @@ export default function HomePage() {
 
         <div className="mt-6 space-y-3">
           {dayTodos.length === 0 ? (
-            <div className="rounded-[1rem] border border-dashed border-[var(--surface-border)] bg-[var(--bg-panel)] px-4 py-6 text-sm text-[var(--text-secondary)]">
-              No todo is planned for {formatHumanDate(selectedDate)} yet.
+            <div className="rounded-lg border border-dashed border-[var(--surface-border)] bg-[var(--bg-secondary)] px-4 py-6">
+              <p className="text-sm text-[var(--text-secondary)]">No missions for {formatHumanDate(selectedDate)}.</p>
+              <p className="mt-1 text-[0.625rem] uppercase tracking-[0.14em] text-[var(--text-secondary)] opacity-50">Set one to begin</p>
             </div>
           ) : (
             dayTodos.map((mission) => {
@@ -911,7 +1077,7 @@ export default function HomePage() {
               return (
                 <div
                   key={mission.id}
-                  className="flex items-center gap-3 rounded-[1rem] border border-[var(--surface-border)] bg-[var(--bg-panel)] px-4 py-3"
+                  className="flex items-center gap-3 rounded-lg border border-[var(--surface-border)] bg-[var(--bg-secondary)] px-4 py-3"
                 >
                   <button
                     type="button"
@@ -919,19 +1085,36 @@ export default function HomePage() {
                     onClick={() => void handleToggleTodo(mission.id, !complete)}
                     className="flex min-w-0 flex-1 items-center gap-3 text-left"
                   >
-                    <span
-                      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors duration-300 ${
-                        complete ? "border-[#111111] bg-[#111111] text-white" : "border-black/12 bg-white text-transparent"
+                    <motion.span
+                      animate={complete ? { scale: [1, 1.3, 1] } : { scale: 1 }}
+                      transition={{ type: "spring", stiffness: 500, damping: 18, duration: 0.3 }}
+                      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors duration-200 ${
+                        complete ? "border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--bg-primary)]" : "border-[var(--checkbox-border)] bg-transparent"
                       }`}
                     >
-                    </span>
-                    <p
-                      className={`min-w-0 text-sm font-medium text-[var(--text-primary)] transition-opacity duration-300 ${
-                        complete ? "line-through opacity-45" : ""
-                      }`}
+                      <AnimatePresence>
+                        {complete && (
+                          <motion.svg
+                            key="check"
+                            initial={{ scale: 0, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0, opacity: 0 }}
+                            transition={{ type: "spring", stiffness: 600, damping: 22, delay: 0.04 }}
+                            viewBox="0 0 16 16"
+                            className="h-3 w-3 fill-none stroke-current"
+                          >
+                            <path d="M3.5 8.2 6.6 11l5.9-6.2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          </motion.svg>
+                        )}
+                      </AnimatePresence>
+                    </motion.span>
+                    <motion.p
+                      animate={{ opacity: complete ? 0.38 : 1 }}
+                      transition={{ duration: 0.25 }}
+                      className={`min-w-0 text-sm font-medium text-[var(--text-primary)] ${complete ? "line-through" : ""}`}
                     >
                       {mission.title}
-                    </p>
+                    </motion.p>
                   </button>
 
                   <button
@@ -950,11 +1133,12 @@ export default function HomePage() {
       </SectionShell>
 
       <SectionShell
-        eyebrow="02 Arcs"
+        eyebrow="Arcs"
         description="Each arc is a goal with a time window and trackable steps."
+        glowFrom="bottom left"
       >
         <div className="flex items-center justify-between mb-6">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--text-secondary)]">
+          <p className="text-[0.625rem] font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)]">
             {arcGoals.length} arc{arcGoals.length !== 1 ? "s" : ""}
           </p>
           <ActionButton onClick={() => setShowCreateArc(true)}>
@@ -963,8 +1147,9 @@ export default function HomePage() {
         </div>
         <div className="grid gap-3 md:grid-cols-2">
           {arcGoals.length === 0 ? (
-            <div className="rounded-[1rem] border border-dashed border-[var(--surface-border)] bg-[var(--bg-panel)] px-4 py-6 text-sm text-[var(--text-secondary)] md:col-span-2">
-              No arcs yet. Create one to start tracking.
+            <div className="rounded-lg border border-dashed border-[var(--surface-border)] bg-[var(--bg-secondary)] px-4 py-6 md:col-span-2">
+              <p className="text-sm text-[var(--text-secondary)]">No active arcs.</p>
+              <p className="mt-1 text-[0.625rem] uppercase tracking-[0.14em] text-[var(--text-secondary)] opacity-50">Launch one to track a goal over time</p>
             </div>
           ) : (
             arcGoals.map((goal) => {
@@ -972,7 +1157,7 @@ export default function HomePage() {
               const completedSteps = goal.subTodos.filter(s => s.completed).length;
               const totalSteps = goal.subTodos.length;
               const stepsPct = totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : 0;
-              const remaining = totalSteps - completedSteps;
+              const rankColor = getArcRankColor(goal.rank);
               return (
                 <div
                   key={goal.id}
@@ -985,68 +1170,99 @@ export default function HomePage() {
                       setActiveGoalId(goal.id);
                     }
                   }}
-                  className="relative cursor-pointer overflow-hidden rounded-[1rem] border border-[var(--surface-border)] bg-[var(--bg-panel)] transition-colors duration-300 hover:bg-[var(--bg-panel-strong)] flex"
+                  className="relative cursor-pointer overflow-hidden rounded-xl border border-[var(--surface-border)] bg-[var(--bg-secondary)] transition-all duration-200 hover:bg-[var(--bg-panel-strong)]"
+                  style={{ borderTop: `2px solid ${rankColor}` }}
                 >
-                  {/* Rank stripe */}
-                  <div
-                    className="w-[5px] shrink-0"
-                    style={{ background: getArcStripeColor(goal.rank) }}
-                  />
-
-                  <div className="flex-1 px-4 py-4">
-                    {/* Header */}
-                    <div className="flex items-start justify-between gap-3 mb-2">
-                      <p className="text-xl font-semibold tracking-[-0.05em] text-[var(--text-primary)] md:text-2xl">
+                  <div className="px-5 pt-5 pb-4">
+                    {/* Title row */}
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="font-[family-name:var(--font-display)] text-2xl font-bold tracking-[0.02em] text-[var(--text-primary)] leading-snug">
                         {goal.title}
                       </p>
-                      <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] ${
-                        goal.status === "cleared" ? "bg-[#edf3ec] text-[#346538]" : "bg-[#e1f3fe] text-[#1f6c9f]"
-                      }`}>
-                        {goal.status === "cleared" ? "Cleared" : "Active"}
+                      <div className="flex items-center gap-1 shrink-0 -mt-0.5 -mr-1">
+                        <button
+                          type="button"
+                          aria-label="Edit arc"
+                          onClick={(event) => { event.stopPropagation(); setEditingArcId(goal.id); }}
+                          className="flex h-7 w-7 items-center justify-center rounded-md text-[var(--text-secondary)] transition-colors duration-150 hover:bg-[var(--bg-panel)] hover:text-[var(--text-primary)]"
+                        >
+                          <svg viewBox="0 0 16 16" className="h-3.5 w-3.5 fill-none stroke-current" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M11.5 2.5a1.414 1.414 0 0 1 2 2L5 13H3v-2L11.5 2.5Z" />
+                          </svg>
+                        </button>
+                        <button
+                          type="button"
+                          aria-label="Delete arc"
+                          onClick={(event) => { event.stopPropagation(); void deleteGate(goal.id); }}
+                          className="flex h-7 w-7 items-center justify-center rounded-md text-[var(--text-secondary)] transition-colors duration-150 hover:bg-[var(--bg-panel)] hover:text-[var(--text-primary)]"
+                        >
+                          <svg viewBox="0 0 16 16" className="h-3.5 w-3.5 fill-none stroke-current" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M3 4h10M6 4V2.5h4V4M5.5 4l.5 9h4l.5-9" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Single meta line */}
+                    <div className="mt-3 flex items-center gap-1.5 flex-wrap">
+                      <span className="flex items-center gap-1 text-[0.625rem] font-semibold uppercase tracking-[0.1em] text-[var(--text-secondary)]">
+                        <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ backgroundColor: rankColor }} />
+                        {goal.rank}
+                      </span>
+                      <span className="text-[var(--surface-border)] select-none">·</span>
+                      <span className="text-[0.625rem] font-semibold uppercase tracking-[0.1em] text-[var(--text-secondary)]">D{goal.difficulty}</span>
+                      <span className="text-[var(--surface-border)] select-none">·</span>
+                      <span className="text-[0.625rem] text-[var(--text-secondary)]">
+                        {formatCalendarRange(goal.date, goal.endDate ?? shiftDate(goal.date, 21))}
+                      </span>
+                      <span className="ml-auto shrink-0">
+                        <span className={`rounded-full px-2 py-0.5 text-[0.625rem] font-semibold uppercase tracking-[0.1em] ${
+                          goal.status === "cleared"
+                            ? "bg-[rgba(74,222,128,0.1)] text-[#4ade80]"
+                            : "bg-[rgba(96,165,250,0.08)] text-[#60a5fa]"
+                        }`}>
+                          {goal.status === "cleared" ? "Cleared" : "Active"}
+                        </span>
                       </span>
                     </div>
+                  </div>
 
-                    {/* Date + rank label */}
-                    <p className="text-[10px] text-[var(--text-secondary)] mb-3 tracking-[0.04em]">
-                      {formatCalendarRange(goal.date, goal.endDate ?? shiftDate(goal.date, 21))} · {goal.rank} Rank
-                    </p>
-
-                    {/* Stat tiles */}
-                    <div className="grid grid-cols-2 gap-2">
-                      {/* Time tile */}
-                      <div className="rounded-[0.625rem] bg-[var(--bg-secondary)] px-3 py-2.5">
-                        <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[var(--text-secondary)] mb-1.5">Time elapsed</p>
-                        <p className="text-lg font-semibold tracking-[-0.04em] text-[var(--text-primary)] mb-1.5">{timePct}%</p>
-                        <div className="h-1 rounded-full bg-[var(--surface-soft)] overflow-hidden">
-                          <div className="h-full rounded-full bg-[var(--text-primary)] transition-all duration-500" style={{ width: `${Math.max(timePct, 2)}%` }} />
-                        </div>
-                        <p className="text-[9px] text-[var(--text-secondary)] mt-1.5">Due {dueLabel}</p>
+                  {/* Progress rows */}
+                  <div className="border-t border-[var(--surface-border)] px-5 py-4 space-y-4">
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[11px] tabular-nums text-[var(--text-secondary)]">
+                          {new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(new Date(`${goal.date}T12:00:00`))}
+                        </span>
+                        <span className="text-[11px] tabular-nums text-[var(--text-secondary)]">{dueLabel}</span>
                       </div>
-                      {/* Steps tile */}
-                      <div className="rounded-[0.625rem] bg-[#f0f6ff] px-3 py-2.5">
-                        <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#5ea2ff] mb-1.5">Steps done</p>
-                        <p className="text-lg font-semibold tracking-[-0.04em] text-[var(--text-primary)] mb-1.5">
-                          {totalSteps === 0 ? "—" : `${completedSteps}/${totalSteps}`}
-                        </p>
-                        <div className="h-1 rounded-full bg-[#d0e6ff] overflow-hidden">
-                          <div className="h-full rounded-full bg-[#5ea2ff] transition-all duration-500" style={{ width: `${Math.max(stepsPct, totalSteps > 0 ? 2 : 0)}%` }} />
-                        </div>
-                        <p className="text-[9px] text-[#5ea2ff] mt-1.5">
-                          {totalSteps === 0 ? "No steps added" : `${remaining} remaining`}
-                        </p>
+                      <div className="h-[3px] rounded-full overflow-hidden" style={{ backgroundColor: "rgba(249,115,22,0.22)" }}>
+                        <div
+                          className="h-full rounded-full transition-all duration-500"
+                          style={{ width: `${Math.max(timePct, 2)}%`, backgroundColor: "#f97316" }}
+                        />
                       </div>
                     </div>
-
-                    {/* Delete button */}
-                    <div className="mt-3 flex justify-end">
-                      <GhostButton
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          void deleteGate(goal.id);
-                        }}
-                      >
-                        Delete
-                      </GhostButton>
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[0.625rem] font-semibold uppercase tracking-[0.1em] text-[var(--text-secondary)]">Steps</span>
+                        <span className="text-[0.625rem] tabular-nums text-[var(--text-secondary)]">
+                          {totalSteps === 0 ? "none added" : `${completedSteps} / ${totalSteps}`}
+                        </span>
+                      </div>
+                      <div className="flex gap-1">
+                        {totalSteps === 0 ? (
+                          <div className="h-[3px] w-full rounded-full bg-[var(--surface-soft)]" />
+                        ) : (
+                          Array.from({ length: totalSteps }, (_, i) => (
+                            <div
+                              key={i}
+                              className="h-[3px] flex-1 rounded-sm transition-colors duration-300"
+                              style={{ backgroundColor: i < completedSteps ? "#2dd4bf" : "rgba(45,212,191,0.18)" }}
+                            />
+                          ))
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1071,18 +1287,25 @@ export default function HomePage() {
         open={showCreateArc}
         today={todayDate()}
         onClose={() => setShowCreateArc(false)}
-        onCreate={async (title, rank, startDate, endDate) => {
+        onCreate={async (title, rank, difficulty, startDate, endDate) => {
           await createGate(title, rank, {
             date: startDate,
             endDate,
+            difficulty,
             why: getPersonaWhy(activePersona),
           });
         }}
       />
+      <EditArcModal
+        arc={arcGoals.find((goal) => goal.id === editingArcId) ?? null}
+        onClose={() => setEditingArcId(null)}
+        onUpdate={handleUpdateGoal}
+      />
 
       <SectionShell
-        eyebrow="03 Reflection"
-        description="Keep the trail of the day visible. Quick logs catch the facts; the journal fields keep the day interpretable."
+        eyebrow="Reflection"
+        description="Keep the trail of the day visible."
+        glowFrom="top left"
       >
         <div className="grid gap-6 md:grid-cols-[0.95fr_1.05fr]">
           <div className="space-y-4">
@@ -1099,8 +1322,8 @@ export default function HomePage() {
               </ActionButton>
             </div>
 
-            <div className="rounded-[1rem] border border-[var(--surface-border)] bg-[var(--bg-panel)] px-4 py-4">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--text-secondary)]">
+            <div className="rounded-lg border border-[var(--surface-border)] bg-[var(--bg-secondary)] px-4 py-4">
+              <p className="text-[0.625rem] font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)]">
                 Gratitude list
               </p>
               <div className="mt-4 space-y-2">
@@ -1132,9 +1355,10 @@ export default function HomePage() {
 
       <div className="grid gap-8 md:grid-cols-[1.15fr_0.85fr]">
         <SectionShell
-          eyebrow="04 Calendar"
+          eyebrow="Calendar"
           title="Calendar"
           description="Navigate months to see arcs and daily entries."
+          glowFrom="bottom right"
         >
           {/* Month navigation header */}
           <div className="mb-4 flex items-center justify-between border-b border-[var(--surface-border)] pb-3">
@@ -1145,11 +1369,11 @@ export default function HomePage() {
                 return { year: d.getFullYear(), month: d.getMonth() };
               })}
               aria-label="Previous month"
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--surface-border)] bg-[var(--bg-panel)] text-sm text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-panel-strong)] hover:text-[var(--text-primary)]"
+              className="flex h-8 w-8 items-center justify-center rounded-md border border-[var(--surface-border)] bg-[var(--bg-secondary)] text-sm text-[var(--text-secondary)] transition-colors hover:border-[var(--accent-solid)]/40 hover:text-[var(--text-primary)]"
             >
               ‹
             </button>
-            <p className="text-base font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
+            <p className="font-mono text-sm font-semibold tracking-[-0.01em] text-[var(--text-primary)]">
               {formatMonthLabel(viewedMonth.year, viewedMonth.month)}
             </p>
             <button
@@ -1163,7 +1387,7 @@ export default function HomePage() {
                 viewedMonth.year > now.getFullYear() ||
                 (viewedMonth.year === now.getFullYear() && viewedMonth.month >= now.getMonth())
               }
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--surface-border)] bg-[var(--bg-panel)] text-sm text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-panel-strong)] hover:text-[var(--text-primary)] disabled:opacity-40 disabled:cursor-not-allowed"
+              className="flex h-8 w-8 items-center justify-center rounded-md border border-[var(--surface-border)] bg-[var(--bg-secondary)] text-sm text-[var(--text-secondary)] transition-colors hover:border-[var(--accent-solid)]/40 hover:text-[var(--text-primary)] disabled:opacity-40 disabled:cursor-not-allowed"
             >
               ›
             </button>
@@ -1172,9 +1396,9 @@ export default function HomePage() {
           {/* Arcs active this month */}
           {arcsThisMonth.length > 0 && (
             <div className="mb-4 flex flex-col gap-1.5">
-              <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[var(--text-secondary)] mb-1">Arcs this month</p>
+              <p className="text-[0.625rem] font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)] mb-1">Arcs this month</p>
               {arcsThisMonth.map((arc) => (
-                <div key={arc.id} className="flex overflow-hidden rounded-lg border border-[var(--surface-border)] bg-[var(--bg-panel)]">
+                <div key={arc.id} className="flex overflow-hidden rounded-md border border-[var(--surface-border)] bg-[var(--bg-secondary)]">
                   <div className="w-[3px] shrink-0" style={{ background: getArcStripeColor(arc.rank) }} />
                   <div className="flex flex-1 items-center justify-between gap-3 px-3 py-2">
                     <span className="text-xs font-semibold text-[var(--text-primary)] truncate">{arc.title}</span>
@@ -1188,11 +1412,11 @@ export default function HomePage() {
           )}
 
           {/* Calendar grid */}
-          <div className="grid grid-cols-7 border-l border-t border-[var(--surface-border)] bg-[var(--bg-panel)]">
+          <div className="grid grid-cols-7 border-l border-t border-[var(--surface-border)] bg-[var(--bg-secondary)]">
             {WEEKDAY_LABELS.map((label) => (
               <div
                 key={label}
-                className="border-r border-b border-[var(--surface-border)] px-1 py-2 text-center text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-secondary)] md:px-2 md:py-3"
+                className="border-r border-b border-[var(--surface-border)] px-1 py-2 text-center text-[0.625rem] font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)] md:px-2 md:py-3"
               >
                 <span className="hidden md:inline">{label}</span>
                 <span className="md:hidden">{label.slice(0, 1)}</span>
@@ -1225,7 +1449,7 @@ export default function HomePage() {
                 : hasLog
                   ? "bg-[var(--accent-solid)]"
                   : hasTodos
-                    ? "bg-[#956400]"
+                    ? "bg-[#f59e0b]"
                     : "";
 
               return (
@@ -1235,10 +1459,10 @@ export default function HomePage() {
                   aria-label={formatHumanDate(date)}
                   className={`group relative aspect-square border-r border-b border-[var(--surface-border)] px-1.5 py-1.5 text-left transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] md:px-2 md:py-2 ${
                     isSelected
-                      ? "bg-[color:color-mix(in_srgb,var(--bg-panel)_86%,white)]"
+                      ? "bg-[color:color-mix(in_oklab,var(--bg-panel)_70%,var(--accent-solid)_30%)]"
                       : isInArc
-                        ? "bg-[color:color-mix(in_srgb,var(--bg-panel)_94%,#5ea2ff)]"
-                        : "bg-[var(--bg-panel)] hover:bg-[var(--bg-panel-strong)]"
+                        ? "bg-[color:color-mix(in_oklab,var(--bg-secondary)_88%,var(--accent-solid)_12%)]"
+                        : "bg-[var(--bg-secondary)] hover:bg-[var(--bg-panel)]"
                   }`}
                 >
                   {isSelected ? (
@@ -1269,13 +1493,14 @@ export default function HomePage() {
         </SectionShell>
 
         <SectionShell
-          eyebrow="05 Mini status"
+          eyebrow="Status"
           title="Status"
-          description="A small readout for rhythm, consistency, and how much of this cycle is actually moving."
+          description="Rhythm, consistency, and cycle progress."
+          glowFrom="top left"
         >
           <div className="grid gap-3">
-            <div className="rounded-[1rem] border border-[var(--surface-border)] bg-[var(--bg-panel)] px-4 py-4">
-              <p className="text-[10px] uppercase tracking-[0.2em] text-[var(--text-secondary)]">
+            <div className="rounded-lg border border-[var(--surface-border)] bg-[var(--bg-secondary)] px-4 py-4">
+              <p className="text-[0.625rem] uppercase tracking-[0.14em] text-[var(--text-secondary)]">
                 Active why
               </p>
               <p className="mt-2 text-xl font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
@@ -1283,16 +1508,30 @@ export default function HomePage() {
               </p>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-[1rem] border border-[var(--surface-border)] bg-[var(--bg-panel)] px-4 py-4">
-                <p className="text-[10px] uppercase tracking-[0.2em] text-[var(--text-secondary)]">
+              <div className="rounded-lg border border-[var(--surface-border)] bg-[var(--bg-secondary)] px-4 py-4">
+                <p className="text-[0.625rem] uppercase tracking-[0.14em] text-[var(--text-secondary)]">
                   Streak
                 </p>
-                <p className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
+                <p
+                  className={`mt-2 text-2xl font-semibold tracking-[-0.04em] transition-colors duration-500 ${
+                    status.streakCount > 0 ? "text-[var(--accent-solid)]" : "text-[var(--text-secondary)]"
+                  }`}
+                  style={
+                    status.streakCount >= 7
+                      ? { textShadow: "0 0 18px color-mix(in srgb, var(--accent-solid) 60%, transparent)" }
+                      : undefined
+                  }
+                >
                   {status.streakCount}
                 </p>
+                {status.streakCount >= 7 && (
+                  <p className="mt-1 font-[family-name:var(--font-display)] text-[0.625rem] uppercase tracking-[0.14em] text-[var(--accent-solid)] opacity-70">
+                    on fire
+                  </p>
+                )}
               </div>
-              <div className="rounded-[1rem] border border-[var(--surface-border)] bg-[var(--bg-panel)] px-4 py-4">
-                <p className="text-[10px] uppercase tracking-[0.2em] text-[var(--text-secondary)]">
+              <div className="rounded-lg border border-[var(--surface-border)] bg-[var(--bg-secondary)] px-4 py-4">
+                <p className="text-[0.625rem] uppercase tracking-[0.14em] text-[var(--text-secondary)]">
                   Journal
                 </p>
                 <p className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
@@ -1300,29 +1539,29 @@ export default function HomePage() {
                 </p>
               </div>
             </div>
-            <div className="rounded-[1rem] border border-[var(--surface-border)] bg-[var(--bg-panel)] px-4 py-4">
+            <div className="rounded-lg border border-[var(--surface-border)] bg-[var(--bg-secondary)] px-4 py-4">
               <div className="flex items-end justify-between gap-3">
                 <div>
-                  <p className="text-[10px] uppercase tracking-[0.2em] text-[var(--text-secondary)]">
+                  <p className="text-[0.625rem] uppercase tracking-[0.14em] text-[var(--text-secondary)]">
                     Today
                   </p>
                   <p className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
                     {status.todayCompletionLabel}
                   </p>
                 </div>
-                <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-secondary)]">
+                <p className="text-[0.625rem] uppercase tracking-[0.14em] text-[var(--text-secondary)]">
                   completed
                 </p>
               </div>
               <div className="mt-4 h-2 rounded-full bg-[var(--surface-soft)]">
                 <div
-                  className="h-full rounded-full bg-[var(--accent-solid)] transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                  className={`h-full rounded-full bg-[var(--accent-solid)] transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${status.dayCompletionRatio >= 1 ? "progress-complete" : ""}`}
                   style={{ width: `${Math.max(status.dayCompletionRatio * 100, 6)}%` }}
                 />
               </div>
             </div>
-            <div className="rounded-[1rem] border border-[var(--surface-border)] bg-[var(--bg-panel)] px-4 py-4">
-              <p className="text-[10px] uppercase tracking-[0.2em] text-[var(--text-secondary)]">
+            <div className="rounded-lg border border-[var(--surface-border)] bg-[var(--bg-secondary)] px-4 py-4">
+              <p className="text-[0.625rem] uppercase tracking-[0.14em] text-[var(--text-secondary)]">
                 Arcs progress
               </p>
               <p className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">

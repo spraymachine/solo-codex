@@ -1,29 +1,53 @@
 @import "tailwindcss";
 
 :root {
-  --bg-primary: oklch(0.962 0.012 75);
-  --bg-secondary: color-mix(in oklab, var(--bg-primary) 86%, var(--accent-solid) 14%);
-  --bg-panel: oklch(0.985 0.005 75);
-  --bg-panel-strong: color-mix(in oklab, var(--bg-panel) 92%, var(--accent-solid) 8%);
+  --bg-primary: #080808;
+  --bg-secondary: #0e0e12;
+  --bg-panel: #131317;
+  --bg-panel-strong: #1a1a20;
   --surface-soft: color-mix(in oklab, var(--accent-solid) 10%, transparent);
-  --surface-border: color-mix(in oklab, var(--accent-solid) 18%, rgba(114, 90, 65, 0.12));
-  --surface-highlight: rgba(255, 255, 255, 0.72);
-  --input-bg: #fffdf8;
-  --input-border: rgba(120, 102, 84, 0.24);
-  --input-shadow: 0 1px 0 rgba(255, 255, 255, 0.9), 0 8px 20px rgba(122, 92, 65, 0.05);
-  --textarea-bg: #fffdf8;
-  --textarea-border: rgba(120, 102, 84, 0.28);
-  --textarea-shadow: 0 1px 0 rgba(255, 255, 255, 0.92), 0 10px 24px rgba(122, 92, 65, 0.06);
-  --text-primary: oklch(0.24 0.02 68);
-  --text-secondary: oklch(0.5 0.02 68);
-  --accent-solid: #38bdf8;
-  --accent-soft: #7dd3fc;
-  --danger: #d86f68;
+  --surface-border: rgba(255, 255, 255, 0.06);
+  --surface-highlight: rgba(255, 255, 255, 0.03);
+  --input-bg: #131317;
+  --input-border: rgba(255, 255, 255, 0.08);
+  --input-shadow: 0 1px 0 rgba(255, 255, 255, 0.03), 0 8px 20px rgba(0, 0, 0, 0.4);
+  --textarea-bg: #131317;
+  --textarea-border: rgba(255, 255, 255, 0.08);
+  --textarea-shadow: 0 1px 0 rgba(255, 255, 255, 0.03), 0 10px 24px rgba(0, 0, 0, 0.44);
+  --text-primary: #f5f5f7;
+  --text-secondary: #71717a;
+  --accent-solid: #3b82f6;
+  --accent-soft: #60a5fa;
+  --danger: #ef4444;
+  --checkbox-border: rgba(255, 255, 255, 0.18);
+}
+
+/* ── Light mode: Periwinkle Mist ─────────────────────────────────────────── */
+html[data-theme="light"] {
+  --bg-primary: oklch(97.5% 0.018 255);
+  --bg-secondary: oklch(95.8% 0.016 257);
+  --bg-panel: oklch(96.5% 0.017 256);
+  --bg-panel-strong: oklch(93.5% 0.022 254);
+  --surface-soft: color-mix(in oklab, var(--accent-solid) 12%, transparent);
+  --surface-border: rgba(25, 35, 100, 0.09);
+  --surface-highlight: rgba(25, 35, 100, 0.025);
+  --input-bg: oklch(95.2% 0.019 258);
+  --input-border: rgba(25, 35, 100, 0.11);
+  --input-shadow: 0 1px 0 rgba(255, 255, 255, 0.7), 0 4px 14px rgba(20, 30, 80, 0.07);
+  --textarea-bg: oklch(95.2% 0.019 258);
+  --textarea-border: rgba(25, 35, 100, 0.11);
+  --textarea-shadow: 0 1px 0 rgba(255, 255, 255, 0.7), 0 6px 18px rgba(20, 30, 80, 0.08);
+  --text-primary: oklch(14% 0.04 262);
+  --text-secondary: oklch(46% 0.028 256);
+  --danger: #dc2626;
+  --checkbox-border: rgba(25, 35, 100, 0.22);
+  color-scheme: light;
 }
 
 @theme inline {
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
+  --font-display: var(--font-display);
 }
 
 * {
@@ -32,12 +56,10 @@
 
 html {
   min-height: 100%;
-  background:
-    radial-gradient(circle at 12% 14%, color-mix(in srgb, var(--accent-solid) 22%, white), transparent 26%),
-    radial-gradient(circle at 86% 10%, color-mix(in srgb, var(--accent-soft) 18%, white), transparent 22%),
-    linear-gradient(180deg, color-mix(in srgb, var(--bg-primary) 84%, white) 0%, var(--bg-primary) 100%);
-  color-scheme: light;
+  background: var(--bg-primary);
+  color-scheme: dark;
   scroll-behavior: smooth;
+  transition: background-color 0.3s ease;
 }
 
 body {
@@ -46,6 +68,7 @@ body {
   background: transparent;
   color: var(--text-primary);
   font-family: var(--font-sans), sans-serif;
+  transition: color 0.3s ease;
 }
 
 body::before {
@@ -53,12 +76,11 @@ body::before {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  z-index: 10;
-  opacity: 0.06;
+  z-index: 100;
+  opacity: 0.035;
   background-image:
-    radial-gradient(circle at 20% 20%, rgba(121, 99, 76, 0.22) 0.55px, transparent 0.7px),
-    radial-gradient(circle at 80% 60%, rgba(121, 99, 76, 0.16) 0.45px, transparent 0.7px);
-  background-size: 28px 28px, 34px 34px;
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-size: 200px 200px;
 }
 
 a {
@@ -71,61 +93,12 @@ a {
 }
 
 [data-persona="harti"] {
-  --accent-solid: #61c78c;
-  --accent-soft: #4d9b6d;
-}
-
-[data-theme="dark"][data-persona="mani"] {
-  --accent-solid: #5b21b6;
-  --accent-soft: #7c3aed;
-}
-
-[data-theme="dark"] {
-  --bg-primary: oklch(0.19 0.012 255);
-  --bg-secondary: color-mix(in oklab, var(--bg-primary) 78%, var(--accent-solid) 22%);
-  --bg-panel: oklch(0.23 0.012 255);
-  --bg-panel-strong: color-mix(in oklab, var(--bg-panel) 88%, var(--accent-solid) 12%);
-  --surface-soft: color-mix(in oklab, var(--accent-solid) 14%, transparent);
-  --surface-border: color-mix(in oklab, var(--accent-solid) 22%, rgba(255, 255, 255, 0.08));
-  --surface-highlight: rgba(255, 255, 255, 0.08);
-  --input-bg: color-mix(in oklab, var(--bg-panel) 82%, white 18%);
-  --input-border: color-mix(in oklab, var(--accent-solid) 24%, rgba(255, 255, 255, 0.16));
-  --input-shadow: 0 1px 0 rgba(255, 255, 255, 0.06), 0 8px 20px rgba(0, 0, 0, 0.14);
-  --textarea-bg: color-mix(in oklab, var(--bg-panel) 80%, white 20%);
-  --textarea-border: color-mix(in oklab, var(--accent-solid) 28%, rgba(255, 255, 255, 0.18));
-  --textarea-shadow: 0 1px 0 rgba(255, 255, 255, 0.06), 0 10px 24px rgba(0, 0, 0, 0.16);
-  --text-primary: oklch(0.94 0.01 255);
-  --text-secondary: oklch(0.78 0.01 255);
-}
-
-[data-theme="dark"] html,
-html[data-theme="dark"] {
-  background:
-    radial-gradient(circle at 12% 14%, color-mix(in srgb, var(--accent-solid) 28%, black), transparent 24%),
-    radial-gradient(circle at 86% 10%, color-mix(in srgb, var(--accent-soft) 22%, black), transparent 22%),
-    linear-gradient(180deg, color-mix(in srgb, var(--bg-primary) 88%, black) 0%, var(--bg-primary) 100%);
-  color-scheme: dark;
-}
-
-.glow-blue,
-.glow-violet,
-.glow-emerald,
-.glow-amber {
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--accent-solid) 14%, rgba(126, 96, 72, 0.12)),
-    0 24px 60px rgba(143, 111, 83, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.72);
-}
-
-.glow-red {
-  box-shadow:
-    0 0 0 1px rgba(216, 111, 104, 0.18),
-    0 24px 60px rgba(216, 111, 104, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  --accent-solid: #22c55e;
+  --accent-soft: #86efac;
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--accent-solid) 22%, white);
+  background: color-mix(in srgb, var(--accent-solid) 30%, transparent);
   color: var(--text-primary);
 }
 
@@ -150,17 +123,46 @@ textarea {
 }
 
 textarea:focus {
-  background: var(--bg-panel) !important;
+  background: var(--bg-panel-strong) !important;
   border-color: var(--accent-solid) !important;
+  box-shadow: inset 0 0 0 1px var(--accent-solid) !important;
 }
 
 input:focus,
 select:focus {
-  background: var(--bg-panel) !important;
+  background: var(--bg-panel-strong) !important;
   border-color: var(--accent-solid) !important;
+  box-shadow: inset 0 0 0 1px var(--accent-solid) !important;
 }
 
 input::placeholder,
 textarea::placeholder {
-  color: color-mix(in srgb, var(--text-secondary) 72%, white);
+  color: var(--text-secondary);
+}
+
+.section-dots {
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.055) 1px, transparent 0);
+  background-size: 22px 22px;
+}
+
+@keyframes progress-glow {
+  0%, 100% { opacity: 1; }
+  50% {
+    opacity: 0.75;
+    box-shadow: 0 0 10px color-mix(in srgb, var(--accent-solid) 55%, transparent);
+  }
+}
+
+.progress-complete {
+  animation: progress-glow 2s ease-in-out infinite;
+}
+
+html[data-theme="light"] .section-dots {
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(20, 40, 120, 0.065) 1px, transparent 0);
+}
+
+html[data-theme="light"] body::before {
+  opacity: 0.018;
 }

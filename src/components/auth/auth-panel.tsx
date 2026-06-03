@@ -49,9 +49,22 @@ export function AuthPanel() {
         </div>
 
         {/* Form card */}
-        <div className="rounded-[2rem] border border-[var(--surface-border)] bg-[var(--bg-secondary)] p-2">
-          <div className="rounded-[1.6rem] border border-[var(--surface-highlight)] bg-[var(--bg-panel-strong)] px-6 py-8">
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <div
+          className="section-dots overflow-hidden rounded-xl border border-[var(--surface-border)]"
+          style={{
+            background: `radial-gradient(ellipse at top left, color-mix(in srgb, var(--accent-solid) 10%, var(--bg-panel)) 0%, var(--bg-panel) 60%)`,
+          }}
+        >
+          <div
+            className="border-b border-[var(--surface-border)] px-6 py-3"
+            style={{ background: `color-mix(in srgb, var(--accent-solid) 5%, var(--bg-panel-strong))` }}
+          >
+            <p className="font-mono text-[10px] font-bold uppercase tracking-[0.3em] text-[var(--accent-solid)]">
+              Credentials
+            </p>
+          </div>
+          <div className="px-6 py-6">
+            <form onSubmit={handleSubmit} className="flex flex-col gap-3">
               <input
                 type="email"
                 value={email}
@@ -59,7 +72,7 @@ export function AuthPanel() {
                 placeholder="Email"
                 required
                 autoComplete="email"
-                className="h-12 w-full rounded-2xl border-0 bg-[var(--bg-secondary)] px-5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] outline-none ring-1 ring-transparent transition-all duration-300 focus:bg-[var(--bg-panel)] focus:ring-[var(--accent-solid)]"
+                className="h-11 w-full rounded-lg border-0 bg-[var(--bg-secondary)] px-4 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] outline-none ring-1 ring-[var(--surface-border)] transition-all duration-200 focus:bg-[var(--bg-panel-strong)] focus:ring-[var(--accent-solid)]"
               />
               <input
                 type="password"
@@ -68,30 +81,30 @@ export function AuthPanel() {
                 placeholder="Password"
                 required
                 autoComplete="current-password"
-                className="h-12 w-full rounded-2xl border-0 bg-[var(--bg-secondary)] px-5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] outline-none ring-1 ring-transparent transition-all duration-300 focus:bg-[var(--bg-panel)] focus:ring-[var(--accent-solid)]"
+                className="h-11 w-full rounded-lg border-0 bg-[var(--bg-secondary)] px-4 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] outline-none ring-1 ring-[var(--surface-border)] transition-all duration-200 focus:bg-[var(--bg-panel-strong)] focus:ring-[var(--accent-solid)]"
               />
 
               <button
                 type="submit"
                 disabled={loading}
-                className="mt-1 h-12 w-full rounded-2xl bg-[var(--accent-solid)] text-sm font-semibold tracking-[0.02em] text-white transition-all duration-300 hover:opacity-90 active:scale-[0.98] disabled:opacity-50"
+                className="mt-1 h-11 w-full rounded-lg bg-[var(--accent-solid)] text-sm font-semibold tracking-[0.01em] text-white transition-all duration-200 hover:opacity-85 active:scale-[0.98] disabled:opacity-40"
               >
                 {loading ? "Signing in..." : "Sign in"}
               </button>
 
               {message ? (
-                <p className="text-center text-sm text-[var(--text-secondary)]">{message}</p>
+                <p className="text-center text-sm text-[var(--danger)]">{message}</p>
               ) : null}
             </form>
           </div>
         </div>
 
         {/* Persona chips */}
-        <div className="mt-6 flex justify-center gap-3">
-          <span className="rounded-full border border-[var(--surface-border)] px-3 py-1 font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--accent-soft)]">
+        <div className="mt-5 flex justify-center gap-3">
+          <span className="rounded-md border border-[var(--surface-border)] px-3 py-1 font-mono text-[10px] uppercase tracking-[0.2em] text-[#60a5fa]">
             mani / blue
           </span>
-          <span className="rounded-full border border-[var(--surface-border)] px-3 py-1 font-mono text-[10px] uppercase tracking-[0.2em] text-[#9fe0b7]">
+          <span className="rounded-md border border-[var(--surface-border)] px-3 py-1 font-mono text-[10px] uppercase tracking-[0.2em] text-[#86efac]">
             harti / green
           </span>
         </div>

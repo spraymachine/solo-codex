@@ -23,6 +23,7 @@ type GoalRow = {
   id: string;
   title: string | null;
   rank: Rank | null;
+  difficulty: 1 | 2 | 3 | null;
   date: string | null;
   why: string | null;
   end_date: string | null;
@@ -65,6 +66,7 @@ function fromGoalRow(row: GoalRow): Gate {
     id: row.id,
     title: row.title ?? "Untitled goal",
     rank: isRank(row.rank) ? row.rank : "E",
+    difficulty: (row.difficulty === 1 || row.difficulty === 2 || row.difficulty === 3) ? row.difficulty : 1,
     date: row.date ?? todayDate(),
     endDate: row.end_date ?? null,
     why: row.why ?? "",
