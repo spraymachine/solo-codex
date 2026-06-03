@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Barlow_Condensed, Geist, JetBrains_Mono } from "next/font/google";
+import { Barlow_Condensed, Caveat, Geist, JetBrains_Mono } from "next/font/google";
 import { AuthGate } from "@/components/auth/auth-gate";
 import { SiteHeader } from "@/components/layout/site-header";
 import { StoreInitializer } from "@/components/store-initializer";
@@ -26,6 +26,11 @@ const barlowCondensed = Barlow_Condensed({
   variable: "--font-display",
 });
 
+const caveat = Caveat({
+  subsets: ["latin"],
+  variable: "--font-handwriting",
+});
+
 export const metadata: Metadata = {
   title: "Solo system",
   description:
@@ -41,7 +46,7 @@ export default function RootLayout({
     <html
       lang="en"
       data-scroll-behavior="smooth"
-      className={`${geist.variable} ${jetbrainsMono.variable} ${barlowCondensed.variable}`}
+      className={`${geist.variable} ${jetbrainsMono.variable} ${barlowCondensed.variable} ${caveat.variable}`}
     >
       <body className="font-sans antialiased">
         <AuthGate>

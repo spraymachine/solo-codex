@@ -18,6 +18,7 @@ import { personaMeta, usePersonaStore } from "@/lib/stores/persona-store";
 import { usePlayerStore } from "@/lib/stores/player-store";
 import { useRecordsStore } from "@/lib/stores/records-store";
 import { useMissionsStore } from "@/lib/stores/missions-store";
+import { StickyWall } from "@/components/sticky/sticky-wall";
 import type { Gate, Persona, Reflection, SubQuest } from "@/lib/types";
 
 const WEEKDAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -162,27 +163,6 @@ function formatHumanDate(date: string) {
     day: "numeric",
     year: "numeric",
   }).format(new Date(`${date}T12:00:00`));
-}
-
-function formatTime(isoTimestamp: string) {
-  return new Intl.DateTimeFormat("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  }).format(new Date(isoTimestamp));
-}
-
-function useLiveClock() {
-  const [now, setNow] = useState(() => new Date());
-  useEffect(() => {
-    const id = window.setInterval(() => setNow(new Date()), 30_000);
-    return () => window.clearInterval(id);
-  }, []);
-  return new Intl.DateTimeFormat("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  }).format(now);
 }
 
 function getCalendarChipLabel(date: string) {
@@ -736,7 +716,6 @@ export default function HomePage() {
   const deleteGate = useGatesStore((state) => state.deleteGate);
 
   const records = useRecordsStore((state) => state.records);
-  const addEntry = useRecordsStore((state) => state.addEntry);
   const saveReflection = useRecordsStore((state) => state.saveReflection);
   const addGratitude = useRecordsStore((state) => state.addGratitude);
 
@@ -744,7 +723,6 @@ export default function HomePage() {
 
   const [todoDraft, setTodoDraft] = useState("");
   const [gratitudeDraft, setGratitudeDraft] = useState("");
-  const [quickLogDraft, setQuickLogDraft] = useState("");
   const [activeGoalId, setActiveGoalId] = useState<string | null>(null);
   const [editingArcId, setEditingArcId] = useState<string | null>(null);
   const [showCreateArc, setShowCreateArc] = useState(false);
@@ -752,8 +730,6 @@ export default function HomePage() {
     const now = new Date();
     return { year: now.getFullYear(), month: now.getMonth() };
   });
-  const currentTime = useLiveClock();
-
   const dayTodos = missions
     .filter((mission) => mission.date === selectedDate)
     .sort((left, right) => {
@@ -903,13 +879,6 @@ export default function HomePage() {
     });
   }
 
-  async function handleQuickLog() {
-    const text = quickLogDraft.trim();
-    if (!text) return;
-    await addEntry(text, selectedDate);
-    setQuickLogDraft("");
-  }
-
   async function handleAddGratitude() {
     const text = gratitudeDraft.trim();
     if (!text) return;
@@ -994,58 +963,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── Quick log ──────────────────────────────────────────────────────── */}
-      <section
-        className="section-dots overflow-hidden rounded-xl border border-[var(--surface-border)]"
-        style={{
-          background: `radial-gradient(ellipse at top right, color-mix(in srgb, var(--accent-solid) 9%, var(--bg-panel)) 0%, var(--bg-panel) 55%)`,
-        }}
-      >
-        <div
-          className="flex items-center justify-between border-b border-[var(--surface-border)] px-5 py-4 md:px-6"
-          style={{
-            background: `color-mix(in srgb, var(--accent-solid) 5%, var(--bg-panel-strong))`,
-          }}
-        >
-          <p className="font-[family-name:var(--font-display)] text-[0.625rem] font-bold uppercase tracking-[0.16em] text-[var(--accent-solid)]">
-            Quick log
-          </p>
-          <p className="font-mono text-[10px] tabular-nums text-[var(--text-secondary)]">
-            {currentTime}
-          </p>
-        </div>
-        <div className="px-5 py-5 md:px-6 md:py-5">
-          <div className="flex flex-col gap-4 md:flex-row md:gap-3">
-            <ResponsiveEntryField
-              value={quickLogDraft}
-              onChange={setQuickLogDraft}
-              onSubmit={() => void handleQuickLog()}
-              placeholder={`What's happening right now...`}
-            />
-            <ActionButton onClick={() => void handleQuickLog()} className="h-13 w-full md:h-11 md:w-auto md:px-5">
-              Log
-            </ActionButton>
-          </div>
-          {dayRecord && dayRecord.entries.length > 0 && (
-            <div className="mt-4 max-h-[220px] space-y-2 overflow-y-auto border-t border-[var(--surface-border)] pt-4 pr-1 md:max-h-none md:overflow-visible">
-              {dayRecord.entries
-                .slice()
-                .reverse()
-                .slice(0, 4)
-                .map((entry) => (
-                  <div key={entry.timestamp} className="flex items-start gap-3">
-                    <span className="shrink-0 font-mono text-[10px] tabular-nums text-[var(--text-secondary)]">
-                      {formatTime(entry.timestamp)}
-                    </span>
-                    <p className="min-w-0 break-words text-sm leading-6 text-[var(--text-primary)]">
-                      {entry.text}
-                    </p>
-                  </div>
-                ))}
-            </div>
-          )}
-        </div>
-      </section>
+      <StickyWall activePersona={activePersona} />
 
       <SectionShell
         eyebrow="Daily"

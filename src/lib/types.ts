@@ -116,6 +116,15 @@ export interface XpLogEntry {
   source: string;
 }
 
+export interface StickyNote {
+  id: string;
+  text: string;
+  color: string;
+  position: number;
+  pinnedAt: string;
+  archivedAt: string | null;
+}
+
 export interface AppSnapshot {
   profile: PlayerProfile;
   gates: Gate[];
