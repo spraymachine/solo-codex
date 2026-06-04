@@ -14,6 +14,23 @@ import type {
   WorkProjectStatus,
 } from "@/lib/types";
 import { generateId, nowISO } from "@/lib/utils";
+import {
+  fetchAllWork,
+  getWorkUserId,
+  sbCreateChapter,
+  sbCreateContact,
+  sbCreateCourse,
+  sbCreateMilestone,
+  sbCreateProject,
+  sbDeleteChapter,
+  sbDeleteCourse,
+  sbDeleteMilestone,
+  sbUpdateChapter,
+  sbUpdateContact,
+  sbUpdateCourse,
+  sbUpdateMilestone,
+  sbUpdateProject,
+} from "@/lib/supabase/work";
 
 type ContactInput = {
   name: string;
@@ -76,9 +93,7 @@ async function runLegacyLeadMigration() {
 
   for (const lead of legacyLeads) {
     const key = `${lead.name.trim().toLowerCase()}|${lead.email.trim().toLowerCase()}|${lead.phone.trim()}`;
-    if (seen.has(key)) {
-      continue;
-    }
+    if (seen.has(key)) continue;
     seen.add(key);
     contacts.push({
       id: generateId(),
@@ -98,9 +113,7 @@ async function runLegacyLeadMigration() {
   if (contacts.length > 0) {
     await workDb.transaction("rw", workDb.contacts, async () => {
       const existingContactCount = await workDb.contacts.count();
-      if (existingContactCount > 0) {
-        return;
-      }
+      if (existingContactCount > 0) return;
       await workDb.contacts.bulkAdd(contacts);
     });
   }
@@ -111,6 +124,17 @@ async function migrateLegacyLeadsIfEmpty() {
     migrationPromise = null;
   });
   await migrationPromise;
+}
+
+// Fire-and-forget Supabase sync — never throws, never blocks UI
+async function syncToSupabase(fn: (userId: string) => Promise<void>) {
+  try {
+    const userId = await getWorkUserId();
+    if (!userId) return;
+    await fn(userId);
+  } catch {
+    // swallow — local state is source of truth
+  }
 }
 
 export const useWorkStore = create<WorkState>((set, get) => ({
@@ -124,6 +148,39 @@ export const useWorkStore = create<WorkState>((set, get) => ({
   async load() {
     await migrateLegacyLeadsIfEmpty();
     const db = getWorkDb();
+
+    // Try Supabase first — if authenticated, use as source of truth
+    try {
+      const userId = await getWorkUserId();
+      if (userId) {
+        const remote = await fetchAllWork(userId);
+        if (remote) {
+          // Write remote data into Dexie for offline access
+          await db.transaction("rw", [db.courses, db.chapters, db.milestones, db.contacts, db.projects], async () => {
+            await Promise.all([
+              db.courses.bulkPut(remote.courses),
+              db.chapters.bulkPut(remote.chapters),
+              db.milestones.bulkPut(remote.milestones),
+              db.contacts.bulkPut(remote.contacts),
+              db.projects.bulkPut(remote.projects),
+            ]);
+          });
+          set({
+            courses: remote.courses,
+            chapters: remote.chapters,
+            milestones: remote.milestones,
+            contacts: sortByCreatedDesc(remote.contacts),
+            projects: sortByCreatedDesc(remote.projects),
+            loaded: true,
+          });
+          return;
+        }
+      }
+    } catch {
+      // fall through to local
+    }
+
+    // Fallback: local Dexie
     const [contacts, projects, courses, chapters, milestones] = await Promise.all([
       db.contacts.toArray(),
       db.projects.toArray(),
@@ -131,7 +188,6 @@ export const useWorkStore = create<WorkState>((set, get) => ({
       db.chapters.toArray(),
       db.milestones.toArray(),
     ]);
-
     set({
       contacts: sortByCreatedDesc(contacts),
       projects: sortByCreatedDesc(projects),
@@ -144,99 +200,62 @@ export const useWorkStore = create<WorkState>((set, get) => ({
 
   async createContact(input) {
     const now = nowISO();
-    const contact: WorkContact = {
-      id: generateId(),
-      archivedAt: null,
-      createdAt: now,
-      updatedAt: now,
-      ...input,
-    };
-
+    const contact: WorkContact = { id: generateId(), archivedAt: null, createdAt: now, updatedAt: now, ...input };
     await getWorkDb().contacts.add(contact);
     set((state) => ({ contacts: [contact, ...state.contacts] }));
+    void syncToSupabase((uid) => sbCreateContact(uid, contact));
     return contact;
   },
 
   async updateContact(id, updates) {
     const next = { ...updates, updatedAt: nowISO() };
     await getWorkDb().contacts.update(id, next);
-    set((state) => ({
-      contacts: state.contacts.map((contact) =>
-        contact.id === id ? { ...contact, ...next } : contact,
-      ),
-    }));
+    set((state) => ({ contacts: state.contacts.map((c) => (c.id === id ? { ...c, ...next } : c)) }));
+    void syncToSupabase((uid) => sbUpdateContact(uid, id, next));
   },
 
   async archiveContact(id) {
     const archivedAt = nowISO();
     const next = { archivedAt, status: "archived" as const, updatedAt: archivedAt };
     await getWorkDb().contacts.update(id, next);
-    set((state) => ({
-      contacts: state.contacts.map((contact) =>
-        contact.id === id ? { ...contact, ...next } : contact,
-      ),
-    }));
+    set((state) => ({ contacts: state.contacts.map((c) => (c.id === id ? { ...c, ...next } : c)) }));
+    void syncToSupabase((uid) => sbUpdateContact(uid, id, next));
   },
 
   async createProject(input) {
-    if (!input.contactId) {
-      throw new Error("Project requires a client or lead.");
-    }
-    const contact = get().contacts.find((item) => item.id === input.contactId);
-    if (!contact) {
-      throw new Error("Project requires an existing client or lead.");
-    }
-
+    if (!input.contactId) throw new Error("Project requires a client or lead.");
+    const contact = get().contacts.find((c) => c.id === input.contactId);
+    if (!contact) throw new Error("Project requires an existing client or lead.");
     const now = nowISO();
-    const project: WorkProject = {
-      id: generateId(),
-      archivedAt: null,
-      createdAt: now,
-      updatedAt: now,
-      ...input,
-    };
-
+    const project: WorkProject = { id: generateId(), archivedAt: null, createdAt: now, updatedAt: now, ...input };
     await getWorkDb().projects.add(project);
     set((state) => ({ projects: [project, ...state.projects] }));
+    void syncToSupabase((uid) => sbCreateProject(uid, project));
     return project;
   },
 
   async updateProject(id, updates) {
     if (updates.contactId !== undefined) {
-      if (!updates.contactId) {
-        throw new Error("Project requires a client or lead.");
-      }
-      const contact = get().contacts.find((item) => item.id === updates.contactId);
-      if (!contact) {
-        throw new Error("Project requires an existing client or lead.");
-      }
+      if (!updates.contactId) throw new Error("Project requires a client or lead.");
+      const contact = get().contacts.find((c) => c.id === updates.contactId);
+      if (!contact) throw new Error("Project requires an existing client or lead.");
     }
-
     const next = { ...updates, updatedAt: nowISO() };
     await getWorkDb().projects.update(id, next);
-    set((state) => ({
-      projects: state.projects.map((project) =>
-        project.id === id ? { ...project, ...next } : project,
-      ),
-    }));
+    set((state) => ({ projects: state.projects.map((p) => (p.id === id ? { ...p, ...next } : p)) }));
+    void syncToSupabase((uid) => sbUpdateProject(uid, id, next));
   },
 
   async archiveProject(id) {
     const archivedAt = nowISO();
     const next = { archivedAt, status: "archived" as const, updatedAt: archivedAt };
     await getWorkDb().projects.update(id, next);
-    set((state) => ({
-      projects: state.projects.map((project) =>
-        project.id === id ? { ...project, ...next } : project,
-      ),
-    }));
+    set((state) => ({ projects: state.projects.map((p) => (p.id === id ? { ...p, ...next } : p)) }));
+    void syncToSupabase((uid) => sbUpdateProject(uid, id, next));
   },
 
   async saveParsedCourse(parsed) {
-    if (!parsed.course || parsed.errors.length > 0) {
-      throw new Error("Cannot save a course with parser errors.");
-    }
-
+    if (!parsed.course || parsed.errors.length > 0) throw new Error("Cannot save a course with parser errors.");
     const db = getWorkDb();
     const now = nowISO();
     const course: WorkCourse = {
@@ -253,7 +272,7 @@ export const useWorkStore = create<WorkState>((set, get) => ({
     const chapters: CourseChapter[] = [];
     const milestones: CourseMilestone[] = [];
 
-    parsed.chapters.forEach((chapter, chapterIndex) => {
+    parsed.chapters.forEach((chapter, ci) => {
       const chapterRow: CourseChapter = {
         id: generateId(),
         courseId: course.id,
@@ -261,11 +280,10 @@ export const useWorkStore = create<WorkState>((set, get) => ({
         deadline: chapter.deadline,
         estimate: chapter.estimate,
         priority: chapter.priority,
-        order: chapterIndex,
+        order: ci,
       };
       chapters.push(chapterRow);
-
-      chapter.milestones.forEach((milestone, milestoneIndex) => {
+      chapter.milestones.forEach((milestone, mi) => {
         milestones.push({
           id: generateId(),
           chapterId: chapterRow.id,
@@ -275,19 +293,15 @@ export const useWorkStore = create<WorkState>((set, get) => ({
           link: milestone.link,
           notes: milestone.notes,
           completed: false,
-          order: milestoneIndex,
+          order: mi,
         });
       });
     });
 
     await db.transaction("rw", [db.courses, db.chapters, db.milestones], async () => {
       await db.courses.add(course);
-      if (chapters.length > 0) {
-        await db.chapters.bulkAdd(chapters);
-      }
-      if (milestones.length > 0) {
-        await db.milestones.bulkAdd(milestones);
-      }
+      if (chapters.length > 0) await db.chapters.bulkAdd(chapters);
+      if (milestones.length > 0) await db.milestones.bulkAdd(milestones);
     });
 
     set((state) => ({
@@ -296,33 +310,37 @@ export const useWorkStore = create<WorkState>((set, get) => ({
       milestones: [...state.milestones, ...milestones],
     }));
 
+    void syncToSupabase(async (uid) => {
+      await sbCreateCourse(uid, course);
+      await Promise.all(chapters.map((ch) => sbCreateChapter(uid, ch)));
+      await Promise.all(milestones.map((m) => sbCreateMilestone(uid, m)));
+    });
+
     return course;
   },
 
   async toggleMilestone(id, completed) {
     await getWorkDb().milestones.update(id, { completed });
-    set((state) => ({
-      milestones: state.milestones.map((m) => (m.id === id ? { ...m, completed } : m)),
-    }));
+    set((state) => ({ milestones: state.milestones.map((m) => (m.id === id ? { ...m, completed } : m)) }));
+    void syncToSupabase((uid) => sbUpdateMilestone(uid, id, { completed }));
   },
 
   async updateMilestone(id, updates) {
     await getWorkDb().milestones.update(id, updates);
-    set((state) => ({
-      milestones: state.milestones.map((m) => (m.id === id ? { ...m, ...updates } : m)),
-    }));
+    set((state) => ({ milestones: state.milestones.map((m) => (m.id === id ? { ...m, ...updates } : m)) }));
+    void syncToSupabase((uid) => sbUpdateMilestone(uid, id, updates));
   },
 
   async deleteMilestone(id) {
     await getWorkDb().milestones.delete(id);
     set((state) => ({ milestones: state.milestones.filter((m) => m.id !== id) }));
+    void syncToSupabase((uid) => sbDeleteMilestone(uid, id));
   },
 
   async updateChapter(id, updates) {
     await getWorkDb().chapters.update(id, updates);
-    set((state) => ({
-      chapters: state.chapters.map((c) => (c.id === id ? { ...c, ...updates } : c)),
-    }));
+    set((state) => ({ chapters: state.chapters.map((c) => (c.id === id ? { ...c, ...updates } : c)) }));
+    void syncToSupabase((uid) => sbUpdateChapter(uid, id, updates));
   },
 
   async deleteChapter(id) {
@@ -336,13 +354,17 @@ export const useWorkStore = create<WorkState>((set, get) => ({
       chapters: state.chapters.filter((c) => c.id !== id),
       milestones: state.milestones.filter((m) => m.chapterId !== id),
     }));
+    void syncToSupabase(async (uid) => {
+      await Promise.all(milestoneIds.map((mid) => sbDeleteMilestone(uid, mid)));
+      await sbDeleteChapter(uid, id);
+    });
   },
 
   async updateCourse(id, updates) {
-    await getWorkDb().courses.update(id, { ...updates, updatedAt: nowISO() });
-    set((state) => ({
-      courses: state.courses.map((c) => (c.id === id ? { ...c, ...updates, updatedAt: nowISO() } : c)),
-    }));
+    const updatedAt = nowISO();
+    await getWorkDb().courses.update(id, { ...updates, updatedAt });
+    set((state) => ({ courses: state.courses.map((c) => (c.id === id ? { ...c, ...updates, updatedAt } : c)) }));
+    void syncToSupabase((uid) => sbUpdateCourse(uid, id, { ...updates, updatedAt }));
   },
 
   async deleteCourse(id) {
@@ -351,6 +373,7 @@ export const useWorkStore = create<WorkState>((set, get) => ({
     const milestoneIds = (
       await Promise.all(chapterIds.map((cid) => db.milestones.where("chapterId").equals(cid).toArray()))
     ).flat().map((m) => m.id);
+
     await db.transaction("rw", [db.courses, db.chapters, db.milestones], async () => {
       await db.milestones.bulkDelete(milestoneIds);
       await db.chapters.bulkDelete(chapterIds);
@@ -361,5 +384,7 @@ export const useWorkStore = create<WorkState>((set, get) => ({
       chapters: state.chapters.filter((c) => !chapterIds.includes(c.id)),
       milestones: state.milestones.filter((m) => !milestoneIds.includes(m.id)),
     }));
+    // Supabase cascades chapters + milestones on course delete (FK on delete cascade)
+    void syncToSupabase((uid) => sbDeleteCourse(uid, id));
   },
 }));
