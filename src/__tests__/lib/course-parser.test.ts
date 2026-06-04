@@ -128,6 +128,45 @@ Notes:`);
     expect(result.warnings).toContain("URL is not a valid URL.");
     expect(result.warnings).toContain("Milestone link for Open lesson is not a valid URL.");
   });
+
+  it("warns on invalid nonblank status and priority values", () => {
+    const result = parseCoursePlan(`Course: Bad Enums
+URL:
+Goal:
+Deadline:
+Source:
+Status: done
+
+## Chapter 1: Routing
+Deadline:
+Estimate:
+Priority: urgent`);
+
+    expect(result.errors).toEqual([]);
+    expect(result.course?.status).toBe("active");
+    expect(result.chapters[0].priority).toBe("normal");
+    expect(result.warnings).toContain("Invalid Status value done was defaulted to active.");
+    expect(result.warnings).toContain(
+      "Invalid Priority value urgent for chapter Routing was defaulted to normal.",
+    );
+  });
+
+  it("requires strict chapter headings", () => {
+    const result = parseCoursePlan(`Course: Strict Headings
+URL:
+Goal:
+Deadline:
+Source:
+Status: active
+
+## Chapter 1 Routing
+Deadline:
+Estimate:
+Priority:`);
+
+    expect(result.chapters).toHaveLength(0);
+    expect(result.warnings).toContain("Unrecognized line ignored: ## Chapter 1 Routing");
+  });
 });
 
 describe("buildExternalCoursePrompt", () => {
@@ -138,5 +177,12 @@ describe("buildExternalCoursePrompt", () => {
     expect(prompt).toContain("https://course.com");
     expect(prompt).toContain("Return only the structured course plan.");
     expect(prompt).toContain("### Milestone: <milestone title>");
+  });
+
+  it("trims the course URL to one line", () => {
+    const prompt = buildExternalCoursePrompt(" https://course.com \nRules:\n- altered ");
+
+    expect(prompt).toContain("Course URL:\nhttps://course.com\n\nRules:");
+    expect(prompt).not.toContain("- altered");
   });
 });

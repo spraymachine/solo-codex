@@ -35,6 +35,7 @@ export interface ParseCoursePlanResult {
 const COURSE_FIELDS = new Set(["Course", "URL", "Goal", "Deadline", "Source", "Status"]);
 const CHAPTER_FIELDS = new Set(["Deadline", "Estimate", "Priority"]);
 const MILESTONE_FIELDS = new Set(["Deadline", "Estimate", "Link", "Notes"]);
+const CHAPTER_HEADING_PATTERN = /^## Chapter\s+(\d+):\s*(.+)$/;
 
 function splitField(line: string) {
   const index = line.indexOf(":");
@@ -59,6 +60,10 @@ function normalizePriority(value: string): ChapterPriority {
     return value;
   }
   return "normal";
+}
+
+function singleLine(value: string) {
+  return value.trim().split(/\r?\n|\r/, 1)[0].trim();
 }
 
 function isValidUrl(value: string) {
@@ -115,11 +120,12 @@ export function parseCoursePlan(input: string): ParseCoursePlanResult {
       continue;
     }
 
-    if (line.startsWith("## Chapter")) {
+    const chapterHeading = CHAPTER_HEADING_PATTERN.exec(line);
+    if (chapterHeading) {
       if (!courseDraft.title) {
         result.errors.push("Chapter appears before a Course: field.");
       }
-      const title = line.replace(/^## Chapter\s*\d*:\s*/, "").trim();
+      const title = chapterHeading[2].trim();
       currentChapter = {
         title,
         deadline: "",
@@ -157,7 +163,14 @@ export function parseCoursePlan(input: string): ParseCoursePlanResult {
       }
       if (field.key === "Deadline") currentChapter.deadline = field.value;
       if (field.key === "Estimate") currentChapter.estimate = field.value;
-      if (field.key === "Priority") currentChapter.priority = normalizePriority(field.value);
+      if (field.key === "Priority") {
+        currentChapter.priority = normalizePriority(field.value);
+        if (field.value && currentChapter.priority === "normal" && field.value !== "normal") {
+          result.warnings.push(
+            `Invalid Priority value ${field.value} for chapter ${currentChapter.title} was defaulted to normal.`,
+          );
+        }
+      }
       continue;
     }
 
@@ -170,7 +183,12 @@ export function parseCoursePlan(input: string): ParseCoursePlanResult {
     if (field.key === "Goal") courseDraft.goal = field.value;
     if (field.key === "Deadline") courseDraft.deadline = field.value;
     if (field.key === "Source") courseDraft.source = field.value;
-    if (field.key === "Status") courseDraft.status = normalizeStatus(field.value);
+    if (field.key === "Status") {
+      courseDraft.status = normalizeStatus(field.value);
+      if (field.value && courseDraft.status === "active" && field.value !== "active") {
+        result.warnings.push(`Invalid Status value ${field.value} was defaulted to active.`);
+      }
+    }
   }
 
   if (!courseDraft.title) {
@@ -195,10 +213,12 @@ export function parseCoursePlan(input: string): ParseCoursePlanResult {
 }
 
 export function buildExternalCoursePrompt(courseUrl = "<PASTE_COURSE_URL_HERE>") {
+  const safeCourseUrl = singleLine(courseUrl);
+
   return `Read this course page and convert it into the exact format below.
 
 Course URL:
-${courseUrl}
+${safeCourseUrl}
 
 Rules:
 - Return only the structured course plan.
