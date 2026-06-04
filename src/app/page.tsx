@@ -3,6 +3,7 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import Link from "next/link";
 import { useAuth } from "@/components/auth/auth-gate";
 import { Modal } from "@/components/ui/modal";
 import {
@@ -19,6 +20,7 @@ import { usePlayerStore } from "@/lib/stores/player-store";
 import { useRecordsStore } from "@/lib/stores/records-store";
 import { useMissionsStore } from "@/lib/stores/missions-store";
 import { StickyWall } from "@/components/sticky/sticky-wall";
+import { useWorkStore } from "@/lib/stores/work-store";
 import type { Gate, Persona, Reflection, SubQuest } from "@/lib/types";
 
 const WEEKDAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -721,6 +723,16 @@ export default function HomePage() {
 
   const profile = usePlayerStore((state) => state.profile);
 
+  const workLoaded = useWorkStore((state) => state.loaded);
+  const workLoad = useWorkStore((state) => state.load);
+  const workCourses = useWorkStore((state) => state.courses);
+  const workProjects = useWorkStore((state) => state.projects);
+  const workMilestones = useWorkStore((state) => state.milestones);
+
+  useEffect(() => {
+    if (!workLoaded) void workLoad();
+  }, [workLoaded, workLoad]);
+
   const [todoDraft, setTodoDraft] = useState("");
   const [gratitudeDraft, setGratitudeDraft] = useState("");
   const [activeGoalId, setActiveGoalId] = useState<string | null>(null);
@@ -890,6 +902,13 @@ export default function HomePage() {
     await saveReflection(nextReflection, selectedDate);
   }
 
+  const activeCourses = workCourses.filter((c) => c.status === "active");
+  const activeProjects = workProjects.filter((p) => !p.archivedAt && p.status === "active");
+  const totalMilestones = workMilestones.length;
+  const doneMilestones = workMilestones.filter((m) => m.completed).length;
+  const milestonePercent =
+    totalMilestones > 0 ? Math.round((doneMilestones / totalMilestones) * 100) : 0;
+
   const now = new Date();
 
   if (!allowedPersonas.includes(activePersona)) {
@@ -960,6 +979,43 @@ export default function HomePage() {
               </button>
             );
           })}
+        </div>
+
+        <div className="px-3 pb-3 md:px-4 md:pb-4">
+          <Link
+            href="/work"
+            className="flex items-center justify-between rounded-xl border border-[var(--surface-border)] bg-[var(--bg-secondary)] px-5 py-4 transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[var(--bg-panel-strong)] active:scale-[0.99] md:px-6 md:py-5"
+          >
+            <div className="min-w-0">
+              <p className="font-[family-name:var(--font-display)] text-[0.625rem] font-bold uppercase tracking-[0.16em] text-[var(--text-secondary)]">
+                Work
+              </p>
+              {workLoaded ? (
+                <div className="mt-2 flex flex-wrap items-baseline gap-x-5 gap-y-1">
+                  <span className="font-[family-name:var(--font-display)] text-2xl font-bold leading-none text-[var(--text-primary)]">
+                    {activeCourses.length}
+                    <span className="ml-1.5 text-xs font-normal text-[var(--text-secondary)]">
+                      active {activeCourses.length === 1 ? "course" : "courses"}
+                    </span>
+                  </span>
+                  <span className="font-[family-name:var(--font-display)] text-2xl font-bold leading-none text-[var(--text-primary)]">
+                    {activeProjects.length}
+                    <span className="ml-1.5 text-xs font-normal text-[var(--text-secondary)]">
+                      active {activeProjects.length === 1 ? "project" : "projects"}
+                    </span>
+                  </span>
+                  {totalMilestones > 0 && (
+                    <span className="font-mono text-xs tabular-nums text-[var(--text-secondary)]">
+                      {milestonePercent}% milestones done
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <p className="mt-2 font-mono text-xs text-[var(--text-secondary)]">Loading…</p>
+              )}
+            </div>
+            <span className="ml-4 shrink-0 text-[var(--text-secondary)]">→</span>
+          </Link>
         </div>
       </section>
 
