@@ -1,6 +1,7 @@
 "use client";
 
 import { create } from "zustand";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 import type { Persona, StickyNote } from "@/lib/types";
 import { getDb } from "@/lib/db/database";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -157,7 +158,7 @@ interface StickyNotesState {
   ownArchived: StickyNote[];
   archiveDrawerOpen: boolean;
   _activePersona: Persona | null;
-  _realtimeChannel: ReturnType<ReturnType<typeof getSupabaseBrowserClient>["channel"]> | null;
+  _realtimeChannel: RealtimeChannel | null;
 
   load: (activePersona: Persona) => Promise<void>;
   unsubscribe: () => Promise<void>;
