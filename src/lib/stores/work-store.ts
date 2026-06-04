@@ -79,6 +79,8 @@ interface WorkState {
   updateProject: (id: string, updates: Partial<ProjectInput>) => Promise<void>;
   archiveProject: (id: string) => Promise<void>;
   createCourse: (input: CourseInput) => Promise<WorkCourse>;
+  createChapter: (courseId: string, title: string) => Promise<CourseChapter>;
+  createMilestone: (chapterId: string, title: string) => Promise<CourseMilestone>;
   saveParsedCourse: (parsed: ParseCoursePlanResult) => Promise<WorkCourse>;
   toggleMilestone: (id: string, completed: boolean) => Promise<void>;
   updateMilestone: (id: string, updates: Partial<Omit<CourseMilestone, "id" | "chapterId" | "order">>) => Promise<void>;
@@ -383,6 +385,44 @@ export const useWorkStore = create<WorkState>((set, get) => ({
     set((state) => ({ courses: [course, ...state.courses] }));
     void syncToSupabase((uid) => sbCreateCourse(uid, course));
     return course;
+  },
+
+  async createChapter(courseId, title) {
+    const db = getWorkDb();
+    const existing = get().chapters.filter((c) => c.courseId === courseId);
+    const chapter: CourseChapter = {
+      id: generateId(),
+      courseId,
+      title,
+      deadline: "",
+      estimate: "",
+      priority: "normal",
+      order: existing.length,
+    };
+    await db.chapters.add(chapter);
+    set((state) => ({ chapters: [...state.chapters, chapter] }));
+    void syncToSupabase((uid) => sbCreateChapter(uid, chapter));
+    return chapter;
+  },
+
+  async createMilestone(chapterId, title) {
+    const db = getWorkDb();
+    const existing = get().milestones.filter((m) => m.chapterId === chapterId);
+    const milestone: CourseMilestone = {
+      id: generateId(),
+      chapterId,
+      title,
+      deadline: "",
+      estimate: "",
+      link: "",
+      notes: "",
+      completed: false,
+      order: existing.length,
+    };
+    await db.milestones.add(milestone);
+    set((state) => ({ milestones: [...state.milestones, milestone] }));
+    void syncToSupabase((uid) => sbCreateMilestone(uid, milestone));
+    return milestone;
   },
 
   async toggleMilestone(id, completed) {

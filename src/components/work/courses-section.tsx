@@ -220,12 +220,18 @@ export function CoursesSection() {
   const deleteChapter = useWorkStore((s) => s.deleteChapter);
   const updateCourse = useWorkStore((s) => s.updateCourse);
   const deleteCourse = useWorkStore((s) => s.deleteCourse);
+  const createChapter = useWorkStore((s) => s.createChapter);
+  const createMilestone = useWorkStore((s) => s.createMilestone);
 
   const [editingCourse, setEditingCourse] = useState<string | null>(null);
   const [editingChapter, setEditingChapter] = useState<string | null>(null);
   const [editingMilestone, setEditingMilestone] = useState<string | null>(null);
   const [collapsedCourses, setCollapsedCourses] = useState<Set<string>>(new Set());
   const [collapsedChapters, setCollapsedChapters] = useState<Set<string>>(new Set());
+  const [addingChapterTo, setAddingChapterTo] = useState<string | null>(null);
+  const [newChapterTitle, setNewChapterTitle] = useState("");
+  const [addingMilestoneTo, setAddingMilestoneTo] = useState<string | null>(null);
+  const [newMilestoneTitle, setNewMilestoneTitle] = useState("");
 
   function toggleCollapsed(id: string) {
     setCollapsedCourses((prev) => {
@@ -243,6 +249,20 @@ export function CoursesSection() {
       else next.add(id);
       return next;
     });
+  }
+
+  async function submitNewChapter(courseId: string) {
+    if (!newChapterTitle.trim()) return;
+    await createChapter(courseId, newChapterTitle.trim());
+    setNewChapterTitle("");
+    setAddingChapterTo(null);
+  }
+
+  async function submitNewMilestone(chapterId: string) {
+    if (!newMilestoneTitle.trim()) return;
+    await createMilestone(chapterId, newMilestoneTitle.trim());
+    setNewMilestoneTitle("");
+    setAddingMilestoneTo(null);
   }
 
   return (
@@ -342,6 +362,14 @@ export function CoursesSection() {
                           <span className={`inline-block transition-transform duration-200 px-1.5 text-[var(--text-secondary)] ${isCollapsed ? "" : "rotate-180"}`}>▾</span>
                           <button
                             type="button"
+                            onClick={(e) => { e.stopPropagation(); setAddingChapterTo(course.id); setNewChapterTitle(""); setCollapsedCourses((p) => { const n = new Set(p); n.delete(course.id); return n; }); }}
+                            className="rounded p-1.5 text-[0.625rem] font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-border)] hover:text-[var(--accent-soft)]"
+                            title="Add chapter"
+                          >
+                            +
+                          </button>
+                          <button
+                            type="button"
                             onClick={(e) => { e.stopPropagation(); setEditingCourse(course.id); }}
                             className="rounded p-1.5 text-[0.625rem] text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-border)] hover:text-[var(--text-primary)]"
                           >
@@ -429,6 +457,14 @@ export function CoursesSection() {
                                 </span>
                                 <button
                                   type="button"
+                                  onClick={(e) => { e.stopPropagation(); setAddingMilestoneTo(chapter.id); setNewMilestoneTitle(""); setCollapsedChapters((p) => { const n = new Set(p); n.delete(chapter.id); return n; }); }}
+                                  className="rounded p-0.5 text-xs font-bold text-[var(--text-secondary)] opacity-100 transition-all sm:opacity-0 sm:group-hover:opacity-100 hover:text-[var(--accent-soft)]"
+                                  title="Add milestone"
+                                >
+                                  +
+                                </button>
+                                <button
+                                  type="button"
                                   onClick={(e) => { e.stopPropagation(); setEditingChapter(chapter.id); }}
                                   className="rounded p-0.5 text-xs text-[var(--text-secondary)] opacity-100 transition-all sm:opacity-0 sm:group-hover:opacity-100 hover:text-[var(--text-primary)]"
                                 >
@@ -453,7 +489,7 @@ export function CoursesSection() {
                           {!isChapterCollapsed && ms.map((milestone, mi) => (
                             <div
                               key={milestone.id}
-                              className={mi > 0 ? "border-t border-[var(--surface-border)]/50" : ""}
+                              className={`border-t border-[var(--surface-border)]/50 ${mi === 0 ? "border-t-0" : ""}`}
                             >
                               {editingMilestone === milestone.id ? (
                                 <MilestoneEditForm
@@ -525,9 +561,45 @@ export function CoursesSection() {
                               )}
                             </div>
                           ))}
+                          {/* Inline add milestone */}
+                          {!isChapterCollapsed && addingMilestoneTo === chapter.id && (
+                            <div className="border-t border-[var(--surface-border)]/50 flex items-center gap-2 px-4 py-2 sm:px-5">
+                              <input
+                                autoFocus
+                                value={newMilestoneTitle}
+                                onChange={(e) => setNewMilestoneTitle(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") void submitNewMilestone(chapter.id);
+                                  if (e.key === "Escape") { setAddingMilestoneTo(null); setNewMilestoneTitle(""); }
+                                }}
+                                placeholder="Milestone title…"
+                                className="flex-1 rounded-md px-2.5 py-1.5 text-xs outline-none"
+                              />
+                              <button type="button" onClick={() => void submitNewMilestone(chapter.id)} className="h-6 rounded-md bg-[var(--accent-solid)] px-2.5 font-[family-name:var(--font-display)] text-[0.5rem] font-bold uppercase tracking-[0.1em] text-white disabled:opacity-40" disabled={!newMilestoneTitle.trim()}>Add</button>
+                              <button type="button" onClick={() => { setAddingMilestoneTo(null); setNewMilestoneTitle(""); }} className="h-6 rounded-md border border-[var(--surface-border)] px-2 font-[family-name:var(--font-display)] text-[0.5rem] font-bold uppercase tracking-[0.1em] text-[var(--text-secondary)]">✕</button>
+                            </div>
+                          )}
                         </div>
                       );
                     })}
+                  {/* Inline add chapter */}
+                  {addingChapterTo === course.id && (
+                    <div className="border-t border-[var(--surface-border)] flex items-center gap-2 bg-[var(--bg-panel-strong)] px-4 py-2.5 sm:px-5">
+                      <input
+                        autoFocus
+                        value={newChapterTitle}
+                        onChange={(e) => setNewChapterTitle(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") void submitNewChapter(course.id);
+                          if (e.key === "Escape") { setAddingChapterTo(null); setNewChapterTitle(""); }
+                        }}
+                        placeholder="Chapter title…"
+                        className="flex-1 rounded-md px-2.5 py-1.5 text-xs outline-none"
+                      />
+                      <button type="button" onClick={() => void submitNewChapter(course.id)} className="h-6 rounded-md bg-[var(--accent-solid)] px-2.5 font-[family-name:var(--font-display)] text-[0.5rem] font-bold uppercase tracking-[0.1em] text-white disabled:opacity-40" disabled={!newChapterTitle.trim()}>Add</button>
+                      <button type="button" onClick={() => { setAddingChapterTo(null); setNewChapterTitle(""); }} className="h-6 rounded-md border border-[var(--surface-border)] px-2 font-[family-name:var(--font-display)] text-[0.5rem] font-bold uppercase tracking-[0.1em] text-[var(--text-secondary)]">✕</button>
+                    </div>
+                  )}
                   </div>}
                 </article>
               );
