@@ -25,7 +25,7 @@ export function NavItem({ href, icon, label }: NavItemProps) {
           : "text-[var(--text-secondary)] hover:bg-white/70 hover:text-[var(--text-primary)]",
       )}
     >
-      <span className="text-base">{icon}</span>
+      <span className="text-base" aria-hidden="true">{icon}</span>
       <span className="hidden lg:inline">{label}</span>
     </Link>
   );
