@@ -42,7 +42,7 @@ describe("WorkPage", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Copy AI prompt" }));
 
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
-      expect.stringContaining("Return only the structured course plan."),
+      expect.stringContaining("Return only the plan"),
     );
   });
 

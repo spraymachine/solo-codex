@@ -50,6 +50,12 @@ interface WorkState {
   archiveProject: (id: string) => Promise<void>;
   saveParsedCourse: (parsed: ParseCoursePlanResult) => Promise<WorkCourse>;
   toggleMilestone: (id: string, completed: boolean) => Promise<void>;
+  updateMilestone: (id: string, updates: Partial<Omit<CourseMilestone, "id" | "chapterId" | "order">>) => Promise<void>;
+  deleteMilestone: (id: string) => Promise<void>;
+  updateChapter: (id: string, updates: Partial<Omit<CourseChapter, "id" | "courseId" | "order">>) => Promise<void>;
+  deleteChapter: (id: string) => Promise<void>;
+  updateCourse: (id: string, updates: Partial<Omit<WorkCourse, "id" | "createdAt">>) => Promise<void>;
+  deleteCourse: (id: string) => Promise<void>;
 }
 
 function sortByCreatedDesc<T extends { createdAt: string }>(items: T[]) {
@@ -296,9 +302,64 @@ export const useWorkStore = create<WorkState>((set, get) => ({
   async toggleMilestone(id, completed) {
     await getWorkDb().milestones.update(id, { completed });
     set((state) => ({
-      milestones: state.milestones.map((milestone) =>
-        milestone.id === id ? { ...milestone, completed } : milestone,
-      ),
+      milestones: state.milestones.map((m) => (m.id === id ? { ...m, completed } : m)),
+    }));
+  },
+
+  async updateMilestone(id, updates) {
+    await getWorkDb().milestones.update(id, updates);
+    set((state) => ({
+      milestones: state.milestones.map((m) => (m.id === id ? { ...m, ...updates } : m)),
+    }));
+  },
+
+  async deleteMilestone(id) {
+    await getWorkDb().milestones.delete(id);
+    set((state) => ({ milestones: state.milestones.filter((m) => m.id !== id) }));
+  },
+
+  async updateChapter(id, updates) {
+    await getWorkDb().chapters.update(id, updates);
+    set((state) => ({
+      chapters: state.chapters.map((c) => (c.id === id ? { ...c, ...updates } : c)),
+    }));
+  },
+
+  async deleteChapter(id) {
+    const db = getWorkDb();
+    const milestoneIds = (await db.milestones.where("chapterId").equals(id).toArray()).map((m) => m.id);
+    await db.transaction("rw", [db.chapters, db.milestones], async () => {
+      await db.milestones.bulkDelete(milestoneIds);
+      await db.chapters.delete(id);
+    });
+    set((state) => ({
+      chapters: state.chapters.filter((c) => c.id !== id),
+      milestones: state.milestones.filter((m) => m.chapterId !== id),
+    }));
+  },
+
+  async updateCourse(id, updates) {
+    await getWorkDb().courses.update(id, { ...updates, updatedAt: nowISO() });
+    set((state) => ({
+      courses: state.courses.map((c) => (c.id === id ? { ...c, ...updates, updatedAt: nowISO() } : c)),
+    }));
+  },
+
+  async deleteCourse(id) {
+    const db = getWorkDb();
+    const chapterIds = (await db.chapters.where("courseId").equals(id).toArray()).map((c) => c.id);
+    const milestoneIds = (
+      await Promise.all(chapterIds.map((cid) => db.milestones.where("chapterId").equals(cid).toArray()))
+    ).flat().map((m) => m.id);
+    await db.transaction("rw", [db.courses, db.chapters, db.milestones], async () => {
+      await db.milestones.bulkDelete(milestoneIds);
+      await db.chapters.bulkDelete(chapterIds);
+      await db.courses.delete(id);
+    });
+    set((state) => ({
+      courses: state.courses.filter((c) => c.id !== id),
+      chapters: state.chapters.filter((c) => !chapterIds.includes(c.id)),
+      milestones: state.milestones.filter((m) => !milestoneIds.includes(m.id)),
     }));
   },
 }));
