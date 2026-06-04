@@ -33,6 +33,11 @@ const STATUS_COLOR: Record<CourseStatus, string> = {
 const COURSE_STATUSES: CourseStatus[] = ["planned", "active", "paused", "completed"];
 const CHAPTER_PRIORITIES: ChapterPriority[] = ["low", "normal", "high"];
 
+function fmtDate(iso: string) {
+  const [, m, d] = iso.split("-");
+  return `${d}/${m}`;
+}
+
 function getCourseProgress(
   course: WorkCourse,
   chapters: CourseChapter[],
@@ -220,6 +225,7 @@ export function CoursesSection() {
   const [editingChapter, setEditingChapter] = useState<string | null>(null);
   const [editingMilestone, setEditingMilestone] = useState<string | null>(null);
   const [collapsedCourses, setCollapsedCourses] = useState<Set<string>>(new Set());
+  const [collapsedChapters, setCollapsedChapters] = useState<Set<string>>(new Set());
 
   function toggleCollapsed(id: string) {
     setCollapsedCourses((prev) => {
@@ -230,8 +236,17 @@ export function CoursesSection() {
     });
   }
 
+  function toggleChapterCollapsed(id: string) {
+    setCollapsedChapters((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
   return (
-    <section className="border-b border-[var(--surface-border)] px-5 py-8 md:px-8">
+    <section className="border-b border-[var(--surface-border)] px-4 py-8 sm:px-5 md:px-8">
       {/* Section header */}
       <div className="mb-7 flex items-end justify-between">
         <div>
@@ -292,84 +307,66 @@ export function CoursesSection() {
                       onCancel={() => setEditingCourse(null)}
                     />
                   ) : (
-                    <div className="border-b border-[var(--surface-border)] px-5 py-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <h3 className="font-[family-name:var(--font-display)] text-xl font-bold uppercase tracking-[0.03em] text-[var(--text-primary)] leading-tight">
-                            {course.title}
-                          </h3>
-                          {course.goal && (
-                            <p className="mt-0.5 text-sm text-[var(--text-secondary)]">{course.goal}</p>
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => toggleCollapsed(course.id)}
+                      onKeyDown={(e) => e.key === "Enter" && toggleCollapsed(course.id)}
+                      className="cursor-pointer border-b border-[var(--surface-border)] px-4 py-4 transition-colors hover:bg-[var(--surface-highlight)] sm:px-5"
+                    >
+                      {/* Title + Due date + Actions */}
+                      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 mb-3">
+                        <div className="flex min-w-0 flex-1 items-center gap-3">
+                          {course.url ? (
+                            <a
+                              href={course.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="font-[family-name:var(--font-display)] text-lg font-bold uppercase tracking-[0.03em] text-[var(--text-primary)] leading-tight hover:text-[var(--accent-soft)] transition-colors sm:text-xl"
+                            >
+                              {course.title}
+                            </a>
+                          ) : (
+                            <h3 className="font-[family-name:var(--font-display)] text-lg font-bold uppercase tracking-[0.03em] text-[var(--text-primary)] leading-tight sm:text-xl">
+                              {course.title}
+                            </h3>
+                          )}
+                          {course.deadline && (
+                            <span className="w-12 text-center font-[family-name:var(--font-display)] text-base font-bold tracking-[0.06em] text-[var(--accent-soft)] shrink-0">
+                              {fmtDate(course.deadline)}
+                            </span>
                           )}
                         </div>
-                        <div className="flex shrink-0 items-center gap-1.5">
-                          <span className={`rounded-full border px-2.5 py-0.5 font-[family-name:var(--font-display)] text-[0.5rem] font-bold uppercase tracking-[0.14em] ${STATUS_COLOR[course.status]}`}>
-                            {course.status}
-                          </span>
+                        <div className="flex shrink-0 items-center gap-1">
+                          <span className={`inline-block transition-transform duration-200 px-1.5 text-[var(--text-secondary)] ${isCollapsed ? "" : "rotate-180"}`}>▾</span>
                           <button
                             type="button"
-                            onClick={() => toggleCollapsed(course.id)}
-                            title={isCollapsed ? "Expand" : "Collapse"}
-                            className="rounded p-1 text-[0.625rem] text-[var(--text-secondary)] transition-all hover:bg-[var(--surface-border)] hover:text-[var(--text-primary)]"
-                          >
-                            <span className={`inline-block transition-transform duration-200 ${isCollapsed ? "" : "rotate-180"}`}>▾</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setEditingCourse(course.id)}
-                            className="rounded p-1 text-[0.625rem] text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-border)] hover:text-[var(--text-primary)]"
+                            onClick={(e) => { e.stopPropagation(); setEditingCourse(course.id); }}
+                            className="rounded p-1.5 text-[0.625rem] text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-border)] hover:text-[var(--text-primary)]"
                           >
                             ✎
                           </button>
                           <button
                             type="button"
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation();
                               if (window.confirm(`Delete "${course.title}" and all its data?`))
                                 void deleteCourse(course.id);
                             }}
-                            className="rounded p-1 text-[0.625rem] text-[var(--text-secondary)] transition-colors hover:bg-[var(--danger)]/10 hover:text-[var(--danger)]"
+                            className="rounded p-1.5 text-[0.625rem] text-[var(--text-secondary)] transition-colors hover:bg-[var(--danger)]/10 hover:text-[var(--danger)]"
                           >
                             ✕
                           </button>
                         </div>
                       </div>
 
-                      {/* Meta */}
-                      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
-                        {course.deadline && (
-                          <span className="font-mono text-xs text-[var(--text-secondary)]">
-                            due <span className="text-[var(--text-primary)]">{course.deadline}</span>
-                          </span>
-                        )}
-                        {course.source && (
-                          <span className="font-[family-name:var(--font-display)] text-[0.625rem] uppercase tracking-[0.12em] text-[var(--text-secondary)]">
-                            {course.source}
-                          </span>
-                        )}
-                        {course.url && (
-                          <a
-                            href={course.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="font-[family-name:var(--font-display)] text-[0.625rem] font-bold uppercase tracking-[0.12em] text-[var(--accent-soft)] transition-opacity hover:opacity-70"
-                          >
-                            Open ↗
-                          </a>
-                        )}
-                      </div>
-
-                      {/* Progress */}
-                      <div className="mt-3">
-                        <div className="mb-1.5 flex items-center justify-between font-mono text-[0.625rem] tabular-nums text-[var(--text-secondary)]">
-                          <span>{doneMs}/{allMs.length} milestones</span>
-                          <span>{progress}%</span>
-                        </div>
-                        <div className="h-1 overflow-hidden rounded-full bg-[var(--surface-border)]">
-                          <div
-                            className={`h-full rounded-full transition-all duration-700 ${progress === 100 ? "progress-complete bg-emerald-400" : "bg-[var(--accent-solid)]"}`}
-                            style={{ width: `${progress}%` }}
-                          />
-                        </div>
+                      {/* Progress bar */}
+                      <div className="h-1 overflow-hidden rounded-full bg-[var(--surface-border)]">
+                        <div
+                          className={`h-full rounded-full transition-all duration-700 ${progress === 100 ? "progress-complete bg-emerald-400" : "bg-[var(--accent-solid)]"}`}
+                          style={{ width: `${progress}%` }}
+                        />
                       </div>
                     </div>
                   )}
@@ -382,6 +379,7 @@ export function CoursesSection() {
                         .sort((a, b) => a.order - b.order);
                       const chapterDone = ms.filter((m) => m.completed).length;
                       const allDone = ms.length > 0 && chapterDone === ms.length;
+                      const isChapterCollapsed = collapsedChapters.has(chapter.id);
 
                       return (
                         <div
@@ -396,53 +394,63 @@ export function CoursesSection() {
                               onCancel={() => setEditingChapter(null)}
                             />
                           ) : (
-                            <div className="group flex flex-wrap items-center gap-2 bg-[var(--bg-panel-strong)] px-5 py-2.5">
-                              <span className="font-[family-name:var(--font-display)] text-[0.5rem] font-bold uppercase tracking-[0.2em] text-[var(--text-secondary)]">
-                                Ch {String(ci + 1).padStart(2, "0")}
+                            <div
+                              role="button"
+                              tabIndex={0}
+                              onClick={() => toggleChapterCollapsed(chapter.id)}
+                              onKeyDown={(e) => e.key === "Enter" && toggleChapterCollapsed(chapter.id)}
+                              className="group flex cursor-pointer items-center gap-2 bg-[var(--bg-panel-strong)] px-4 py-3 transition-colors hover:bg-[var(--surface-highlight)] sm:px-5"
+                            >
+                              <span className={`shrink-0 text-xs transition-transform duration-200 text-[var(--text-secondary)] ${isChapterCollapsed ? "" : "rotate-180"}`}>▾</span>
+                              <span className="shrink-0 font-[family-name:var(--font-display)] text-[0.5rem] font-bold uppercase tracking-[0.2em] text-[var(--text-secondary)]">
+                                {String(ci + 1).padStart(2, "0")}
                               </span>
-                              <p className={`font-[family-name:var(--font-display)] text-xs font-bold uppercase tracking-[0.08em] ${allDone ? "text-[var(--text-secondary)]" : "text-[var(--text-primary)]"}`}>
+                              <p className={`flex-1 truncate font-[family-name:var(--font-display)] text-xs font-bold uppercase tracking-[0.06em] sm:text-sm ${allDone ? "text-[var(--text-secondary)]" : "text-[var(--text-primary)]"}`}>
                                 {chapter.title}
                               </p>
-                              {chapter.priority !== "normal" && (
-                                <span className={`rounded px-1.5 py-0.5 font-[family-name:var(--font-display)] text-[0.5rem] font-bold uppercase tracking-[0.1em] ${PRIORITY_COLOR[chapter.priority]}`}>
-                                  {PRIORITY_LABEL[chapter.priority]}
-                                </span>
-                              )}
-                              {chapter.deadline && (
+                              <div className="flex shrink-0 items-center gap-2">
+                                {chapter.deadline && (
+                                  <span className="hidden w-12 text-center font-[family-name:var(--font-display)] text-sm font-bold text-[var(--accent-soft)] sm:inline">
+                                    {fmtDate(chapter.deadline)}
+                                  </span>
+                                )}
+                                {chapter.estimate && (
+                                  <span className="hidden font-mono text-[0.625rem] tabular-nums text-[var(--text-secondary)] sm:inline">
+                                    {chapter.estimate}
+                                  </span>
+                                )}
+                                {chapter.priority !== "normal" && (
+                                  <span className={`hidden rounded px-1 py-0.5 font-[family-name:var(--font-display)] text-[0.5rem] font-bold uppercase tracking-[0.1em] sm:inline ${PRIORITY_COLOR[chapter.priority]}`}>
+                                    {PRIORITY_LABEL[chapter.priority]}
+                                  </span>
+                                )}
                                 <span className="font-mono text-[0.625rem] tabular-nums text-[var(--text-secondary)]">
-                                  {chapter.deadline}
+                                  {chapterDone}/{ms.length}
                                 </span>
-                              )}
-                              {chapter.estimate && (
-                                <span className="font-mono text-[0.625rem] tabular-nums text-[var(--text-secondary)]">
-                                  {chapter.estimate}
-                                </span>
-                              )}
-                              <span className="ml-auto font-mono text-[0.625rem] tabular-nums text-[var(--text-secondary)]">
-                                {chapterDone}/{ms.length}
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() => setEditingChapter(chapter.id)}
-                                className="rounded p-0.5 text-[0.625rem] text-[var(--text-secondary)] opacity-0 transition-all group-hover:opacity-100 hover:text-[var(--text-primary)]"
-                              >
-                                ✎
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  if (window.confirm(`Delete chapter "${chapter.title}"?`))
-                                    void deleteChapter(chapter.id);
-                                }}
-                                className="rounded p-0.5 text-[0.625rem] text-[var(--text-secondary)] opacity-0 transition-all group-hover:opacity-100 hover:text-[var(--danger)]"
-                              >
-                                ✕
-                              </button>
+                                <button
+                                  type="button"
+                                  onClick={(e) => { e.stopPropagation(); setEditingChapter(chapter.id); }}
+                                  className="rounded p-0.5 text-xs text-[var(--text-secondary)] opacity-0 transition-all group-hover:opacity-100 hover:text-[var(--text-primary)]"
+                                >
+                                  ✎
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (window.confirm(`Delete chapter "${chapter.title}"?`))
+                                      void deleteChapter(chapter.id);
+                                  }}
+                                  className="rounded p-0.5 text-xs text-[var(--text-secondary)] opacity-0 transition-all group-hover:opacity-100 hover:text-[var(--danger)]"
+                                >
+                                  ✕
+                                </button>
+                              </div>
                             </div>
                           )}
 
                           {/* Milestones */}
-                          {ms.map((milestone, mi) => (
+                          {!isChapterCollapsed && ms.map((milestone, mi) => (
                             <div
                               key={milestone.id}
                               className={mi > 0 ? "border-t border-[var(--surface-border)]/50" : ""}
@@ -454,12 +462,12 @@ export function CoursesSection() {
                                   onCancel={() => setEditingMilestone(null)}
                                 />
                               ) : (
-                                <div className={`group flex items-start gap-3 px-5 py-3 transition-colors hover:bg-[var(--surface-highlight)] ${milestone.completed ? "opacity-50" : ""}`}>
+                                <div className={`group flex items-start gap-3 px-4 py-2.5 transition-colors hover:bg-[var(--surface-highlight)] sm:px-5 ${milestone.completed ? "opacity-40" : ""}`}>
                                   <input
                                     type="checkbox"
                                     checked={milestone.completed}
                                     onChange={(e) => void toggleMilestone(milestone.id, e.target.checked)}
-                                    className="mt-0.5 h-3.5 w-3.5 shrink-0 cursor-pointer"
+                                    className="mt-[3px] h-3.5 w-3.5 shrink-0 cursor-pointer"
                                     style={{ accentColor: "var(--accent-solid)" }}
                                   />
                                   <div className="min-w-0 flex-1">
@@ -467,10 +475,10 @@ export function CoursesSection() {
                                       {milestone.title}
                                     </p>
                                     {(milestone.deadline || milestone.estimate || milestone.notes || milestone.link) && (
-                                      <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5">
+                                      <div className="mt-0.5 flex flex-wrap items-center gap-x-2.5 gap-y-0.5">
                                         {milestone.deadline && (
-                                          <span className="font-mono text-[0.625rem] tabular-nums text-[var(--text-secondary)]">
-                                            {milestone.deadline}
+                                          <span className="w-10 text-center font-[family-name:var(--font-display)] text-sm font-bold text-[var(--accent-soft)]">
+                                            {fmtDate(milestone.deadline)}
                                           </span>
                                         )}
                                         {milestone.estimate && (
@@ -497,18 +505,18 @@ export function CoursesSection() {
                                       </div>
                                     )}
                                   </div>
-                                  <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+                                  <div className="flex shrink-0 items-center gap-0.5 opacity-100 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100">
                                     <button
                                       type="button"
                                       onClick={() => setEditingMilestone(milestone.id)}
-                                      className="rounded p-1 text-[0.625rem] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                                      className="rounded p-1 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                                     >
                                       ✎
                                     </button>
                                     <button
                                       type="button"
                                       onClick={() => void deleteMilestone(milestone.id)}
-                                      className="rounded p-1 text-[0.625rem] text-[var(--text-secondary)] hover:text-[var(--danger)]"
+                                      className="rounded p-1 text-xs text-[var(--text-secondary)] hover:text-[var(--danger)]"
                                     >
                                       ✕
                                     </button>
