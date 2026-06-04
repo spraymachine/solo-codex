@@ -225,6 +225,44 @@ Priority: high`);
     expect(result.warnings).toContain("Unsupported malformed chapter field Deadline was ignored.");
   });
 
+  it("does not let compact chapter token fields overwrite course fields", () => {
+    const result = parseCoursePlan(`Course: Strict Headings
+URL:
+Goal:
+Deadline: 2026-07-30
+Source:
+Status: active
+
+## Chapter1: Routing
+Deadline: 2026-06-12
+Estimate: 3h
+Priority: high`);
+
+    expect(result.course?.deadline).toBe("2026-07-30");
+    expect(result.chapters).toHaveLength(0);
+    expect(result.warnings).toContain("Unrecognized line ignored: ## Chapter1: Routing");
+    expect(result.warnings).toContain("Unsupported malformed chapter field Deadline was ignored.");
+  });
+
+  it("does not let lowercase chapter heading fields overwrite course fields", () => {
+    const result = parseCoursePlan(`Course: Strict Headings
+URL:
+Goal:
+Deadline: 2026-07-30
+Source:
+Status: active
+
+## chapter 1: Routing
+Deadline: 2026-06-12
+Estimate: 3h
+Priority: high`);
+
+    expect(result.course?.deadline).toBe("2026-07-30");
+    expect(result.chapters).toHaveLength(0);
+    expect(result.warnings).toContain("Unrecognized line ignored: ## chapter 1: Routing");
+    expect(result.warnings).toContain("Unsupported malformed chapter field Deadline was ignored.");
+  });
+
   it("does not let double-space chapter heading fields overwrite course fields", () => {
     const result = parseCoursePlan(`Course: Strict Headings
 URL:

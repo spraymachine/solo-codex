@@ -37,7 +37,7 @@ const CHAPTER_FIELDS = new Set(["Deadline", "Estimate", "Priority"]);
 const MILESTONE_FIELDS = new Set(["Deadline", "Estimate", "Link", "Notes"]);
 const CHAPTER_HEADING_PATTERN = /^## Chapter (\d+): (\S.*)$/;
 const MILESTONE_HEADING_PATTERN = /^### Milestone: (\S.*)$/;
-const MALFORMED_CHAPTER_HEADING_PATTERN = /^##\s*Chapter\b/;
+const MALFORMED_CHAPTER_HEADING_PATTERN = /^##(?!#)\s*chapter(?:\b|\d)/i;
 const MALFORMED_MILESTONE_HEADING_PATTERN = /^###\s*Milestone\b/;
 
 function splitField(line: string) {
