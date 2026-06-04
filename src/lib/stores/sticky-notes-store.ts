@@ -181,6 +181,8 @@ async function refreshFromCloud(persona: Persona, set: (s: Partial<StickyNotesSt
   set({ ownNotes, ownArchived });
 }
 
+let loadingPromise: Promise<void> | null = null;
+
 export const useStickyNotesStore = create<StickyNotesState>()((set, get) => ({
   ownNotes: [],
   ownArchived: [],
@@ -189,42 +191,52 @@ export const useStickyNotesStore = create<StickyNotesState>()((set, get) => ({
   _realtimeChannel: null,
 
   load: async (activePersona) => {
-    // Tear down any existing channel before re-subscribing
-    await get().unsubscribe();
+    const { _activePersona, _realtimeChannel } = get();
+    if (_activePersona === activePersona && _realtimeChannel) return;
 
-    set({ _activePersona: activePersona });
-
-    // Show Dexie immediately
-    const [ownLocal, ownArchLocal] = await Promise.all([
-      readActive(activePersona),
-      readArchived(activePersona),
-    ]);
-    set({ ownNotes: ownLocal, ownArchived: ownArchLocal });
-
-    // Reconcile with Supabase
-    await refreshFromCloud(activePersona, set);
-
-    // Subscribe to realtime changes from other devices
-    const supabase = getSupabaseBrowserClient();
-    const user = await getAuthUser();
-    if (supabase && isSupabaseConfigured() && user) {
-      const channel = supabase
-        .channel(`sticky_notes:${user.id}:${activePersona}`)
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "sticky_notes",
-            filter: `user_id=eq.${user.id}`,
-          },
-          () => {
-            void refreshFromCloud(activePersona, set);
-          },
-        )
-        .subscribe();
-      set({ _realtimeChannel: channel });
+    if (loadingPromise) {
+      await loadingPromise;
+      return;
     }
+
+    loadingPromise = (async () => {
+      await get().unsubscribe();
+
+      set({ _activePersona: activePersona });
+
+      const [ownLocal, ownArchLocal] = await Promise.all([
+        readActive(activePersona),
+        readArchived(activePersona),
+      ]);
+      set({ ownNotes: ownLocal, ownArchived: ownArchLocal });
+
+      await refreshFromCloud(activePersona, set);
+
+      const supabase = getSupabaseBrowserClient();
+      const user = await getAuthUser();
+      if (supabase && isSupabaseConfigured() && user) {
+        const channel = supabase
+          .channel(`sticky_notes:${user.id}:${activePersona}`)
+          .on(
+            "postgres_changes",
+            {
+              event: "*",
+              schema: "public",
+              table: "sticky_notes",
+              filter: `user_id=eq.${user.id}`,
+            },
+            () => {
+              void refreshFromCloud(activePersona, set);
+            },
+          )
+          .subscribe();
+        set({ _realtimeChannel: channel });
+      }
+    })().finally(() => {
+      loadingPromise = null;
+    });
+
+    await loadingPromise;
   },
 
   unsubscribe: async () => {
