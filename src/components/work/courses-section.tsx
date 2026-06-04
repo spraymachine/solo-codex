@@ -219,6 +219,16 @@ export function CoursesSection() {
   const [editingCourse, setEditingCourse] = useState<string | null>(null);
   const [editingChapter, setEditingChapter] = useState<string | null>(null);
   const [editingMilestone, setEditingMilestone] = useState<string | null>(null);
+  const [collapsedCourses, setCollapsedCourses] = useState<Set<string>>(new Set());
+
+  function toggleCollapsed(id: string) {
+    setCollapsedCourses((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
 
   return (
     <section className="border-b border-[var(--surface-border)] px-5 py-8 md:px-8">
@@ -262,6 +272,7 @@ export function CoursesSection() {
               );
               const doneMs = allMs.filter((m) => m.completed).length;
               const isActive = course.status === "active";
+              const isCollapsed = collapsedCourses.has(course.id);
 
               return (
                 <article
@@ -295,6 +306,14 @@ export function CoursesSection() {
                           <span className={`rounded-full border px-2.5 py-0.5 font-[family-name:var(--font-display)] text-[0.5rem] font-bold uppercase tracking-[0.14em] ${STATUS_COLOR[course.status]}`}>
                             {course.status}
                           </span>
+                          <button
+                            type="button"
+                            onClick={() => toggleCollapsed(course.id)}
+                            title={isCollapsed ? "Expand" : "Collapse"}
+                            className="rounded p-1 text-[0.625rem] text-[var(--text-secondary)] transition-all hover:bg-[var(--surface-border)] hover:text-[var(--text-primary)]"
+                          >
+                            <span className={`inline-block transition-transform duration-200 ${isCollapsed ? "" : "rotate-180"}`}>▾</span>
+                          </button>
                           <button
                             type="button"
                             onClick={() => setEditingCourse(course.id)}
@@ -356,7 +375,7 @@ export function CoursesSection() {
                   )}
 
                   {/* Chapters */}
-                  <div>
+                  {!isCollapsed && <div>
                     {courseChapters.map((chapter, ci) => {
                       const ms = milestones
                         .filter((m) => m.chapterId === chapter.id)
@@ -501,7 +520,7 @@ export function CoursesSection() {
                         </div>
                       );
                     })}
-                  </div>
+                  </div>}
                 </article>
               );
             })
