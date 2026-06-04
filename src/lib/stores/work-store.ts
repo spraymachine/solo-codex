@@ -1,8 +1,11 @@
 "use client";
 
 import { create } from "zustand";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 import { getDb } from "@/lib/db/database";
 import { getWorkDb } from "@/lib/db/work-database";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
 import type { ParseCoursePlanResult } from "@/lib/work/course-parser";
 import type {
   CourseChapter,
@@ -58,7 +61,9 @@ interface WorkState {
   chapters: CourseChapter[];
   milestones: CourseMilestone[];
   loaded: boolean;
+  _realtimeChannel: RealtimeChannel | null;
   load: () => Promise<void>;
+  unsubscribe: () => Promise<void>;
   createContact: (input: ContactInput) => Promise<WorkContact>;
   updateContact: (id: string, updates: Partial<ContactInput>) => Promise<void>;
   archiveContact: (id: string) => Promise<void>;
@@ -137,6 +142,31 @@ async function syncToSupabase(fn: (userId: string) => Promise<void>) {
   }
 }
 
+async function refreshFromRemote(
+  userId: string,
+  set: (partial: Partial<WorkState>) => void,
+) {
+  const remote = await fetchAllWork(userId);
+  if (!remote) return;
+  const db = getWorkDb();
+  await db.transaction("rw", [db.courses, db.chapters, db.milestones, db.contacts, db.projects], async () => {
+    await Promise.all([
+      db.courses.bulkPut(remote.courses),
+      db.chapters.bulkPut(remote.chapters),
+      db.milestones.bulkPut(remote.milestones),
+      db.contacts.bulkPut(remote.contacts),
+      db.projects.bulkPut(remote.projects),
+    ]);
+  });
+  set({
+    courses: remote.courses,
+    chapters: remote.chapters,
+    milestones: remote.milestones,
+    contacts: sortByCreatedDesc(remote.contacts),
+    projects: sortByCreatedDesc(remote.projects),
+  });
+}
+
 export const useWorkStore = create<WorkState>((set, get) => ({
   contacts: [],
   projects: [],
@@ -144,6 +174,16 @@ export const useWorkStore = create<WorkState>((set, get) => ({
   chapters: [],
   milestones: [],
   loaded: false,
+  _realtimeChannel: null,
+
+  async unsubscribe() {
+    const { _realtimeChannel } = get();
+    if (_realtimeChannel) {
+      const client = getSupabaseBrowserClient();
+      set({ _realtimeChannel: null });
+      if (client) await client.removeChannel(_realtimeChannel);
+    }
+  },
 
   async load() {
     await migrateLegacyLeadsIfEmpty();
@@ -153,28 +193,25 @@ export const useWorkStore = create<WorkState>((set, get) => ({
     try {
       const userId = await getWorkUserId();
       if (userId) {
-        const remote = await fetchAllWork(userId);
-        if (remote) {
-          // Write remote data into Dexie for offline access
-          await db.transaction("rw", [db.courses, db.chapters, db.milestones, db.contacts, db.projects], async () => {
-            await Promise.all([
-              db.courses.bulkPut(remote.courses),
-              db.chapters.bulkPut(remote.chapters),
-              db.milestones.bulkPut(remote.milestones),
-              db.contacts.bulkPut(remote.contacts),
-              db.projects.bulkPut(remote.projects),
-            ]);
-          });
-          set({
-            courses: remote.courses,
-            chapters: remote.chapters,
-            milestones: remote.milestones,
-            contacts: sortByCreatedDesc(remote.contacts),
-            projects: sortByCreatedDesc(remote.projects),
-            loaded: true,
-          });
-          return;
+        await refreshFromRemote(userId, set);
+        set({ loaded: true });
+
+        // Subscribe to realtime updates across all 5 tables
+        const client = getSupabaseBrowserClient();
+        if (client && isSupabaseConfigured() && !get()._realtimeChannel) {
+          const tables = ["work_courses", "work_chapters", "work_milestones", "work_contacts", "work_projects"];
+          let channel = client.channel(`work:${userId}`);
+          for (const table of tables) {
+            channel = channel.on(
+              "postgres_changes" as any,
+              { event: "*", schema: "public", table, filter: `user_id=eq.${userId}` },
+              () => { void refreshFromRemote(userId, set); },
+            );
+          }
+          channel.subscribe();
+          set({ _realtimeChannel: channel });
         }
+        return;
       }
     } catch {
       // fall through to local

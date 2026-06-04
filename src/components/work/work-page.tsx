@@ -10,9 +10,12 @@ export function WorkPage() {
   const loaded = useWorkStore((state) => state.loaded);
   const load = useWorkStore((state) => state.load);
 
+  const unsubscribe = useWorkStore((state) => state.unsubscribe);
+
   useEffect(() => {
     if (!loaded) void load();
-  }, [load, loaded]);
+    return () => { void unsubscribe(); };
+  }, [load, loaded, unsubscribe]);
 
   return (
     <div className="min-h-screen text-[var(--text-primary)]">
