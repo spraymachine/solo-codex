@@ -36,6 +36,8 @@ const COURSE_FIELDS = new Set(["Course", "URL", "Goal", "Deadline", "Source", "S
 const CHAPTER_FIELDS = new Set(["Deadline", "Estimate", "Priority"]);
 const MILESTONE_FIELDS = new Set(["Deadline", "Estimate", "Link", "Notes"]);
 const CHAPTER_HEADING_PATTERN = /^## Chapter\s+(\d+):\s*(.+)$/;
+const MALFORMED_CHAPTER_HEADING_PATTERN = /^##\s+Chapter\b/;
+const MALFORMED_MILESTONE_HEADING_PATTERN = /^###\s+Milestone\b/;
 
 function splitField(line: string) {
   const index = line.indexOf(":");
@@ -143,7 +145,7 @@ export function parseCoursePlan(input: string): ParseCoursePlanResult {
       continue;
     }
 
-    if (line.startsWith("## Chapter")) {
+    if (MALFORMED_CHAPTER_HEADING_PATTERN.test(line)) {
       result.warnings.push(`Unrecognized line ignored: ${line}`);
       currentChapter = null;
       currentMilestone = null;
@@ -152,7 +154,7 @@ export function parseCoursePlan(input: string): ParseCoursePlanResult {
       continue;
     }
 
-    if (line.startsWith("### Milestone")) {
+    if (MALFORMED_MILESTONE_HEADING_PATTERN.test(line)) {
       result.warnings.push(`Unrecognized line ignored: ${line}`);
       currentMilestone = null;
       isInInvalidMilestoneBlock = true;
