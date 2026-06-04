@@ -19,8 +19,8 @@ export function CourseImportPanel() {
 
   async function copyPrompt() {
     await navigator.clipboard.writeText(prompt);
-    setCopyLabel("Copied");
-    window.setTimeout(() => setCopyLabel("Copy AI prompt"), 1200);
+    setCopyLabel("Copied ✓");
+    window.setTimeout(() => setCopyLabel("Copy AI prompt"), 1400);
   }
 
   function previewCourse() {
@@ -36,104 +36,125 @@ export function CourseImportPanel() {
     setSaving(false);
   }
 
+  const hasErrors = parsed && parsed.errors.length > 0;
+  const readyToSave = parsed && parsed.errors.length === 0 && parsed.course;
+
   return (
-    <section className="rounded-xl border border-[#EAEAEA] bg-white p-5">
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+    <section className="overflow-hidden rounded-xl border border-[var(--surface-border)] bg-[var(--bg-panel)]">
+      {/* Panel header */}
+      <div className="border-b border-[var(--surface-border)] px-5 py-4">
+        <p className="font-[family-name:var(--font-display)] text-[0.625rem] font-bold uppercase tracking-[0.22em] text-[var(--text-secondary)]">
+          Import
+        </p>
+        <h2 className="mt-1 font-[family-name:var(--font-display)] text-xl font-bold uppercase tracking-[0.04em] text-[var(--text-primary)]">
+          Paste Course Plan
+        </h2>
+      </div>
+
+      <div className="space-y-4 p-5">
+        {/* URL field */}
         <div>
-          <p className="text-[0.625rem] font-bold uppercase tracking-[0.14em] text-[#787774]">
-            Strict import
-          </p>
-          <h2 className="mt-1 text-xl font-semibold tracking-[-0.03em] text-[#1f1b17]">
-            Paste course plan
-          </h2>
+          <label className="mb-1.5 block font-[family-name:var(--font-display)] text-[0.625rem] font-bold uppercase tracking-[0.18em] text-[var(--text-secondary)]">
+            Course URL
+          </label>
+          <input
+            value={courseUrl}
+            onChange={(e) => setCourseUrl(e.target.value)}
+            placeholder="https://course.com"
+            className="w-full rounded-lg px-3 py-2 text-sm outline-none"
+          />
         </div>
+
+        {/* Copy prompt button */}
         <button
           type="button"
+          aria-label="Copy AI prompt"
           onClick={() => void copyPrompt()}
-          className="h-9 rounded-md bg-[#111111] px-3 text-xs font-semibold text-white"
+          className="flex w-full items-center justify-between rounded-lg border border-[var(--surface-border)] bg-[var(--bg-panel-strong)] px-4 py-3 transition-colors hover:border-[var(--accent-solid)] hover:bg-[var(--surface-soft)]"
         >
-          {copyLabel}
+          <span className="font-[family-name:var(--font-display)] text-xs font-bold uppercase tracking-[0.14em] text-[var(--text-primary)]" aria-hidden="true">
+            {copyLabel}
+          </span>
+          <span className="font-mono text-[0.625rem] text-[var(--accent-soft)]" aria-hidden="true">AI → paste below</span>
         </button>
-      </div>
 
-      <label className="grid gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-[#787774]">
-        Course URL for prompt
-        <input
-          value={courseUrl}
-          onChange={(event) => setCourseUrl(event.target.value)}
-          className="h-10 rounded-lg border border-[#EAEAEA] bg-[#F7F6F3] px-3 text-sm normal-case tracking-normal text-[#1f1b17] outline-none"
-          placeholder="https://course.com"
-        />
-      </label>
+        {/* Paste area */}
+        <div>
+          <label className="mb-1.5 block font-[family-name:var(--font-display)] text-[0.625rem] font-bold uppercase tracking-[0.18em] text-[var(--text-secondary)]">
+            Course plan text
+          </label>
+          <textarea
+            aria-label="Course plan text"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            rows={12}
+            placeholder={"Course:\nURL:\nGoal:\nDeadline:\nSource:\nStatus: active\n\n## Chapter 1: Title\n..."}
+            className="w-full rounded-lg px-3 py-3 font-mono text-xs leading-6 outline-none"
+          />
+        </div>
 
-      <label className="mt-4 grid gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-[#787774]">
-        Course plan text
-        <textarea
-          aria-label="Course plan text"
-          value={draft}
-          onChange={(event) => setDraft(event.target.value)}
-          rows={10}
-          className="rounded-lg border border-[#EAEAEA] bg-[#F9F9F8] p-3 font-mono text-xs normal-case leading-6 tracking-normal text-[#1f1b17] outline-none"
-          placeholder={"Course:\nURL:\nGoal:\nDeadline:\nSource:\nStatus: active"}
-        />
-      </label>
+        {/* Actions */}
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={previewCourse}
+            disabled={!draft.trim()}
+            className="h-9 flex-1 rounded-lg border border-[var(--surface-border)] bg-[var(--bg-panel-strong)] px-3 font-[family-name:var(--font-display)] text-xs font-bold uppercase tracking-[0.12em] text-[var(--text-primary)] transition-colors hover:border-[var(--accent-solid)] disabled:opacity-40"
+          >
+            Preview
+          </button>
+          <button
+            type="button"
+            disabled={!readyToSave || saving}
+            onClick={() => void saveCourse()}
+            className="h-9 flex-1 rounded-lg bg-[var(--accent-solid)] px-3 font-[family-name:var(--font-display)] text-xs font-bold uppercase tracking-[0.12em] text-white transition-opacity disabled:opacity-40"
+          >
+            {saving ? "Saving…" : "Save Course"}
+          </button>
+        </div>
 
-      <div className="mt-4 flex gap-2">
-        <button
-          type="button"
-          onClick={previewCourse}
-          className="h-9 rounded-md border border-[#EAEAEA] bg-white px-3 text-xs font-semibold text-[#1f1b17]"
-        >
-          Preview course
-        </button>
-        <button
-          type="button"
-          disabled={!parsed || parsed.errors.length > 0 || saving}
-          onClick={() => void saveCourse()}
-          className="h-9 rounded-md bg-[#111111] px-3 text-xs font-semibold text-white disabled:opacity-40"
-        >
-          {saving ? "Saving" : "Save course"}
-        </button>
-      </div>
-
-      {parsed ? (
-        <div className="mt-5 rounded-lg border border-[#EAEAEA] bg-[#F7F6F3] p-4">
-          {parsed.errors.length > 0 ? (
-            <div className="space-y-1 text-sm text-[#9F2F2D]">
-              {parsed.errors.map((error) => (
-                <p key={error}>{error}</p>
-              ))}
-            </div>
-          ) : (
-            <div>
-              <p className="text-sm font-semibold text-[#1f1b17]">{parsed.course?.title}</p>
-              <div className="mt-3 space-y-3">
-                {parsed.chapters.map((chapter) => (
-                  <div key={chapter.title} className="border-t border-[#EAEAEA] pt-3">
-                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#787774]">
-                      {chapter.title}
-                    </p>
-                    <div className="mt-2 space-y-1">
-                      {chapter.milestones.map((milestone) => (
-                        <p key={milestone.title} className="text-sm text-[#1f1b17]">
-                          {milestone.title}
-                        </p>
-                      ))}
-                    </div>
-                  </div>
+        {/* Parse result */}
+        {parsed ? (
+          <div className={`rounded-lg border p-4 ${hasErrors ? "border-[var(--danger)]/30 bg-[var(--danger)]/5" : "border-[var(--accent-solid)]/20 bg-[var(--surface-soft)]"}`}>
+            {hasErrors ? (
+              <div className="space-y-1">
+                {parsed.errors.map((err) => (
+                  <p key={err} className="font-mono text-xs text-[var(--danger)]">{err}</p>
                 ))}
               </div>
-              {parsed.warnings.length > 0 ? (
-                <div className="mt-3 space-y-1 text-xs text-[#956400]">
-                  {parsed.warnings.map((warning) => (
-                    <p key={warning}>{warning}</p>
+            ) : (
+              <div>
+                <p className="font-[family-name:var(--font-display)] text-sm font-bold uppercase tracking-[0.08em] text-[var(--accent-soft)]">
+                  <span aria-hidden="true">✓ </span>{parsed.course?.title}
+                </p>
+                <div className="mt-2 space-y-2">
+                  {parsed.chapters.map((chapter) => (
+                    <div key={chapter.title}>
+                      <p className="font-[family-name:var(--font-display)] text-[0.625rem] font-bold uppercase tracking-[0.12em] text-[var(--text-secondary)]">
+                        {chapter.title}
+                      </p>
+                      <div className="mt-1 ml-2 space-y-0.5">
+                        {chapter.milestones.map((m) => (
+                          <p key={m.title} className="font-mono text-[0.625rem] text-[var(--text-secondary)]">
+                            <span aria-hidden="true">· </span>{m.title}
+                          </p>
+                        ))}
+                      </div>
+                    </div>
                   ))}
                 </div>
-              ) : null}
-            </div>
-          )}
-        </div>
-      ) : null}
+                {parsed.warnings.length > 0 && (
+                  <div className="mt-3 space-y-0.5">
+                    {parsed.warnings.map((w) => (
+                      <p key={w} className="font-mono text-[0.625rem] text-[var(--text-secondary)] opacity-60">{w}</p>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        ) : null}
+      </div>
     </section>
   );
 }

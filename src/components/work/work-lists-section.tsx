@@ -4,20 +4,34 @@ import { useMemo, useState } from "react";
 import { useWorkStore } from "@/lib/stores/work-store";
 import type { WorkContactStatus, WorkProjectStatus } from "@/lib/types";
 
+const CONTACT_STATUS_COLOR: Record<WorkContactStatus, string> = {
+  client: "text-[var(--accent-soft)] bg-[var(--surface-soft)] border-[var(--accent-solid)]/30",
+  lead: "text-[var(--text-secondary)] bg-[var(--surface-highlight)] border-[var(--surface-border)]",
+  prospect: "text-yellow-400 bg-yellow-400/10 border-yellow-400/30",
+  lost: "text-[var(--text-secondary)] opacity-50 bg-transparent border-[var(--surface-border)]",
+  archived: "text-[var(--text-secondary)] opacity-40 bg-transparent border-[var(--surface-border)]",
+};
+
+const PROJECT_STATUS_COLOR: Record<WorkProjectStatus, string> = {
+  active: "text-[var(--accent-soft)] bg-[var(--surface-soft)] border-[var(--accent-solid)]/30",
+  planned: "text-[var(--text-secondary)] bg-[var(--surface-highlight)] border-[var(--surface-border)]",
+  paused: "text-yellow-400/80 bg-yellow-400/10 border-yellow-400/20",
+  completed: "text-emerald-400 bg-emerald-400/10 border-emerald-400/30",
+  archived: "text-[var(--text-secondary)] opacity-40 bg-transparent border-[var(--surface-border)]",
+};
+
 export function WorkListsSection() {
-  const contacts = useWorkStore((state) => state.contacts).filter(
-    (contact) => !contact.archivedAt,
-  );
-  const projects = useWorkStore((state) => state.projects).filter(
-    (project) => !project.archivedAt,
-  );
-  const createContact = useWorkStore((state) => state.createContact);
-  const createProject = useWorkStore((state) => state.createProject);
+  const contacts = useWorkStore((s) => s.contacts).filter((c) => !c.archivedAt);
+  const projects = useWorkStore((s) => s.projects).filter((p) => !p.archivedAt);
+  const createContact = useWorkStore((s) => s.createContact);
+  const createProject = useWorkStore((s) => s.createProject);
+
   const [contactName, setContactName] = useState("");
   const [projectTitle, setProjectTitle] = useState("");
   const [selectedContactId, setSelectedContactId] = useState("");
+
   const contactById = useMemo(
-    () => new Map(contacts.map((contact) => [contact.id, contact])),
+    () => new Map(contacts.map((c) => [c.id, c])),
     [contacts],
   );
 
@@ -50,123 +64,129 @@ export function WorkListsSection() {
 
   return (
     <section className="px-5 py-8 md:px-8">
-      <div className="mb-5">
-        <p className="text-[0.625rem] font-bold uppercase tracking-[0.14em] text-[#787774]">
-          02 · Freelance work
+      <div className="mb-7">
+        <p className="font-[family-name:var(--font-display)] text-[0.625rem] font-bold uppercase tracking-[0.28em] text-[var(--text-secondary)]">
+          02 / Freelance
         </p>
-        <h2 className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-[#1f1b17]">
-          Clients / Leads and Projects
+        <h2 className="mt-1 font-[family-name:var(--font-display)] text-3xl font-bold uppercase tracking-[0.03em] text-[var(--text-primary)] md:text-4xl">
+          Clients &amp; Projects
         </h2>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <section className="rounded-xl border border-[#EAEAEA] bg-white">
-          <div className="border-b border-[#EAEAEA] p-5">
-            <h3 className="text-lg font-semibold tracking-[-0.02em] text-[#1f1b17]">
+      <div className="grid gap-5 lg:grid-cols-2">
+        {/* Contacts */}
+        <div className="overflow-hidden rounded-xl border border-[var(--surface-border)] bg-[var(--bg-panel)]">
+          <div className="border-b border-[var(--surface-border)] px-5 py-4">
+            <p className="font-[family-name:var(--font-display)] text-[0.5rem] font-bold uppercase tracking-[0.22em] text-[var(--text-secondary)]">
               Clients / Leads
-            </h3>
+            </p>
             <div className="mt-3 flex gap-2">
               <input
                 value={contactName}
-                onChange={(event) => setContactName(event.target.value)}
+                onChange={(e) => setContactName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && void addContact()}
                 placeholder="New lead name"
-                className="h-10 flex-1 rounded-lg border border-[#EAEAEA] bg-[#F7F6F3] px-3 text-sm outline-none"
+                className="h-9 flex-1 rounded-lg px-3 text-sm outline-none"
               />
               <button
                 type="button"
                 onClick={() => void addContact()}
-                className="h-10 rounded-md bg-[#111111] px-3 text-xs font-semibold text-white"
+                className="h-9 rounded-lg bg-[var(--accent-solid)] px-3 font-[family-name:var(--font-display)] text-[0.625rem] font-bold uppercase tracking-[0.1em] text-white transition-opacity hover:opacity-80"
               >
-                New client
+                Add
               </button>
             </div>
           </div>
-          <div className="divide-y divide-[#EAEAEA] px-5">
+
+          <div>
             {contacts.length === 0 ? (
-              <p className="py-6 text-sm text-[#787774]">No clients or leads yet.</p>
+              <p className="px-5 py-6 text-xs text-[var(--text-secondary)] opacity-60">No clients or leads yet.</p>
             ) : (
-              contacts.map((contact) => (
-                <article
+              contacts.map((contact, i) => (
+                <div
                   key={contact.id}
-                  className="grid grid-cols-[minmax(0,1fr)_auto] gap-4 py-4"
+                  className={`flex items-start justify-between gap-3 px-5 py-3.5 transition-colors hover:bg-[var(--surface-highlight)] ${i > 0 ? "border-t border-[var(--surface-border)]/50" : ""}`}
                 >
-                  <div>
-                    <p className="font-semibold text-[#1f1b17]">{contact.name}</p>
-                    <p className="mt-1 text-sm text-[#787774]">
-                      {contact.email || contact.phone || "No contact details yet"}
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-[var(--text-primary)]">{contact.name}</p>
+                    <p className="mt-0.5 font-mono text-[0.625rem] tabular-nums text-[var(--text-secondary)]">
+                      {contact.email || contact.phone || "—"}
                     </p>
-                    {contact.nextStep ? (
-                      <p className="mt-1 text-xs text-[#956400]">Next: {contact.nextStep}</p>
-                    ) : null}
+                    {contact.nextStep && (
+                      <p className="mt-0.5 text-[0.625rem] text-[var(--accent-soft)]/70">→ {contact.nextStep}</p>
+                    )}
                   </div>
-                  <span className="h-fit rounded-full bg-[#EDF3EC] px-2 py-1 text-[0.625rem] font-bold uppercase tracking-[0.08em] text-[#346538]">
+                  <span className={`shrink-0 rounded-full border px-2 py-0.5 font-[family-name:var(--font-display)] text-[0.5rem] font-bold uppercase tracking-[0.12em] ${CONTACT_STATUS_COLOR[contact.status]}`}>
                     {contact.status}
                   </span>
-                </article>
+                </div>
               ))
             )}
           </div>
-        </section>
+        </div>
 
-        <section className="rounded-xl border border-[#EAEAEA] bg-white">
-          <div className="border-b border-[#EAEAEA] p-5">
-            <h3 className="text-lg font-semibold tracking-[-0.02em] text-[#1f1b17]">Projects</h3>
-            <div className="mt-3 grid gap-2 sm:grid-cols-[minmax(0,1fr)_180px_auto]">
+        {/* Projects */}
+        <div className="overflow-hidden rounded-xl border border-[var(--surface-border)] bg-[var(--bg-panel)]">
+          <div className="border-b border-[var(--surface-border)] px-5 py-4">
+            <p className="font-[family-name:var(--font-display)] text-[0.5rem] font-bold uppercase tracking-[0.22em] text-[var(--text-secondary)]">
+              Projects
+            </p>
+            <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_160px_auto]">
               <input
                 value={projectTitle}
-                onChange={(event) => setProjectTitle(event.target.value)}
+                onChange={(e) => setProjectTitle(e.target.value)}
                 placeholder="New project title"
-                className="h-10 rounded-lg border border-[#EAEAEA] bg-[#F7F6F3] px-3 text-sm outline-none"
+                className="h-9 rounded-lg px-3 text-sm outline-none"
               />
               <select
                 value={selectedContactId}
-                onChange={(event) => setSelectedContactId(event.target.value)}
-                className="h-10 rounded-lg border border-[#EAEAEA] bg-[#F7F6F3] px-3 text-sm outline-none"
+                onChange={(e) => setSelectedContactId(e.target.value)}
+                className="h-9 rounded-lg px-3 text-sm outline-none"
               >
                 <option value="">Select client</option>
-                {contacts.map((contact) => (
-                  <option key={contact.id} value={contact.id}>
-                    {contact.name}
-                  </option>
+                {contacts.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>
               <button
                 type="button"
                 disabled={!selectedContactId}
                 onClick={() => void addProject()}
-                className="h-10 rounded-md bg-[#111111] px-3 text-xs font-semibold text-white disabled:opacity-40"
+                className="h-9 rounded-lg bg-[var(--accent-solid)] px-3 font-[family-name:var(--font-display)] text-[0.625rem] font-bold uppercase tracking-[0.1em] text-white transition-opacity hover:opacity-80 disabled:opacity-30"
               >
-                New project
+                Add
               </button>
             </div>
           </div>
-          <div className="divide-y divide-[#EAEAEA] px-5">
+
+          <div>
             {projects.length === 0 ? (
-              <p className="py-6 text-sm text-[#787774]">No projects yet.</p>
+              <p className="px-5 py-6 text-xs text-[var(--text-secondary)] opacity-60">No projects yet.</p>
             ) : (
-              projects.map((project) => (
-                <article
+              projects.map((project, i) => (
+                <div
                   key={project.id}
-                  className="grid grid-cols-[minmax(0,1fr)_auto] gap-4 py-4"
+                  className={`flex items-start justify-between gap-3 px-5 py-3.5 transition-colors hover:bg-[var(--surface-highlight)] ${i > 0 ? "border-t border-[var(--surface-border)]/50" : ""}`}
                 >
-                  <div>
-                    <p className="font-semibold text-[#1f1b17]">{project.title}</p>
-                    <p className="mt-1 text-sm text-[#787774]">
-                      Attached to{" "}
-                      {contactById.get(project.contactId)?.name ?? "Unknown contact"}
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-[var(--text-primary)]">{project.title}</p>
+                    <p className="mt-0.5 text-[0.625rem] text-[var(--text-secondary)]">
+                      {contactById.get(project.contactId)?.name ?? "Unknown client"}
                     </p>
-                    {project.deadline ? (
-                      <p className="mt-1 text-xs text-[#956400]">Deadline: {project.deadline}</p>
-                    ) : null}
+                    {project.deadline && (
+                      <p className="mt-0.5 font-mono text-[0.625rem] tabular-nums text-[var(--text-secondary)]">
+                        due {project.deadline}
+                      </p>
+                    )}
                   </div>
-                  <span className="h-fit rounded-full bg-[#E1F3FE] px-2 py-1 text-[0.625rem] font-bold uppercase tracking-[0.08em] text-[#1F6C9F]">
+                  <span className={`shrink-0 rounded-full border px-2 py-0.5 font-[family-name:var(--font-display)] text-[0.5rem] font-bold uppercase tracking-[0.12em] ${PROJECT_STATUS_COLOR[project.status]}`}>
                     {project.status}
                   </span>
-                </article>
+                </div>
               ))
             )}
           </div>
-        </section>
+        </div>
       </div>
     </section>
   );

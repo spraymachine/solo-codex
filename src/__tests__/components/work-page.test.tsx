@@ -24,7 +24,7 @@ describe("WorkPage", () => {
     vi.clearAllMocks();
   });
 
-  it("renders courses before clients and projects", async () => {
+  it("renders courses section before clients section", async () => {
     render(<WorkPage />);
 
     await waitFor(() =>
@@ -32,8 +32,11 @@ describe("WorkPage", () => {
     );
 
     const text = document.body.textContent ?? "";
-    expect(text.indexOf("Courses")).toBeLessThan(text.indexOf("Clients / Leads"));
-    expect(text.indexOf("Clients / Leads")).toBeLessThan(text.indexOf("Projects"));
+    const coursesIdx = text.indexOf("01 / Courses");
+    const clientsIdx = text.indexOf("02 / Freelance");
+    expect(coursesIdx).toBeGreaterThanOrEqual(0);
+    expect(clientsIdx).toBeGreaterThanOrEqual(0);
+    expect(coursesIdx).toBeLessThan(clientsIdx);
   });
 
   it("copies the external AI prompt", async () => {
@@ -70,12 +73,12 @@ Link: https://lesson.com
 Notes: Focus on behavior changes.`,
       },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Preview course" }));
+    fireEvent.click(screen.getByRole("button", { name: "Preview" }));
 
     expect(await screen.findByText("Advanced Next.js")).toBeInTheDocument();
     expect(screen.getByText("Watch routing lessons")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Save course" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save Course" }));
 
     await waitFor(() => expect(useWorkStore.getState().courses).toHaveLength(1));
   });
