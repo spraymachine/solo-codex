@@ -232,7 +232,7 @@ export function WorkListsSection() {
 
       <div className="grid gap-5 lg:grid-cols-2">
         {/* Contacts */}
-        <div className="overflow-hidden rounded-xl border border-[var(--surface-border)] bg-[var(--bg-panel)]">
+        <div className="rounded-xl border border-[var(--surface-border)] bg-[var(--bg-panel)]">
           <div className="border-b border-[var(--surface-border)] px-4 py-4 sm:px-5">
             <p className="font-[family-name:var(--font-display)] text-[0.5rem] font-bold uppercase tracking-[0.22em] text-[var(--text-secondary)]">
               Clients / Leads
@@ -255,7 +255,7 @@ export function WorkListsSection() {
             </div>
           </div>
 
-          <div>
+          <div className="overflow-hidden rounded-b-xl">
             {contacts.length === 0 ? (
               <p className="px-5 py-6 text-xs text-[var(--text-secondary)] opacity-60">No clients or leads yet.</p>
             ) : (
@@ -278,7 +278,7 @@ export function WorkListsSection() {
                       <button
                         type="button"
                         onClick={() => setEditingContact(editingContact === contact.id ? null : contact.id)}
-                        className="rounded p-1 text-[0.625rem] text-[var(--text-secondary)] opacity-0 transition-all group-hover:opacity-100 hover:text-[var(--text-primary)]"
+                        className="rounded p-1 text-[0.625rem] text-[var(--text-secondary)] transition-all sm:opacity-0 sm:group-hover:opacity-100 hover:text-[var(--text-primary)]"
                       >
                         ✎
                       </button>
@@ -288,7 +288,7 @@ export function WorkListsSection() {
                           if (window.confirm(`Archive "${contact.name}"?`))
                             void archiveContact(contact.id);
                         }}
-                        className="rounded p-1 text-[0.625rem] text-[var(--text-secondary)] opacity-0 transition-all group-hover:opacity-100 hover:text-[var(--danger)]"
+                        className="rounded p-1 text-[0.625rem] text-[var(--text-secondary)] transition-all sm:opacity-0 sm:group-hover:opacity-100 hover:text-[var(--danger)]"
                       >
                         ✕
                       </button>
@@ -309,7 +309,7 @@ export function WorkListsSection() {
         </div>
 
         {/* Projects */}
-        <div className="overflow-hidden rounded-xl border border-[var(--surface-border)] bg-[var(--bg-panel)]">
+        <div className="rounded-xl border border-[var(--surface-border)] bg-[var(--bg-panel)]">
           <div className="border-b border-[var(--surface-border)] px-4 py-4 sm:px-5">
             <p className="font-[family-name:var(--font-display)] text-[0.5rem] font-bold uppercase tracking-[0.22em] text-[var(--text-secondary)]">
               Projects
@@ -342,7 +342,7 @@ export function WorkListsSection() {
             </div>
           </div>
 
-          <div>
+          <div className="overflow-hidden rounded-b-xl">
             {projects.length === 0 ? (
               <p className="px-5 py-6 text-xs text-[var(--text-secondary)] opacity-60">No projects yet.</p>
             ) : (
@@ -367,7 +367,7 @@ export function WorkListsSection() {
                       <button
                         type="button"
                         onClick={() => setEditingProject(editingProject === project.id ? null : project.id)}
-                        className="rounded p-1 text-[0.625rem] text-[var(--text-secondary)] opacity-0 transition-all group-hover:opacity-100 hover:text-[var(--text-primary)]"
+                        className="rounded p-1 text-[0.625rem] text-[var(--text-secondary)] transition-all sm:opacity-0 sm:group-hover:opacity-100 hover:text-[var(--text-primary)]"
                       >
                         ✎
                       </button>
@@ -377,7 +377,7 @@ export function WorkListsSection() {
                           if (window.confirm(`Archive "${project.title}"?`))
                             void archiveProject(project.id);
                         }}
-                        className="rounded p-1 text-[0.625rem] text-[var(--text-secondary)] opacity-0 transition-all group-hover:opacity-100 hover:text-[var(--danger)]"
+                        className="rounded p-1 text-[0.625rem] text-[var(--text-secondary)] transition-all sm:opacity-0 sm:group-hover:opacity-100 hover:text-[var(--danger)]"
                       >
                         ✕
                       </button>
