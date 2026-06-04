@@ -10,6 +10,7 @@ import type { ParseCoursePlanResult } from "@/lib/work/course-parser";
 import type {
   CourseChapter,
   CourseMilestone,
+  CourseStatus,
   WorkContact,
   WorkContactStatus,
   WorkCourse,
@@ -54,6 +55,13 @@ type ProjectInput = {
   progress: number;
 };
 
+type CourseInput = {
+  title: string;
+  url: string;
+  deadline: string;
+  status: CourseStatus;
+};
+
 interface WorkState {
   contacts: WorkContact[];
   projects: WorkProject[];
@@ -70,6 +78,7 @@ interface WorkState {
   createProject: (input: ProjectInput) => Promise<WorkProject>;
   updateProject: (id: string, updates: Partial<ProjectInput>) => Promise<void>;
   archiveProject: (id: string) => Promise<void>;
+  createCourse: (input: CourseInput) => Promise<WorkCourse>;
   saveParsedCourse: (parsed: ParseCoursePlanResult) => Promise<WorkCourse>;
   toggleMilestone: (id: string, completed: boolean) => Promise<void>;
   updateMilestone: (id: string, updates: Partial<Omit<CourseMilestone, "id" | "chapterId" | "order">>) => Promise<void>;
@@ -353,6 +362,26 @@ export const useWorkStore = create<WorkState>((set, get) => ({
       await Promise.all(milestones.map((m) => sbCreateMilestone(uid, m)));
     });
 
+    return course;
+  },
+
+  async createCourse(input) {
+    const db = getWorkDb();
+    const now = nowISO();
+    const course: WorkCourse = {
+      id: generateId(),
+      title: input.title,
+      url: input.url,
+      goal: "",
+      deadline: input.deadline,
+      source: "",
+      status: input.status,
+      createdAt: now,
+      updatedAt: now,
+    };
+    await db.courses.add(course);
+    set((state) => ({ courses: [course, ...state.courses] }));
+    void syncToSupabase((uid) => sbCreateCourse(uid, course));
     return course;
   },
 
