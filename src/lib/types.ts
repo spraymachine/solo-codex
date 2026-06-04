@@ -134,6 +134,72 @@ export interface Lead {
   createdAt: string;
 }
 
+export type CourseStatus = "planned" | "active" | "paused" | "completed";
+export type ChapterPriority = "low" | "normal" | "high";
+export type WorkContactStatus = "lead" | "prospect" | "client" | "lost" | "archived";
+export type WorkProjectStatus = "planned" | "active" | "paused" | "completed" | "archived";
+
+export interface WorkCourse {
+  id: string;
+  title: string;
+  url: string;
+  goal: string;
+  deadline: string;
+  source: string;
+  status: CourseStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CourseChapter {
+  id: string;
+  courseId: string;
+  title: string;
+  deadline: string;
+  estimate: string;
+  priority: ChapterPriority;
+  order: number;
+}
+
+export interface CourseMilestone {
+  id: string;
+  chapterId: string;
+  title: string;
+  deadline: string;
+  estimate: string;
+  link: string;
+  notes: string;
+  completed: boolean;
+  order: number;
+}
+
+export interface WorkContact {
+  id: string;
+  name: string;
+  status: WorkContactStatus;
+  phone: string;
+  email: string;
+  notes: string;
+  source: string;
+  nextStep: string;
+  archivedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WorkProject {
+  id: string;
+  contactId: string;
+  title: string;
+  status: WorkProjectStatus;
+  deadline: string;
+  notes: string;
+  progress: number;
+  archivedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface AppSnapshot {
   profile: PlayerProfile;
   gates: Gate[];

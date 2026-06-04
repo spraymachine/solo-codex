@@ -19,7 +19,6 @@ import { usePlayerStore } from "@/lib/stores/player-store";
 import { useRecordsStore } from "@/lib/stores/records-store";
 import { useMissionsStore } from "@/lib/stores/missions-store";
 import { StickyWall } from "@/components/sticky/sticky-wall";
-import { LeadsSection } from "@/components/leads/leads-section";
 import type { Gate, Persona, Reflection, SubQuest } from "@/lib/types";
 
 const WEEKDAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -1494,7 +1493,6 @@ export default function HomePage() {
         </SectionShell>
       </div>
 
-      <LeadsSection />
     </div>
   );
 }

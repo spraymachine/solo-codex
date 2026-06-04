@@ -4,6 +4,7 @@ import { NavItem } from "./nav-item";
 
 const navItems = [
   { href: "/", icon: "⬡", label: "Dashboard" },
+  { href: "/work", icon: "▦", label: "Work" },
   { href: "/gates", icon: "◈", label: "Gates" },
   { href: "/missions", icon: "◎", label: "Missions" },
   { href: "/inventory", icon: "▤", label: "Inventory" },

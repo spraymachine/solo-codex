@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 
 const navItems = [
   { href: "/#overview", label: "Home" },
-  { href: "/#work", label: "Work" },
+  { href: "/work", label: "Work" },
   { href: "/#missions", label: "Goals" },
   { href: "/#records", label: "Record" },
   { href: "/#status", label: "Status" },
@@ -19,7 +19,7 @@ export function BottomNav() {
         <Link
           key={item.href}
           href={item.href}
-          className={`rounded-full px-3 py-2 text-xs transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] ${pathname === "/" ? "bg-[color:color-mix(in_srgb,var(--accent-solid)_16%,white)] text-[var(--text-primary)]" : "text-[var(--text-secondary)]"}`}
+          className={`rounded-full px-3 py-2 text-xs transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] ${pathname === item.href || (item.href === "/#overview" && pathname === "/") ? "bg-[color:color-mix(in_srgb,var(--accent-solid)_16%,white)] text-[var(--text-primary)]" : "text-[var(--text-secondary)]"}`}
         >
           {item.label}
         </Link>
