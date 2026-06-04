@@ -35,7 +35,8 @@ export interface ParseCoursePlanResult {
 const COURSE_FIELDS = new Set(["Course", "URL", "Goal", "Deadline", "Source", "Status"]);
 const CHAPTER_FIELDS = new Set(["Deadline", "Estimate", "Priority"]);
 const MILESTONE_FIELDS = new Set(["Deadline", "Estimate", "Link", "Notes"]);
-const CHAPTER_HEADING_PATTERN = /^## Chapter\s+(\d+):\s*(.+)$/;
+const CHAPTER_HEADING_PATTERN = /^## Chapter (\d+): (\S.*)$/;
+const MILESTONE_HEADING_PATTERN = /^### Milestone: (\S.*)$/;
 const MALFORMED_CHAPTER_HEADING_PATTERN = /^##\s+Chapter\b/;
 const MALFORMED_MILESTONE_HEADING_PATTERN = /^###\s+Milestone\b/;
 
@@ -107,14 +108,15 @@ export function parseCoursePlan(input: string): ParseCoursePlanResult {
       continue;
     }
 
-    if (line.startsWith("### Milestone:")) {
+    const milestoneHeading = MILESTONE_HEADING_PATTERN.exec(line);
+    if (milestoneHeading) {
       if (!currentChapter) {
         result.errors.push("Milestone appears before a chapter heading.");
         currentMilestone = null;
         continue;
       }
       currentMilestone = {
-        title: line.replace(/^### Milestone:\s*/, "").trim(),
+        title: milestoneHeading[1].trim(),
         deadline: "",
         estimate: "",
         link: "",
