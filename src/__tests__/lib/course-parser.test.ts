@@ -167,6 +167,24 @@ Priority:`);
     expect(result.chapters).toHaveLength(0);
     expect(result.warnings).toContain("Unrecognized line ignored: ## Chapter 1 Routing");
   });
+
+  it("does not let malformed chapter fields overwrite course fields", () => {
+    const result = parseCoursePlan(`Course: Strict Headings
+URL:
+Goal:
+Deadline: 2026-07-30
+Source:
+Status: active
+
+## Chapter 1 Routing
+Deadline: 2026-06-12
+Estimate: 3h
+Priority: high`);
+
+    expect(result.course?.deadline).toBe("2026-07-30");
+    expect(result.chapters).toHaveLength(0);
+    expect(result.warnings).toContain("Unrecognized line ignored: ## Chapter 1 Routing");
+  });
 });
 
 describe("buildExternalCoursePrompt", () => {

@@ -96,6 +96,7 @@ export function parseCoursePlan(input: string): ParseCoursePlanResult {
 
   let currentChapter: ParsedCourseChapter | null = null;
   let currentMilestone: ParsedCourseMilestone | null = null;
+  let isInInvalidChapterBlock = false;
 
   for (const rawLine of input.split(/\r?\n/)) {
     const line = rawLine.trim();
@@ -134,13 +135,27 @@ export function parseCoursePlan(input: string): ParseCoursePlanResult {
         milestones: [],
       };
       currentMilestone = null;
+      isInInvalidChapterBlock = false;
       result.chapters.push(currentChapter);
+      continue;
+    }
+
+    if (line.startsWith("## Chapter")) {
+      result.warnings.push(`Unrecognized line ignored: ${line}`);
+      currentChapter = null;
+      currentMilestone = null;
+      isInInvalidChapterBlock = true;
       continue;
     }
 
     const field = splitField(line);
     if (!field) {
       result.warnings.push(`Unrecognized line ignored: ${line}`);
+      continue;
+    }
+
+    if (isInInvalidChapterBlock) {
+      result.warnings.push(`Unsupported malformed chapter field ${field.key} was ignored.`);
       continue;
     }
 
