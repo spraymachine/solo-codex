@@ -15,20 +15,10 @@ function getCourseProgress(
   chapters: CourseChapter[],
   milestones: CourseMilestone[],
 ) {
-  const chapterIds = new Set(
-    chapters.filter((c) => c.courseId === course.id).map((c) => c.id),
-  );
+  const chapterIds = new Set(chapters.filter((c) => c.courseId === course.id).map((c) => c.id));
   const all = milestones.filter((m) => chapterIds.has(m.chapterId));
   if (all.length === 0) return 0;
   return Math.round((all.filter((m) => m.completed).length / all.length) * 100);
-}
-
-function MetaChip({ label }: { label: string }) {
-  return (
-    <span className="rounded-md bg-[#F0F0EE] px-2 py-0.5 font-mono text-[0.625rem] tabular-nums text-[#787774]">
-      {label}
-    </span>
-  );
 }
 
 export function CoursesSection() {
@@ -50,13 +40,13 @@ export function CoursesSection() {
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1.4fr)_minmax(340px,0.6fr)]">
         {/* Course list */}
-        <div className="space-y-4">
+        <div className="space-y-5">
           {courses.length === 0 ? (
-            <div className="grid min-h-[220px] place-items-center rounded-xl border border-dashed border-[#EAEAEA] bg-[#F9F9F8] p-6 text-center">
+            <div className="grid min-h-[200px] place-items-center rounded-xl border border-dashed border-[#EAEAEA] bg-[#F9F9F8] p-6 text-center">
               <div>
                 <p className="text-base font-semibold text-[#1f1b17]">No courses yet</p>
                 <p className="mt-1.5 text-sm text-[#787774]">
-                  Paste a strict course plan on the right to import your first checklist.
+                  Paste a course plan on the right to import your first checklist.
                 </p>
               </div>
             </div>
@@ -66,20 +56,18 @@ export function CoursesSection() {
                 .filter((c) => c.courseId === course.id)
                 .sort((a, b) => a.order - b.order);
               const progress = getCourseProgress(course, chapters, milestones);
-              const totalMs = milestones.filter((m) =>
+              const allMs = milestones.filter((m) =>
                 courseChapters.some((c) => c.id === m.chapterId),
-              ).length;
-              const doneMs = milestones.filter(
-                (m) => courseChapters.some((c) => c.id === m.chapterId) && m.completed,
-              ).length;
+              );
+              const doneMs = allMs.filter((m) => m.completed).length;
 
               return (
                 <article
                   key={course.id}
                   className="overflow-hidden rounded-xl border border-[#EAEAEA] bg-white"
                 >
-                  {/* Course header */}
-                  <div className="border-b border-[#EAEAEA] px-5 py-4">
+                  {/* ── Course header ── */}
+                  <div className="border-b border-[#EAEAEA] bg-[#FAFAF9] px-5 py-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <h2 className="text-lg font-semibold leading-snug tracking-[-0.025em] text-[#1f1b17]">
@@ -102,31 +90,30 @@ export function CoursesSection() {
                       </span>
                     </div>
 
-                    {/* Course meta row */}
-                    <div className="mt-2 flex flex-wrap items-center gap-2">
-                      {course.deadline ? <MetaChip label={`due ${course.deadline}`} /> : null}
-                      {course.source ? <MetaChip label={course.source} /> : null}
+                    <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[#787774]">
+                      {course.deadline ? (
+                        <span>
+                          Due <strong className="font-semibold text-[#1f1b17]">{course.deadline}</strong>
+                        </span>
+                      ) : null}
+                      {course.source ? <span>{course.source}</span> : null}
                       {course.url ? (
                         <a
                           href={course.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-xs font-semibold text-[#1F6C9F] underline-offset-2 hover:underline"
+                          className="font-semibold text-[#1F6C9F] underline-offset-2 hover:underline"
                         >
                           Open course ↗
                         </a>
                       ) : null}
                     </div>
 
-                    {/* Progress bar */}
+                    {/* Progress */}
                     <div className="mt-3">
-                      <div className="mb-1 flex items-center justify-between">
-                        <span className="font-mono text-[0.625rem] tabular-nums text-[#787774]">
-                          {doneMs}/{totalMs} milestones
-                        </span>
-                        <span className="font-mono text-[0.625rem] tabular-nums text-[#787774]">
-                          {progress}%
-                        </span>
+                      <div className="mb-1.5 flex items-center justify-between text-[0.625rem] font-mono tabular-nums text-[#787774]">
+                        <span>{doneMs} of {allMs.length} milestones done</span>
+                        <span>{progress}%</span>
                       </div>
                       <div className="h-1.5 overflow-hidden rounded-full bg-[#EAEAEA]">
                         <div
@@ -137,46 +124,53 @@ export function CoursesSection() {
                     </div>
                   </div>
 
-                  {/* Chapters */}
+                  {/* ── Chapters + milestones ── */}
                   <div className="divide-y divide-[#EAEAEA]">
                     {courseChapters.map((chapter) => {
-                      const chapterMilestones = milestones
+                      const ms = milestones
                         .filter((m) => m.chapterId === chapter.id)
                         .sort((a, b) => a.order - b.order);
-                      const chapterDone = chapterMilestones.filter((m) => m.completed).length;
+                      const chapterDone = ms.filter((m) => m.completed).length;
+                      const allDone = ms.length > 0 && chapterDone === ms.length;
 
                       return (
-                        <div key={chapter.id} className="px-5 py-4">
-                          {/* Chapter header */}
-                          <div className="flex flex-wrap items-center gap-2">
-                            <p className="mr-1 text-sm font-semibold text-[#1f1b17]">
+                        <div key={chapter.id}>
+                          {/* Chapter row */}
+                          <div className="flex flex-wrap items-center gap-2 bg-[#F7F6F3] px-5 py-2.5">
+                            <p
+                              className={`text-xs font-bold uppercase tracking-[0.06em] ${allDone ? "text-[#ADADAD]" : "text-[#1f1b17]"}`}
+                            >
                               {chapter.title}
                             </p>
                             {chapter.priority !== "normal" ? (
                               <span
-                                className={`rounded-md px-1.5 py-0.5 text-[0.625rem] font-bold uppercase tracking-[0.06em] ${PRIORITY_STYLE[chapter.priority]}`}
+                                className={`rounded px-1.5 py-0.5 text-[0.625rem] font-bold uppercase tracking-[0.06em] ${PRIORITY_STYLE[chapter.priority]}`}
                               >
                                 {chapter.priority}
                               </span>
                             ) : null}
                             {chapter.deadline ? (
-                              <MetaChip label={`due ${chapter.deadline}`} />
+                              <span className="text-[0.625rem] text-[#787774]">
+                                due <strong className="font-semibold">{chapter.deadline}</strong>
+                              </span>
                             ) : null}
                             {chapter.estimate ? (
-                              <MetaChip label={chapter.estimate} />
+                              <span className="rounded bg-[#EAEAEA] px-1.5 py-0.5 font-mono text-[0.625rem] text-[#787774]">
+                                {chapter.estimate}
+                              </span>
                             ) : null}
                             <span className="ml-auto font-mono text-[0.625rem] tabular-nums text-[#ADADAD]">
-                              {chapterDone}/{chapterMilestones.length}
+                              {chapterDone}/{ms.length}
                             </span>
                           </div>
 
-                          {/* Milestones */}
-                          {chapterMilestones.length > 0 ? (
-                            <div className="mt-3 space-y-2.5">
-                              {chapterMilestones.map((milestone) => (
-                                <div
+                          {/* Milestone rows */}
+                          {ms.length > 0 ? (
+                            <div className="divide-y divide-[#F3F3F1]">
+                              {ms.map((milestone) => (
+                                <label
                                   key={milestone.id}
-                                  className="flex items-start gap-2.5"
+                                  className={`flex cursor-pointer items-start gap-3 px-5 py-3.5 transition-colors hover:bg-[#FAFAF9] ${milestone.completed ? "bg-[#FAFAF9]" : "bg-white"}`}
                                 >
                                   <input
                                     type="checkbox"
@@ -184,39 +178,48 @@ export function CoursesSection() {
                                     onChange={(e) =>
                                       void toggleMilestone(milestone.id, e.target.checked)
                                     }
-                                    className="mt-0.5 h-3.5 w-3.5 shrink-0 accent-[#2F3437]"
+                                    className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-[#2F3437]"
                                   />
                                   <div className="min-w-0 flex-1">
                                     <p
-                                      className={`text-sm leading-snug ${milestone.completed ? "text-[#ADADAD] line-through" : "text-[#1f1b17]"}`}
+                                      className={`text-sm font-medium leading-snug ${
+                                        milestone.completed
+                                          ? "text-[#ADADAD] line-through decoration-[#ADADAD]"
+                                          : "text-[#1f1b17]"
+                                      }`}
                                     >
                                       {milestone.title}
                                     </p>
-                                    <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                                      {milestone.deadline ? (
-                                        <MetaChip label={`due ${milestone.deadline}`} />
-                                      ) : null}
-                                      {milestone.estimate ? (
-                                        <MetaChip label={milestone.estimate} />
-                                      ) : null}
-                                      {milestone.notes ? (
-                                        <span className="text-[0.625rem] text-[#ADADAD]">
-                                          {milestone.notes}
-                                        </span>
-                                      ) : null}
-                                      {milestone.link ? (
-                                        <a
-                                          href={milestone.link}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="text-[0.625rem] font-semibold text-[#1F6C9F] underline-offset-2 hover:underline"
-                                        >
-                                          Open ↗
-                                        </a>
-                                      ) : null}
-                                    </div>
+                                    {(milestone.deadline || milestone.estimate || milestone.notes || milestone.link) ? (
+                                      <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+                                        {milestone.deadline ? (
+                                          <span className="text-xs text-[#787774]">
+                                            Due <strong className="font-semibold text-[#1f1b17]">{milestone.deadline}</strong>
+                                          </span>
+                                        ) : null}
+                                        {milestone.estimate ? (
+                                          <span className="rounded bg-[#EAEAEA] px-1.5 py-0.5 font-mono text-[0.625rem] text-[#787774]">
+                                            {milestone.estimate}
+                                          </span>
+                                        ) : null}
+                                        {milestone.notes ? (
+                                          <span className="text-xs text-[#ADADAD]">{milestone.notes}</span>
+                                        ) : null}
+                                        {milestone.link ? (
+                                          <a
+                                            href={milestone.link}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            onClick={(e) => e.stopPropagation()}
+                                            className="text-xs font-semibold text-[#1F6C9F] underline-offset-2 hover:underline"
+                                          >
+                                            Open ↗
+                                          </a>
+                                        ) : null}
+                                      </div>
+                                    ) : null}
                                   </div>
-                                </div>
+                                </label>
                               ))}
                             </div>
                           ) : null}
@@ -230,7 +233,7 @@ export function CoursesSection() {
           )}
         </div>
 
-        {/* Import panel */}
+        {/* Import panel — sticky on xl */}
         <div className="xl:sticky xl:top-6 xl:self-start">
           <CourseImportPanel />
         </div>
