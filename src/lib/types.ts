@@ -125,6 +125,15 @@ export interface StickyNote {
   archivedAt: string | null;
 }
 
+export interface Lead {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+  notes: string;
+  createdAt: string;
+}
+
 export interface AppSnapshot {
   profile: PlayerProfile;
   gates: Gate[];

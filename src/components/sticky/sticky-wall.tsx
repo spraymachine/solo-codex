@@ -31,7 +31,7 @@ export function StickyWall({ activePersona }: StickyWallProps) {
 
   useEffect(() => {
     void load(activePersona);
-    return () => unsubscribe();
+    return () => { void unsubscribe(); };
   }, [activePersona, load, unsubscribe]);
 
   useEffect(() => {

@@ -160,7 +160,7 @@ interface StickyNotesState {
   _realtimeChannel: ReturnType<ReturnType<typeof getSupabaseBrowserClient>["channel"]> | null;
 
   load: (activePersona: Persona) => Promise<void>;
-  unsubscribe: () => void;
+  unsubscribe: () => Promise<void>;
   addNote: (text: string, color: string) => Promise<void>;
   deleteNote: (id: string) => Promise<void>;
   reorderNotes: (orderedIds: string[]) => Promise<void>;
@@ -190,7 +190,7 @@ export const useStickyNotesStore = create<StickyNotesState>()((set, get) => ({
 
   load: async (activePersona) => {
     // Tear down any existing channel before re-subscribing
-    get().unsubscribe();
+    await get().unsubscribe();
 
     set({ _activePersona: activePersona });
 
@@ -227,11 +227,14 @@ export const useStickyNotesStore = create<StickyNotesState>()((set, get) => ({
     }
   },
 
-  unsubscribe: () => {
+  unsubscribe: async () => {
     const { _realtimeChannel } = get();
     if (_realtimeChannel) {
-      void _realtimeChannel.unsubscribe();
+      const supabase = getSupabaseBrowserClient();
       set({ _realtimeChannel: null });
+      if (supabase) {
+        await supabase.removeChannel(_realtimeChannel);
+      }
     }
   },
 

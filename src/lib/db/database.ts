@@ -4,6 +4,7 @@ import type {
   GymStat,
   HunterRecord,
   InventoryItem,
+  Lead,
   Mission,
   PlayerProfile,
   Quest,
@@ -23,6 +24,7 @@ class SoloLevelingDB extends Dexie {
   gymStats!: EntityTable<GymStat, "id">;
   xpLog!: EntityTable<XpLogEntry, "id">;
   stickyNotes!: EntityTable<StickyNote, "id">;
+  leads!: EntityTable<Lead, "id">;
 
   constructor(name: string) {
     super(name);
@@ -99,6 +101,18 @@ class SoloLevelingDB extends Dexie {
       gymStats: "id",
       xpLog: "id, timestamp",
       stickyNotes: "id, pinnedAt",
+    });
+    this.version(6).stores({
+      profile: "_id",
+      gates: "id, status, rank, date",
+      quests: "id, gateId, status, order",
+      missions: "id, rank, date",
+      inventory: "id",
+      hunterRecords: "date",
+      gymStats: "id",
+      xpLog: "id, timestamp",
+      stickyNotes: "id, pinnedAt",
+      leads: "id, createdAt",
     });
   }
 }

@@ -11,6 +11,7 @@ import { useCampaignStore } from "@/lib/stores/campaign-store";
 import { useContinuationStore } from "@/lib/stores/continuation-store";
 import { useStatsStore } from "@/lib/stores/stats-store";
 import { useSystemStore } from "@/lib/stores/system-store";
+import { useLeadsStore } from "@/lib/stores/leads-store";
 
 export function StoreInitializer() {
   const activePersona = usePersonaStore((state) => state.activePersona);
@@ -20,6 +21,8 @@ export function StoreInitializer() {
   const inventoryLoaded = useInventoryStore((state) => state.loaded);
   const recordsLoaded = useRecordsStore((state) => state.loaded);
   const statsLoaded = useStatsStore((state) => state.loaded);
+  const leadsLoaded = useLeadsStore((state) => state.loaded);
+  const loadLeads = useLeadsStore((state) => state.load);
   const quests = useGatesStore((state) => state.quests);
   const loadPlayer = usePlayerStore((state) => state.load);
   const loadGates = useGatesStore((state) => state.load);
@@ -53,11 +56,17 @@ export function StoreInitializer() {
     if (!statsLoaded) {
       void loadStats();
     }
+
+    if (!leadsLoaded) {
+      void loadLeads();
+    }
   }, [
     gatesLoaded,
     inventoryLoaded,
+    leadsLoaded,
     loadGates,
     loadInventory,
+    loadLeads,
     loadMissions,
     loadPlayer,
     loadRecords,
@@ -89,11 +98,13 @@ export function StoreInitializer() {
       loadInventory(activePersona),
       loadRecords(activePersona),
       loadStats(activePersona),
+      loadLeads(activePersona),
     ]);
   }, [
     activePersona,
     loadGates,
     loadInventory,
+    loadLeads,
     loadMissions,
     loadPlayer,
     loadRecords,
