@@ -37,8 +37,9 @@ const CHAPTER_FIELDS = new Set(["Deadline", "Estimate", "Priority"]);
 const MILESTONE_FIELDS = new Set(["Deadline", "Estimate", "Link", "Notes"]);
 const CHAPTER_HEADING_PATTERN = /^## Chapter (\d+): (\S.*)$/;
 const MILESTONE_HEADING_PATTERN = /^### Milestone: (\S.*)$/;
-const MALFORMED_CHAPTER_HEADING_PATTERN = /^##(?!#)\s*chapter(?:\b|\d)/i;
-const MALFORMED_MILESTONE_HEADING_PATTERN = /^###\s*milestone(?:\b|\d)/i;
+const LEVEL_2_HEADING_PATTERN = /^##(?!#)\S?.*$/;
+const LEVEL_3_HEADING_PATTERN = /^###(?!#)\S?.*$/;
+const PROMPT_URL_PLACEHOLDER = "<PASTE_COURSE_URL_HERE>";
 
 function splitField(line: string) {
   const index = line.indexOf(":");
@@ -79,6 +80,13 @@ function isValidUrl(value: string) {
   } catch {
     return false;
   }
+}
+
+function isCleanHttpUrl(value: string) {
+  if (!value || /\s/.test(value)) {
+    return false;
+  }
+  return isValidUrl(value);
 }
 
 export function parseCoursePlan(input: string): ParseCoursePlanResult {
@@ -147,7 +155,7 @@ export function parseCoursePlan(input: string): ParseCoursePlanResult {
       continue;
     }
 
-    if (MALFORMED_CHAPTER_HEADING_PATTERN.test(line)) {
+    if (LEVEL_2_HEADING_PATTERN.test(line)) {
       result.warnings.push(`Unrecognized line ignored: ${line}`);
       currentChapter = null;
       currentMilestone = null;
@@ -156,7 +164,7 @@ export function parseCoursePlan(input: string): ParseCoursePlanResult {
       continue;
     }
 
-    if (MALFORMED_MILESTONE_HEADING_PATTERN.test(line)) {
+    if (LEVEL_3_HEADING_PATTERN.test(line)) {
       result.warnings.push(`Unrecognized line ignored: ${line}`);
       currentMilestone = null;
       isInInvalidMilestoneBlock = true;
@@ -247,8 +255,11 @@ export function parseCoursePlan(input: string): ParseCoursePlanResult {
   return result;
 }
 
-export function buildExternalCoursePrompt(courseUrl = "<PASTE_COURSE_URL_HERE>") {
-  const safeCourseUrl = singleLine(courseUrl);
+export function buildExternalCoursePrompt(courseUrl = PROMPT_URL_PLACEHOLDER) {
+  const sanitizedCourseUrl = singleLine(courseUrl);
+  const safeCourseUrl = isCleanHttpUrl(sanitizedCourseUrl)
+    ? sanitizedCourseUrl
+    : PROMPT_URL_PLACEHOLDER;
 
   return `Read this course page and convert it into the exact format below.
 
