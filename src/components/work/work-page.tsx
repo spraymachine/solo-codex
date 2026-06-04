@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import Link from "next/link";
 import { useWorkStore } from "@/lib/stores/work-store";
 import { CoursesSection } from "./courses-section";
 import { WorkListsSection } from "./work-lists-section";
@@ -18,7 +19,13 @@ export function WorkPage() {
       {/* Header */}
       <header className="section-dots relative overflow-hidden border-b border-[var(--surface-border)] bg-[var(--bg-panel)]">
         <div className="relative z-10 px-5 py-10 md:px-8 md:py-14">
-          <p className="font-[family-name:var(--font-display)] text-[0.625rem] font-bold uppercase tracking-[0.28em] text-[var(--accent-soft)]">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 font-[family-name:var(--font-display)] text-xs font-bold uppercase tracking-[0.12em] text-[var(--text-secondary)] transition-colors hover:text-[var(--accent-soft)]"
+          >
+            ← Dashboard
+          </Link>
+          <p className="mt-4 font-[family-name:var(--font-display)] text-[0.625rem] font-bold uppercase tracking-[0.28em] text-[var(--accent-soft)]">
             System · Work Module
           </p>
           <h1 className="mt-3 font-[family-name:var(--font-display)] text-5xl font-bold uppercase tracking-[0.04em] text-[var(--text-primary)] md:text-7xl">
