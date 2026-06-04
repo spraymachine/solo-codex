@@ -325,6 +325,60 @@ Notes: Watch carefully.`);
     expect(result.warnings).toContain("Unrecognized line ignored: ### Milestone Watch lesson");
   });
 
+  it("does not let lowercase malformed milestone fields overwrite chapter fields", () => {
+    const result = parseCoursePlan(`Course: Strict Milestones
+URL:
+Goal:
+Deadline:
+Source:
+Status: active
+
+## Chapter 1: Routing
+Deadline: 2026-06-20
+Estimate: 4h
+Priority: high
+
+### milestone: Watch lesson
+Deadline: 2026-06-12
+Estimate: 45m
+Link: https://lesson.com
+Notes: Watch carefully.`);
+
+    expect(result.chapters[0].deadline).toBe("2026-06-20");
+    expect(result.chapters[0].milestones).toHaveLength(0);
+    expect(result.warnings).toContain("Unrecognized line ignored: ### milestone: Watch lesson");
+    expect(result.warnings).toContain(
+      "Unsupported malformed milestone field Deadline was ignored.",
+    );
+  });
+
+  it("does not let compact-token malformed milestone fields overwrite chapter fields", () => {
+    const result = parseCoursePlan(`Course: Strict Milestones
+URL:
+Goal:
+Deadline:
+Source:
+Status: active
+
+## Chapter 1: Routing
+Deadline: 2026-06-20
+Estimate: 4h
+Priority: high
+
+### Milestone1: Watch lesson
+Deadline: 2026-06-12
+Estimate: 45m
+Link: https://lesson.com
+Notes: Watch carefully.`);
+
+    expect(result.chapters[0].deadline).toBe("2026-06-20");
+    expect(result.chapters[0].milestones).toHaveLength(0);
+    expect(result.warnings).toContain("Unrecognized line ignored: ### Milestone1: Watch lesson");
+    expect(result.warnings).toContain(
+      "Unsupported malformed milestone field Deadline was ignored.",
+    );
+  });
+
   it("does not let extra-space malformed milestone fields overwrite chapter fields", () => {
     const result = parseCoursePlan(`Course: Strict Milestones
 URL:
