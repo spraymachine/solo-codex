@@ -97,6 +97,7 @@ export function parseCoursePlan(input: string): ParseCoursePlanResult {
   let currentChapter: ParsedCourseChapter | null = null;
   let currentMilestone: ParsedCourseMilestone | null = null;
   let isInInvalidChapterBlock = false;
+  let isInInvalidMilestoneBlock = false;
 
   for (const rawLine of input.split(/\r?\n/)) {
     const line = rawLine.trim();
@@ -117,6 +118,7 @@ export function parseCoursePlan(input: string): ParseCoursePlanResult {
         link: "",
         notes: "",
       };
+      isInInvalidMilestoneBlock = false;
       currentChapter.milestones.push(currentMilestone);
       continue;
     }
@@ -136,6 +138,7 @@ export function parseCoursePlan(input: string): ParseCoursePlanResult {
       };
       currentMilestone = null;
       isInInvalidChapterBlock = false;
+      isInInvalidMilestoneBlock = false;
       result.chapters.push(currentChapter);
       continue;
     }
@@ -145,6 +148,14 @@ export function parseCoursePlan(input: string): ParseCoursePlanResult {
       currentChapter = null;
       currentMilestone = null;
       isInInvalidChapterBlock = true;
+      isInInvalidMilestoneBlock = false;
+      continue;
+    }
+
+    if (line.startsWith("### Milestone")) {
+      result.warnings.push(`Unrecognized line ignored: ${line}`);
+      currentMilestone = null;
+      isInInvalidMilestoneBlock = true;
       continue;
     }
 
@@ -156,6 +167,11 @@ export function parseCoursePlan(input: string): ParseCoursePlanResult {
 
     if (isInInvalidChapterBlock) {
       result.warnings.push(`Unsupported malformed chapter field ${field.key} was ignored.`);
+      continue;
+    }
+
+    if (isInInvalidMilestoneBlock) {
+      result.warnings.push(`Unsupported malformed milestone field ${field.key} was ignored.`);
       continue;
     }
 

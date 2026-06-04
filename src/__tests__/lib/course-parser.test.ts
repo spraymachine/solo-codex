@@ -185,6 +185,30 @@ Priority: high`);
     expect(result.chapters).toHaveLength(0);
     expect(result.warnings).toContain("Unrecognized line ignored: ## Chapter 1 Routing");
   });
+
+  it("does not let malformed milestone fields overwrite chapter fields", () => {
+    const result = parseCoursePlan(`Course: Strict Milestones
+URL:
+Goal:
+Deadline:
+Source:
+Status: active
+
+## Chapter 1: Routing
+Deadline: 2026-06-20
+Estimate: 4h
+Priority: high
+
+### Milestone Watch lesson
+Deadline: 2026-06-12
+Estimate: 45m
+Link: https://lesson.com
+Notes: Watch carefully.`);
+
+    expect(result.chapters[0].deadline).toBe("2026-06-20");
+    expect(result.chapters[0].milestones).toHaveLength(0);
+    expect(result.warnings).toContain("Unrecognized line ignored: ### Milestone Watch lesson");
+  });
 });
 
 describe("buildExternalCoursePrompt", () => {
