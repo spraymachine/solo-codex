@@ -261,37 +261,55 @@ export function buildExternalCoursePrompt(courseUrl = PROMPT_URL_PLACEHOLDER) {
     ? sanitizedCourseUrl
     : PROMPT_URL_PLACEHOLDER;
 
-  return `Read this course page and convert it into the exact format below.
+  return `You are a course planner. Read the course at the URL below and produce a structured plan in the exact format shown. Return only the plan — no explanations, no markdown, no extra text.
 
-Course URL:
-${safeCourseUrl}
+Course URL: ${safeCourseUrl}
 
 Rules:
-- Return only the structured course plan.
-- Do not add explanations.
-- Use the exact field names shown.
-- Use ISO dates as YYYY-MM-DD when dates are known.
-- If a deadline is unknown, leave it blank after the colon.
-- Break the course into chapters.
-- Break each chapter into milestones.
-- Each milestone may only include Deadline, Estimate, Link, and Notes.
+- Fill in real values from the course page (title, chapters, lessons/milestones, durations).
+- Infer deadlines based on today being ${new Date().toISOString().slice(0, 10)} and a realistic study pace. Leave blank if truly unknown.
+- Estimate time per milestone honestly (e.g. 30m, 1h, 2h).
+- Priority is one of: low / normal / high. Use high for foundational chapters.
+- Each milestone link should be the direct lesson URL if available, otherwise leave blank.
+- Notes: one short sentence of what to focus on. Leave blank if nothing specific.
+- Status is one of: planned / active / paused / completed. Use active.
 
-Format:
-Course:
-URL:
-Goal:
-Deadline:
-Source:
+Exact format (copy this structure, replace angle-bracket placeholders):
+
+Course: <course title>
+URL: ${safeCourseUrl}
+Goal: <one sentence — what skill or outcome this course delivers>
+Deadline: <YYYY-MM-DD>
+Source: <platform name, e.g. Udemy>
 Status: active
 
 ## Chapter 1: <chapter title>
-Deadline:
-Estimate:
-Priority:
+Deadline: <YYYY-MM-DD>
+Estimate: <e.g. 3h>
+Priority: <low|normal|high>
 
-### Milestone: <milestone title>
-Deadline:
-Estimate:
+### Milestone: <lesson or task title>
+Deadline: <YYYY-MM-DD>
+Estimate: <e.g. 45m>
+Link: <direct lesson URL or blank>
+Notes: <one sentence or blank>
+
+### Milestone: <next lesson>
+Deadline: <YYYY-MM-DD>
+Estimate: <e.g. 30m>
 Link:
-Notes:`;
+Notes:
+
+## Chapter 2: <chapter title>
+Deadline: <YYYY-MM-DD>
+Estimate: <e.g. 5h>
+Priority: <low|normal|high>
+
+### Milestone: <lesson title>
+Deadline: <YYYY-MM-DD>
+Estimate: <e.g. 1h>
+Link:
+Notes:
+
+(continue for all chapters and milestones in the course)`;
 }
