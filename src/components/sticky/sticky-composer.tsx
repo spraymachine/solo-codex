@@ -116,10 +116,10 @@ export function StickyComposer({ persona, atCap, onAdd }: StickyComposerProps) {
               }}
             />
 
-            {/* Bottom row */}
-            <div className="mt-2 flex items-center justify-between gap-2">
+            {/* Bottom section — swatches above actions */}
+            <div className="mt-2 flex flex-col gap-2">
               {/* Color swatches */}
-              <div className="flex gap-1.5">
+              <div className="flex flex-wrap gap-1.5">
                 {colors.map((c) => (
                   <motion.button
                     key={c}
@@ -129,7 +129,7 @@ export function StickyComposer({ persona, atCap, onAdd }: StickyComposerProps) {
                     whileTap={{ scale: 0.82 }}
                     animate={{ scale: color === c ? 1.3 : 1 }}
                     transition={{ type: "spring", stiffness: 500, damping: 22 }}
-                    className="h-3.5 w-3.5 rounded-full"
+                    className="h-4 w-4 rounded-full"
                     style={{
                       backgroundColor: c,
                       boxShadow: color === c ? `0 0 0 1.5px rgba(0,0,0,0.35)` : "0 0 0 1px rgba(0,0,0,0.12)",
@@ -138,7 +138,8 @@ export function StickyComposer({ persona, atCap, onAdd }: StickyComposerProps) {
                 ))}
               </div>
 
-              <div className="flex items-center gap-2">
+              {/* Actions row */}
+              <div className="flex items-center justify-end gap-2">
                 <span
                   className="font-mono text-[9px] tabular-nums"
                   style={{ color: remaining <= 15 ? "#c43000" : "rgba(0,0,0,0.38)" }}

@@ -27,9 +27,12 @@ export function StickyWall({ activePersona }: StickyWallProps) {
   const [localOrder, setLocalOrder] = useState<string[]>([]);
   const [draggedId, setDraggedId] = useState<string | null>(null);
 
+  const unsubscribe = useStickyNotesStore((s) => s.unsubscribe);
+
   useEffect(() => {
     void load(activePersona);
-  }, [activePersona, load]);
+    return () => unsubscribe();
+  }, [activePersona, load, unsubscribe]);
 
   useEffect(() => {
     setLocalOrder(ownNotes.map((n) => n.id));

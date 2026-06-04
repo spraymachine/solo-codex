@@ -15,6 +15,12 @@ export const WARM_COLORS = [
   "#80ccf0", // sky blue
   "#ffb3c6", // pink
   "#fff2a8", // pale lemon
+  "#ff6b6b", // red
+  "#ffa94d", // orange
+  "#a29bfe", // lavender
+  "#fd79a8", // hot pink
+  "#55efc4", // aqua
+  "#ffffff", // white
 ] as const;
 
 export const CALM_COLORS = [
@@ -24,6 +30,12 @@ export const CALM_COLORS = [
   "#9ac4bc", // eucalyptus
   "#d4b88c", // ochre
   "#e0dbd2", // linen
+  "#c3aed6", // soft purple
+  "#f0c0a0", // peach
+  "#a0c4d0", // powder blue
+  "#bfb0a0", // taupe
+  "#c8d8b0", // pistachio
+  "#f5f0e8", // cream
 ] as const;
 
 export function getNoteColors(persona: Persona): readonly string[] {
@@ -145,8 +157,10 @@ interface StickyNotesState {
   ownArchived: StickyNote[];
   archiveDrawerOpen: boolean;
   _activePersona: Persona | null;
+  _realtimeChannel: ReturnType<ReturnType<typeof getSupabaseBrowserClient>["channel"]> | null;
 
   load: (activePersona: Persona) => Promise<void>;
+  unsubscribe: () => void;
   addNote: (text: string, color: string) => Promise<void>;
   deleteNote: (id: string) => Promise<void>;
   reorderNotes: (orderedIds: string[]) => Promise<void>;
@@ -155,13 +169,29 @@ interface StickyNotesState {
   setArchiveDrawerOpen: (open: boolean) => void;
 }
 
+async function refreshFromCloud(persona: Persona, set: (s: Partial<StickyNotesState>) => void) {
+  const cloud = await pullFromSupabase(persona);
+  if (cloud !== null) {
+    await syncDexieFromCloud(persona, cloud);
+  }
+  const [ownNotes, ownArchived] = await Promise.all([
+    readActive(persona),
+    readArchived(persona),
+  ]);
+  set({ ownNotes, ownArchived });
+}
+
 export const useStickyNotesStore = create<StickyNotesState>()((set, get) => ({
   ownNotes: [],
   ownArchived: [],
   archiveDrawerOpen: false,
   _activePersona: null,
+  _realtimeChannel: null,
 
   load: async (activePersona) => {
+    // Tear down any existing channel before re-subscribing
+    get().unsubscribe();
+
     set({ _activePersona: activePersona });
 
     // Show Dexie immediately
@@ -172,15 +202,37 @@ export const useStickyNotesStore = create<StickyNotesState>()((set, get) => ({
     set({ ownNotes: ownLocal, ownArchived: ownArchLocal });
 
     // Reconcile with Supabase
-    const cloud = await pullFromSupabase(activePersona);
-    if (cloud !== null) {
-      await syncDexieFromCloud(activePersona, cloud);
+    await refreshFromCloud(activePersona, set);
+
+    // Subscribe to realtime changes from other devices
+    const supabase = getSupabaseBrowserClient();
+    const user = await getAuthUser();
+    if (supabase && isSupabaseConfigured() && user) {
+      const channel = supabase
+        .channel(`sticky_notes:${user.id}:${activePersona}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "sticky_notes",
+            filter: `user_id=eq.${user.id}`,
+          },
+          () => {
+            void refreshFromCloud(activePersona, set);
+          },
+        )
+        .subscribe();
+      set({ _realtimeChannel: channel });
     }
-    const [ownNotes, ownArchived] = await Promise.all([
-      readActive(activePersona),
-      readArchived(activePersona),
-    ]);
-    set({ ownNotes, ownArchived });
+  },
+
+  unsubscribe: () => {
+    const { _realtimeChannel } = get();
+    if (_realtimeChannel) {
+      void _realtimeChannel.unsubscribe();
+      set({ _realtimeChannel: null });
+    }
   },
 
   addNote: async (text, color) => {
