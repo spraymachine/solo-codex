@@ -430,7 +430,7 @@ export function CoursesSection() {
                                 <button
                                   type="button"
                                   onClick={(e) => { e.stopPropagation(); setEditingChapter(chapter.id); }}
-                                  className="rounded p-0.5 text-xs text-[var(--text-secondary)] opacity-0 transition-all group-hover:opacity-100 hover:text-[var(--text-primary)]"
+                                  className="rounded p-0.5 text-xs text-[var(--text-secondary)] opacity-100 transition-all sm:opacity-0 sm:group-hover:opacity-100 hover:text-[var(--text-primary)]"
                                 >
                                   ✎
                                 </button>
@@ -441,7 +441,7 @@ export function CoursesSection() {
                                     if (window.confirm(`Delete chapter "${chapter.title}"?`))
                                       void deleteChapter(chapter.id);
                                   }}
-                                  className="rounded p-0.5 text-xs text-[var(--text-secondary)] opacity-0 transition-all group-hover:opacity-100 hover:text-[var(--danger)]"
+                                  className="rounded p-0.5 text-xs text-[var(--text-secondary)] opacity-100 transition-all sm:opacity-0 sm:group-hover:opacity-100 hover:text-[var(--danger)]"
                                 >
                                   ✕
                                 </button>
