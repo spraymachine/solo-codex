@@ -200,7 +200,7 @@ export function CoursesSection() {
   const [editingChapter, setEditingChapter] = useState<string | null>(null);
   const [editingMilestone, setEditingMilestone] = useState<string | null>(null);
   const [collapsedCourses, setCollapsedCourses] = useState<Set<string>>(new Set());
-  const [collapsedChapters, setCollapsedChapters] = useState<Set<string>>(new Set());
+  const [expandedChapters, setExpandedChapters] = useState<Set<string>>(new Set());
   const [addingChapterTo, setAddingChapterTo] = useState<string | null>(null);
   const [newChapterTitle, setNewChapterTitle] = useState("");
   const [addingMilestoneTo, setAddingMilestoneTo] = useState<string | null>(null);
@@ -216,7 +216,7 @@ export function CoursesSection() {
   }
 
   function toggleChapterCollapsed(id: string) {
-    setCollapsedChapters((prev) => {
+    setExpandedChapters((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
@@ -380,7 +380,7 @@ export function CoursesSection() {
                         .sort((a, b) => a.order - b.order);
                       const chapterDone = ms.filter((m) => m.completed).length;
                       const allDone = ms.length > 0 && chapterDone === ms.length;
-                      const isChapterCollapsed = collapsedChapters.has(chapter.id);
+                      const isChapterCollapsed = !expandedChapters.has(chapter.id);
 
                       return (
                         <div
@@ -425,7 +425,7 @@ export function CoursesSection() {
                                 </span>
                                 <button
                                   type="button"
-                                  onClick={(e) => { e.stopPropagation(); setAddingMilestoneTo(chapter.id); setNewMilestoneTitle(""); setCollapsedChapters((p) => { const n = new Set(p); n.delete(chapter.id); return n; }); }}
+                                  onClick={(e) => { e.stopPropagation(); setAddingMilestoneTo(chapter.id); setNewMilestoneTitle(""); setExpandedChapters((p) => { const n = new Set(p); n.add(chapter.id); return n; }); }}
                                   className="rounded p-0.5 text-xs font-bold text-[var(--text-secondary)] opacity-100 transition-all sm:opacity-0 sm:group-hover:opacity-100 hover:text-[var(--accent-soft)]"
                                   title="Add milestone"
                                 >
