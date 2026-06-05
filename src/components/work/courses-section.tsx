@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import type {
-  ChapterPriority,
   CourseChapter,
   CourseMilestone,
   CourseStatus,
@@ -10,18 +9,6 @@ import type {
 } from "@/lib/types";
 import { useWorkStore } from "@/lib/stores/work-store";
 import { CourseImportPanel } from "./course-import-panel";
-
-const PRIORITY_LABEL: Record<ChapterPriority, string> = {
-  high: "HIGH",
-  normal: "—",
-  low: "LOW",
-};
-
-const PRIORITY_COLOR: Record<ChapterPriority, string> = {
-  high: "text-[var(--accent-soft)] bg-[var(--surface-soft)]",
-  normal: "text-[var(--text-secondary)] bg-transparent",
-  low: "text-[var(--text-secondary)] opacity-50 bg-transparent",
-};
 
 const STATUS_COLOR: Record<CourseStatus, string> = {
   active: "text-[var(--accent-soft)] bg-[var(--surface-soft)] border-[var(--accent-solid)]/30",
@@ -31,7 +18,6 @@ const STATUS_COLOR: Record<CourseStatus, string> = {
 };
 
 const COURSE_STATUSES: CourseStatus[] = ["planned", "active", "paused", "completed"];
-const CHAPTER_PRIORITIES: ChapterPriority[] = ["low", "normal", "high"];
 
 function fmtDate(iso: string) {
   const [, m, d] = iso.split("-");
@@ -154,26 +140,13 @@ function ChapterEditForm({
   const [title, setTitle] = useState(chapter.title);
   const [deadline, setDeadline] = useState(chapter.deadline);
   const [estimate, setEstimate] = useState(chapter.estimate);
-  const [priority, setPriority] = useState<ChapterPriority>(chapter.priority);
 
   return (
     <div className="flex flex-wrap items-end gap-3 bg-[var(--bg-panel-strong)] px-5 py-3">
       <Field label="Title" value={title} onChange={setTitle} placeholder="Chapter title" className="flex-1" />
       <Field label="Deadline" value={deadline} onChange={setDeadline} placeholder="YYYY-MM-DD" className="w-32" />
       <Field label="Estimate" value={estimate} onChange={setEstimate} placeholder="3h" className="w-20" />
-      <div className="w-24">
-        <label className="mb-1 block font-[family-name:var(--font-display)] text-[0.5rem] font-bold uppercase tracking-[0.18em] text-[var(--text-secondary)]">
-          Priority
-        </label>
-        <select
-          value={priority}
-          onChange={(e) => setPriority(e.target.value as ChapterPriority)}
-          className="w-full rounded-md px-2.5 py-1.5 text-xs outline-none"
-        >
-          {CHAPTER_PRIORITIES.map((p) => <option key={p} value={p}>{p}</option>)}
-        </select>
-      </div>
-      <FormActions onSave={() => onSave({ title, deadline, estimate, priority })} onCancel={onCancel} />
+      <FormActions onSave={() => onSave({ title, deadline, estimate })} onCancel={onCancel} />
     </div>
   );
 }
@@ -445,11 +418,6 @@ export function CoursesSection() {
                                 {chapter.estimate && (
                                   <span className="hidden font-mono text-[0.625rem] tabular-nums text-[var(--text-secondary)] sm:inline">
                                     {chapter.estimate}
-                                  </span>
-                                )}
-                                {chapter.priority !== "normal" && (
-                                  <span className={`hidden rounded px-1 py-0.5 font-[family-name:var(--font-display)] text-[0.5rem] font-bold uppercase tracking-[0.1em] sm:inline ${PRIORITY_COLOR[chapter.priority]}`}>
-                                    {PRIORITY_LABEL[chapter.priority]}
                                   </span>
                                 )}
                                 <span className="font-mono text-[0.625rem] tabular-nums text-[var(--text-secondary)]">

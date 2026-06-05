@@ -121,7 +121,6 @@ describe("work store", () => {
           title: "Routing",
           deadline: "2026-06-12",
           estimate: "3h",
-          priority: "high",
           milestones: [
             {
               title: "Watch routing lessons",

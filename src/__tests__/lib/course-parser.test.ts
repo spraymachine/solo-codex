@@ -11,7 +11,6 @@ Status: active
 ## Chapter 1: Routing
 Deadline: 2026-06-12
 Estimate: 3h
-Priority: high
 
 ### Milestone: Watch routing lessons
 Deadline: 2026-06-10
@@ -34,7 +33,6 @@ describe("parseCoursePlan", () => {
     expect(result.course?.url).toBe("https://course.com");
     expect(result.chapters).toHaveLength(1);
     expect(result.chapters[0].title).toBe("Routing");
-    expect(result.chapters[0].priority).toBe("high");
     expect(result.chapters[0].milestones).toHaveLength(2);
     expect(result.chapters[0].milestones[0].title).toBe("Watch routing lessons");
     expect(result.chapters[0].milestones[0].link).toBe("https://lesson.com");
@@ -51,7 +49,6 @@ Status: active
 ## Chapter 1: Start
 Deadline:
 Estimate:
-Priority:
 
 ### Milestone: Read intro
 Deadline:
@@ -61,7 +58,6 @@ Notes:`);
 
     expect(result.errors).toEqual([]);
     expect(result.course?.url).toBe("");
-    expect(result.chapters[0].priority).toBe("normal");
     expect(result.chapters[0].milestones[0].notes).toBe("");
     expect(result.warnings).toEqual([]);
   });
@@ -94,7 +90,6 @@ Status: active
 ## Chapter 1: Routing
 Deadline:
 Estimate:
-Priority:
 
 ### Milestone: Watch lesson
 Deadline:
@@ -118,7 +113,6 @@ Status: active
 ## Chapter 1: Links
 Deadline:
 Estimate:
-Priority:
 
 ### Milestone: Open lesson
 Deadline:
@@ -130,7 +124,7 @@ Notes:`);
     expect(result.warnings).toContain("Milestone link for Open lesson is not a valid URL.");
   });
 
-  it("warns on invalid nonblank status and priority values", () => {
+  it("warns on invalid nonblank status value", () => {
     const result = parseCoursePlan(`Course: Bad Enums
 URL:
 Goal:
@@ -140,16 +134,11 @@ Status: done
 
 ## Chapter 1: Routing
 Deadline:
-Estimate:
-Priority: urgent`);
+Estimate:`);
 
     expect(result.errors).toEqual([]);
     expect(result.course?.status).toBe("active");
-    expect(result.chapters[0].priority).toBe("normal");
     expect(result.warnings).toContain("Invalid Status value done was defaulted to active.");
-    expect(result.warnings).toContain(
-      "Invalid Priority value urgent for chapter Routing was defaulted to normal.",
-    );
   });
 
   it("requires strict chapter headings", () => {
@@ -162,8 +151,7 @@ Status: active
 
 ## Chapter 1 Routing
 Deadline:
-Estimate:
-Priority:`);
+Estimate:`);
 
     expect(result.chapters).toHaveLength(0);
     expect(result.warnings).toContain("Unrecognized line ignored: ## Chapter 1 Routing");
@@ -179,8 +167,7 @@ Status: active
 
 ## Chapter 1 Routing
 Deadline: 2026-06-12
-Estimate: 3h
-Priority: high`);
+Estimate: 3h`);
 
     expect(result.course?.deadline).toBe("2026-07-30");
     expect(result.chapters).toHaveLength(0);
@@ -197,8 +184,7 @@ Status: active
 
 ## Module 1: Routing
 Deadline: 2026-06-12
-Estimate: 3h
-Priority: high`);
+Estimate: 3h`);
 
     expect(result.course?.deadline).toBe("2026-07-30");
     expect(result.chapters).toHaveLength(0);
@@ -216,8 +202,7 @@ Status: active
 
 ##  Chapter 1: Routing
 Deadline: 2026-06-12
-Estimate: 3h
-Priority: high`);
+Estimate: 3h`);
 
     expect(result.course?.deadline).toBe("2026-07-30");
     expect(result.chapters).toHaveLength(0);
@@ -235,8 +220,7 @@ Status: active
 
 ##Chapter 1: Routing
 Deadline: 2026-06-12
-Estimate: 3h
-Priority: high`);
+Estimate: 3h`);
 
     expect(result.course?.deadline).toBe("2026-07-30");
     expect(result.chapters).toHaveLength(0);
@@ -254,8 +238,7 @@ Status: active
 
 ## Chapter1: Routing
 Deadline: 2026-06-12
-Estimate: 3h
-Priority: high`);
+Estimate: 3h`);
 
     expect(result.course?.deadline).toBe("2026-07-30");
     expect(result.chapters).toHaveLength(0);
@@ -273,8 +256,7 @@ Status: active
 
 ## chapter 1: Routing
 Deadline: 2026-06-12
-Estimate: 3h
-Priority: high`);
+Estimate: 3h`);
 
     expect(result.course?.deadline).toBe("2026-07-30");
     expect(result.chapters).toHaveLength(0);
@@ -292,8 +274,7 @@ Status: active
 
 ## Chapter  1: Routing
 Deadline: 2026-06-12
-Estimate: 3h
-Priority: high`);
+Estimate: 3h`);
 
     expect(result.course?.deadline).toBe("2026-07-30");
     expect(result.chapters).toHaveLength(0);
@@ -311,8 +292,7 @@ Status: active
 
 ## Chapter 1:Routing
 Deadline: 2026-06-12
-Estimate: 3h
-Priority: high`);
+Estimate: 3h`);
 
     expect(result.course?.deadline).toBe("2026-07-30");
     expect(result.chapters).toHaveLength(0);
@@ -331,7 +311,6 @@ Status: active
 ## Chapter 1: Routing
 Deadline: 2026-06-20
 Estimate: 4h
-Priority: high
 
 ### Milestone Watch lesson
 Deadline: 2026-06-12
@@ -355,7 +334,6 @@ Status: active
 ## Chapter 1: Routing
 Deadline: 2026-06-20
 Estimate: 4h
-Priority: high
 
 ### Lesson 1: Watch
 Deadline: 2026-06-12
@@ -382,7 +360,6 @@ Status: active
 ## Chapter 1: Routing
 Deadline: 2026-06-20
 Estimate: 4h
-Priority: high
 
 ### milestone: Watch lesson
 Deadline: 2026-06-12
@@ -409,7 +386,6 @@ Status: active
 ## Chapter 1: Routing
 Deadline: 2026-06-20
 Estimate: 4h
-Priority: high
 
 ### Milestone1: Watch lesson
 Deadline: 2026-06-12
@@ -436,7 +412,6 @@ Status: active
 ## Chapter 1: Routing
 Deadline: 2026-06-20
 Estimate: 4h
-Priority: high
 
 ###  Milestone: Watch lesson
 Deadline: 2026-06-12
@@ -464,7 +439,6 @@ Status: active
 ## Chapter 1: Routing
 Deadline: 2026-06-20
 Estimate: 4h
-Priority: high
 
 ###Milestone: Watch lesson
 Deadline: 2026-06-12
@@ -491,7 +465,6 @@ Status: active
 ## Chapter 1: Routing
 Deadline: 2026-06-20
 Estimate: 4h
-Priority: high
 
 ### Milestone:Watch lesson
 Deadline: 2026-06-12
@@ -518,7 +491,6 @@ Status: active
 ## Chapter 1: Routing
 Deadline: 2026-06-20
 Estimate: 4h
-Priority: high
 
 ### Milestone:
 Deadline: 2026-06-12

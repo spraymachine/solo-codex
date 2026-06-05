@@ -135,7 +135,6 @@ export interface Lead {
 }
 
 export type CourseStatus = "planned" | "active" | "paused" | "completed";
-export type ChapterPriority = "low" | "normal" | "high";
 export type WorkContactStatus = "lead" | "prospect" | "client" | "lost" | "archived";
 export type WorkProjectStatus = "planned" | "active" | "paused" | "completed" | "archived";
 
@@ -157,7 +156,6 @@ export interface CourseChapter {
   title: string;
   deadline: string;
   estimate: string;
-  priority: ChapterPriority;
   order: number;
 }
 

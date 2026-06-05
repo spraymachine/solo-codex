@@ -1,4 +1,4 @@
-import type { ChapterPriority, CourseStatus } from "@/lib/types";
+import type { CourseStatus } from "@/lib/types";
 
 export interface ParsedCourseMilestone {
   title: string;
@@ -12,7 +12,6 @@ export interface ParsedCourseChapter {
   title: string;
   deadline: string;
   estimate: string;
-  priority: ChapterPriority;
   milestones: ParsedCourseMilestone[];
 }
 
@@ -33,7 +32,7 @@ export interface ParseCoursePlanResult {
 }
 
 const COURSE_FIELDS = new Set(["Course", "URL", "Goal", "Deadline", "Source", "Status"]);
-const CHAPTER_FIELDS = new Set(["Deadline", "Estimate", "Priority"]);
+const CHAPTER_FIELDS = new Set(["Deadline", "Estimate"]);
 const MILESTONE_FIELDS = new Set(["Deadline", "Estimate", "Link", "Notes"]);
 const CHAPTER_HEADING_PATTERN = /^## Chapter (\d+): (\S.*)$/;
 const MILESTONE_HEADING_PATTERN = /^### Milestone: (\S.*)$/;
@@ -57,13 +56,6 @@ function normalizeStatus(value: string): CourseStatus {
     return value;
   }
   return "active";
-}
-
-function normalizePriority(value: string): ChapterPriority {
-  if (value === "low" || value === "normal" || value === "high") {
-    return value;
-  }
-  return "normal";
 }
 
 function singleLine(value: string) {
@@ -145,7 +137,6 @@ export function parseCoursePlan(input: string): ParseCoursePlanResult {
         title,
         deadline: "",
         estimate: "",
-        priority: "normal",
         milestones: [],
       };
       currentMilestone = null;
@@ -206,14 +197,6 @@ export function parseCoursePlan(input: string): ParseCoursePlanResult {
       }
       if (field.key === "Deadline") currentChapter.deadline = field.value;
       if (field.key === "Estimate") currentChapter.estimate = field.value;
-      if (field.key === "Priority") {
-        currentChapter.priority = normalizePriority(field.value);
-        if (field.value && currentChapter.priority === "normal" && field.value !== "normal") {
-          result.warnings.push(
-            `Invalid Priority value ${field.value} for chapter ${currentChapter.title} was defaulted to normal.`,
-          );
-        }
-      }
       continue;
     }
 

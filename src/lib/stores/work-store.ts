@@ -329,7 +329,6 @@ export const useWorkStore = create<WorkState>((set, get) => ({
         title: chapter.title,
         deadline: chapter.deadline,
         estimate: chapter.estimate,
-        priority: chapter.priority,
         order: ci,
       };
       chapters.push(chapterRow);
@@ -398,7 +397,6 @@ export const useWorkStore = create<WorkState>((set, get) => ({
       title,
       deadline: "",
       estimate: "",
-      priority: "normal",
       order: existing.length,
     };
     await db.chapters.add(chapter);

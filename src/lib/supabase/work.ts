@@ -45,7 +45,6 @@ function rowToChapter(r: any): CourseChapter {
     title: r.title,
     deadline: r.deadline ?? "",
     estimate: r.estimate ?? "",
-    priority: r.priority,
     order: r.order,
   };
 }
@@ -173,7 +172,6 @@ export async function sbCreateChapter(userId: string, chapter: CourseChapter) {
     title: chapter.title,
     deadline: chapter.deadline,
     estimate: chapter.estimate,
-    priority: chapter.priority,
     order: chapter.order,
     created_at: now,
     updated_at: now,
@@ -187,7 +185,6 @@ export async function sbUpdateChapter(userId: string, chapterId: string, updates
     title: updates.title,
     deadline: updates.deadline,
     estimate: updates.estimate,
-    priority: updates.priority,
     updated_at: nowISO(),
   }).eq("user_id", userId).eq("id", chapterId);
 }
