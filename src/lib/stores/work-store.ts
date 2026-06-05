@@ -40,10 +40,11 @@ type ContactInput = {
   name: string;
   status: WorkContactStatus;
   phone: string;
+  phoneLabel: string;
+  phone2: string;
+  phone2Label: string;
   email: string;
   notes: string;
-  source: string;
-  nextStep: string;
 };
 
 type ProjectInput = {
@@ -116,10 +117,11 @@ async function runLegacyLeadMigration() {
       name: lead.name.trim(),
       status: "lead",
       phone: lead.phone,
+      phoneLabel: "",
+      phone2: "",
+      phone2Label: "",
       email: lead.email,
       notes: lead.notes,
-      source: "Migrated lead",
-      nextStep: "",
       archivedAt: null,
       createdAt: lead.createdAt,
       updatedAt: now,

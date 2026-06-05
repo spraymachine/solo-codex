@@ -178,10 +178,11 @@ export interface WorkContact {
   name: string;
   status: WorkContactStatus;
   phone: string;
+  phoneLabel: string;
+  phone2: string;
+  phone2Label: string;
   email: string;
   notes: string;
-  source: string;
-  nextStep: string;
   archivedAt: string | null;
   createdAt: string;
   updatedAt: string;

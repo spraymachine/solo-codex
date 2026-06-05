@@ -31,8 +31,8 @@ describe("work store", () => {
       phone: "+91 93469 07002",
       email: "founder@studio.in",
       notes: "Final quote sent.",
-      source: "WhatsApp",
-      nextStep: "Send final scope",
+      phoneLabel: "",
+      phone2: "", phone2Label: "",
     });
 
     expect(useWorkStore.getState().contacts).toHaveLength(1);
@@ -62,8 +62,8 @@ describe("work store", () => {
       phone: "",
       email: "",
       notes: "",
-      source: "",
-      nextStep: "",
+      phoneLabel: "",
+      phone2: "", phone2Label: "",
     });
 
     const project = await useWorkStore.getState().createProject({
@@ -86,8 +86,8 @@ describe("work store", () => {
       phone: "",
       email: "",
       notes: "",
-      source: "",
-      nextStep: "",
+      phoneLabel: "",
+      phone2: "", phone2Label: "",
     });
     const project = await useWorkStore.getState().createProject({
       contactId: contact.id,
@@ -157,7 +157,7 @@ describe("work store", () => {
 
     expect(useWorkStore.getState().contacts).toHaveLength(1);
     expect(useWorkStore.getState().contacts[0].name).toBe("Apex Fitness");
-    expect(useWorkStore.getState().contacts[0].source).toBe("Migrated lead");
+    expect(useWorkStore.getState().contacts[0].email).toBe("apex@example.com");
 
     await useWorkStore.getState().load();
     expect(useWorkStore.getState().contacts).toHaveLength(1);

@@ -625,6 +625,16 @@ function EditArcModal({
   const [endDate, setEndDate] = useState(arc?.endDate ?? "");
   const [submitting, setSubmitting] = useState(false);
 
+  useEffect(() => {
+    if (arc) {
+      setTitle(arc.title ?? "");
+      setRank(arc.rank ?? "A");
+      setDifficulty(arc.difficulty ?? 1);
+      setStartDate(arc.date ?? "");
+      setEndDate(arc.endDate ?? "");
+    }
+  }, [arc?.id]);
+
   async function handleSubmit() {
     if (!arc || !title.trim() || !startDate || !endDate || endDate <= startDate) return;
     setSubmitting(true);
@@ -1232,7 +1242,7 @@ export default function HomePage() {
                             <div
                               key={i}
                               className="h-[3px] flex-1 rounded-sm transition-colors duration-300"
-                              style={{ backgroundColor: i < completedSteps ? "#2dd4bf" : "rgba(45,212,191,0.18)" }}
+                              style={{ backgroundColor: i < completedSteps ? "var(--accent-solid)" : "var(--step-incomplete)" }}
                             />
                           ))
                         )}

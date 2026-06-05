@@ -20,6 +20,7 @@
   --accent-soft: #60a5fa;
   --danger: #ef4444;
   --checkbox-border: rgba(255, 255, 255, 0.18);
+  --step-incomplete: color-mix(in oklab, var(--accent-solid) 18%, transparent);
 }
 
 /* ── Light mode: Periwinkle Mist ─────────────────────────────────────────── */
@@ -41,6 +42,7 @@ html[data-theme="light"] {
   --text-secondary: oklch(46% 0.028 256);
   --danger: #dc2626;
   --checkbox-border: rgba(25, 35, 100, 0.22);
+  --step-incomplete: color-mix(in oklab, var(--accent-solid) 35%, transparent);
   color-scheme: light;
 }
 

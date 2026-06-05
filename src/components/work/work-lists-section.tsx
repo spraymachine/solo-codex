@@ -42,9 +42,10 @@ function ContactEditForm({
   const [name, setName] = useState(contact.name);
   const [status, setStatus] = useState<WorkContactStatus>(contact.status);
   const [phone, setPhone] = useState(contact.phone);
+  const [phoneLabel, setPhoneLabel] = useState(contact.phoneLabel);
+  const [phone2, setPhone2] = useState(contact.phone2);
+  const [phone2Label, setPhone2Label] = useState(contact.phone2Label);
   const [email, setEmail] = useState(contact.email);
-  const [source, setSource] = useState(contact.source);
-  const [nextStep, setNextStep] = useState(contact.nextStep);
   const [notes, setNotes] = useState(contact.notes);
 
   return (
@@ -61,20 +62,24 @@ function ContactEditForm({
           </select>
         </div>
         <div>
-          <label className={labelClass}>Phone</label>
-          <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+1 555…" className={inputClass} />
+          <label className={labelClass}>Phone 1 label</label>
+          <input value={phoneLabel} onChange={(e) => setPhoneLabel(e.target.value)} placeholder="e.g. John" className={inputClass} />
+        </div>
+        <div>
+          <label className={labelClass}>Phone 1 number</label>
+          <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+1 555…" type="tel" className={inputClass} />
+        </div>
+        <div>
+          <label className={labelClass}>Phone 2 label</label>
+          <input value={phone2Label} onChange={(e) => setPhone2Label(e.target.value)} placeholder="e.g. Sarah" className={inputClass} />
+        </div>
+        <div>
+          <label className={labelClass}>Phone 2 number</label>
+          <input value={phone2} onChange={(e) => setPhone2(e.target.value)} placeholder="+1 555…" type="tel" className={inputClass} />
         </div>
         <div>
           <label className={labelClass}>Email</label>
           <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="jane@…" className={inputClass} />
-        </div>
-        <div>
-          <label className={labelClass}>Source</label>
-          <input value={source} onChange={(e) => setSource(e.target.value)} placeholder="Referral" className={inputClass} />
-        </div>
-        <div>
-          <label className={labelClass}>Next step</label>
-          <input value={nextStep} onChange={(e) => setNextStep(e.target.value)} placeholder="Follow up…" className={inputClass} />
         </div>
         <div className="sm:col-span-2">
           <label className={labelClass}>Notes</label>
@@ -84,7 +89,7 @@ function ContactEditForm({
       <div className="flex gap-2 pt-1">
         <button
           type="button"
-          onClick={() => onSave({ name, status, phone, email, source, nextStep, notes })}
+          onClick={() => onSave({ name, status, phone, phoneLabel, phone2, phone2Label, email, notes })}
           className="h-7 rounded-md bg-[var(--accent-solid)] px-3 font-[family-name:var(--font-display)] text-[0.625rem] font-bold uppercase tracking-[0.1em] text-white"
         >
           Save
@@ -198,10 +203,11 @@ export function WorkListsSection() {
       name: contactName.trim(),
       status: "lead" as WorkContactStatus,
       phone: "",
+      phoneLabel: "",
+      phone2: "",
+      phone2Label: "",
       email: "",
       notes: "",
-      source: "",
-      nextStep: "",
     });
     setContactName("");
   }
@@ -264,12 +270,27 @@ export function WorkListsSection() {
                   <div className="group flex items-start gap-3 px-4 py-3 transition-colors hover:bg-[var(--surface-highlight)] sm:px-5">
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium text-[var(--text-primary)]">{contact.name}</p>
-                      <p className="mt-0.5 font-mono text-[0.625rem] tabular-nums text-[var(--text-secondary)]">
-                        {contact.email || contact.phone || "—"}
-                      </p>
-                      {contact.nextStep && (
-                        <p className="mt-0.5 text-[0.625rem] text-[var(--accent-soft)]/70">→ {contact.nextStep}</p>
-                      )}
+                      <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5">
+                        {contact.phone && (
+                          <a
+                            href={`tel:${contact.phone}`}
+                            className="font-mono text-[0.625rem] tabular-nums text-[var(--text-secondary)] hover:text-[var(--accent-solid)] transition-colors"
+                          >
+                            {contact.phoneLabel || contact.phone}
+                          </a>
+                        )}
+                        {contact.phone2 && (
+                          <a
+                            href={`tel:${contact.phone2}`}
+                            className="font-mono text-[0.625rem] tabular-nums text-[var(--text-secondary)] hover:text-[var(--accent-solid)] transition-colors"
+                          >
+                            {contact.phone2Label || contact.phone2}
+                          </a>
+                        )}
+                        {!contact.phone && !contact.phone2 && contact.email && (
+                          <span className="font-mono text-[0.625rem] tabular-nums text-[var(--text-secondary)]">{contact.email}</span>
+                        )}
+                      </div>
                     </div>
                     <div className="flex shrink-0 items-center gap-1">
                       <span className={`rounded-full border px-2 py-0.5 font-[family-name:var(--font-display)] text-[0.5rem] font-bold uppercase tracking-[0.12em] ${CONTACT_STATUS_COLOR[contact.status]}`}>
