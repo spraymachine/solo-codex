@@ -19,11 +19,15 @@ export function CourseImportPanel() {
   const [qaStatus, setQaStatus] = useState<CourseStatus>("planned");
   const [qaAdding, setQaAdding] = useState(false);
   const [courseUrl, setCourseUrl] = useState("");
+  const [pasteDueDate, setPasteDueDate] = useState("");
   const [draft, setDraft] = useState("");
   const [parsed, setParsed] = useState<ParseCoursePlanResult | null>(null);
   const [copyLabel, setCopyLabel] = useState("Copy AI prompt");
   const [saving, setSaving] = useState(false);
-  const prompt = useMemo(() => buildExternalCoursePrompt(courseUrl || undefined), [courseUrl]);
+  const prompt = useMemo(
+    () => buildExternalCoursePrompt(courseUrl || undefined, pasteDueDate || undefined),
+    [courseUrl, pasteDueDate],
+  );
 
   async function copyPrompt() {
     await navigator.clipboard.writeText(prompt);
@@ -155,6 +159,20 @@ export function CourseImportPanel() {
               value={courseUrl}
               onChange={(e) => setCourseUrl(e.target.value)}
               placeholder="https://course.com"
+              className="w-full rounded-lg px-3 py-2 text-sm outline-none"
+            />
+          </div>
+
+          {/* Due date */}
+          <div>
+            <label className="mb-1.5 block font-[family-name:var(--font-display)] text-[0.625rem] font-bold uppercase tracking-[0.18em] text-[var(--text-secondary)]">
+              Due Date
+            </label>
+            <input
+              type="date"
+              value={pasteDueDate}
+              onChange={(e) => setPasteDueDate(e.target.value)}
+              min={new Date().toISOString().slice(0, 10)}
               className="w-full rounded-lg px-3 py-2 text-sm outline-none"
             />
           </div>

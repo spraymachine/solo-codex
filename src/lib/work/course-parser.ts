@@ -238,11 +238,15 @@ export function parseCoursePlan(input: string): ParseCoursePlanResult {
   return result;
 }
 
-export function buildExternalCoursePrompt(courseUrl = PROMPT_URL_PLACEHOLDER) {
+export function buildExternalCoursePrompt(courseUrl = PROMPT_URL_PLACEHOLDER, dueDate?: string) {
   const sanitizedCourseUrl = singleLine(courseUrl);
   const safeCourseUrl = isCleanHttpUrl(sanitizedCourseUrl)
     ? sanitizedCourseUrl
     : PROMPT_URL_PLACEHOLDER;
+
+  const dueDateLine = dueDate
+    ? `- The entire course must be completed by ${dueDate}. Set the top-level course Deadline to exactly ${dueDate} and distribute chapter/milestone deadlines evenly before that date.`
+    : `- Infer deadlines based on today being ${new Date().toISOString().slice(0, 10)} and a realistic study pace. Leave blank if truly unknown.`;
 
   return `You are a course planner. Read the course at the URL below and produce a structured plan in the exact format shown. Return only the plan — no explanations, no markdown, no extra text.
 
@@ -250,7 +254,7 @@ Course URL: ${safeCourseUrl}
 
 Rules:
 - Fill in real values from the course page (title, chapters, lessons/milestones, durations).
-- Infer deadlines based on today being ${new Date().toISOString().slice(0, 10)} and a realistic study pace. Leave blank if truly unknown.
+${dueDateLine}
 - Estimate time per milestone honestly (e.g. 30m, 1h, 2h).
 - Priority is one of: low / normal / high. Use high for foundational chapters.
 - Each milestone link should be the direct lesson URL if available, otherwise leave blank.
