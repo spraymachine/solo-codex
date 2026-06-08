@@ -47,12 +47,12 @@ const PERSONA_CARD_STYLE: Record<
     activeShadow: "shadow-[0_0_0_1px_rgba(34,197,94,0.35),0_18px_44px_rgba(34,197,94,0.1)]",
     heroBackground: "bg-[linear-gradient(135deg,rgba(34,197,94,0.12),transparent_60%)]",
   },
-  hunter: {
+  persona1: {
     activeBorder: "border-[#f97316]",
     activeShadow: "shadow-[0_0_0_1px_rgba(249,115,22,0.35),0_18px_44px_rgba(249,115,22,0.1)]",
     heroBackground: "bg-[linear-gradient(135deg,rgba(249,115,22,0.12),transparent_60%)]",
   },
-  rahul: {
+  persona2: {
     activeBorder: "border-[#a855f7]",
     activeShadow: "shadow-[0_0_0_1px_rgba(168,85,247,0.35),0_18px_44px_rgba(168,85,247,0.1)]",
     heroBackground: "bg-[linear-gradient(135deg,rgba(168,85,247,0.12),transparent_60%)]",
@@ -1081,7 +1081,7 @@ export default function HomePage() {
                   >
                     <motion.span
                       animate={complete ? { scale: [1, 1.3, 1] } : { scale: 1 }}
-                      transition={{ type: "spring", stiffness: 500, damping: 18, duration: 0.3 }}
+                      transition={{ type: "tween", ease: "easeOut", duration: 0.3 }}
                       className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors duration-200 ${
                         complete ? "border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--bg-primary)]" : "border-[var(--checkbox-border)] bg-transparent"
                       }`}

@@ -9,11 +9,11 @@ describe("persona access", () => {
     expect(canAccessPersona("harti", "maniha@improve.com")).toBe(true);
   });
 
-  it("scopes demo@improve.com to Hunter and Rahul only", () => {
-    expect(getAllowedPersonas("demo@improve.com")).toEqual(["hunter", "rahul"]);
+  it("scopes demo@improve.com to Persona 1 and Persona 2 only", () => {
+    expect(getAllowedPersonas("demo@improve.com")).toEqual(["persona1", "persona2"]);
     expect(canAccessPersona("mani", "demo@improve.com")).toBe(false);
     expect(canAccessPersona("harti", "demo@improve.com")).toBe(false);
-    expect(canAccessPersona("hunter", "demo@improve.com")).toBe(true);
-    expect(canAccessPersona("rahul", "demo@improve.com")).toBe(true);
+    expect(canAccessPersona("persona1", "demo@improve.com")).toBe(true);
+    expect(canAccessPersona("persona2", "demo@improve.com")).toBe(true);
   });
 });

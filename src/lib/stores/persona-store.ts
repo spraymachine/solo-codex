@@ -33,14 +33,14 @@ export const personaMeta: Record<
     secondary: "#86efac",
     description: "Growth, rhythm, and steady daily momentum.",
   },
-  hunter: {
-    label: "Hunter",
+  persona1: {
+    label: "Persona 1",
     accent: "#f97316",
     secondary: "#fdba74",
     description: "Planning, structure, and high-focus systems.",
   },
-  rahul: {
-    label: "Rahul",
+  persona2: {
+    label: "Persona 2",
     accent: "#a855f7",
     secondary: "#d8b4fe",
     description: "Growth, rhythm, and steady daily momentum.",

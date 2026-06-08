@@ -1,5 +1,5 @@
 export type Rank = "E" | "D" | "C" | "B" | "A" | "S";
-export type Persona = "mani" | "harti" | "hunter" | "rahul";
+export type Persona = "mani" | "harti" | "persona1" | "persona2";
 
 export type GateStatus = "locked" | "active" | "cleared" | "failed";
 

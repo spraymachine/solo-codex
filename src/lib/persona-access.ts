@@ -4,7 +4,7 @@ const DEFAULT_PERSONAS: Persona[] = ["mani", "harti"];
 
 const PERSONAS_BY_EMAIL: Record<string, Persona[]> = {
   "maniha@improve.com": ["mani", "harti"],
-  "demo@improve.com": ["hunter", "rahul"],
+  "demo@improve.com": ["persona1", "persona2"],
 };
 
 export function getAllowedPersonas(email?: string | null): Persona[] {
