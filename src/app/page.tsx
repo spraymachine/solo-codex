@@ -47,6 +47,16 @@ const PERSONA_CARD_STYLE: Record<
     activeShadow: "shadow-[0_0_0_1px_rgba(34,197,94,0.35),0_18px_44px_rgba(34,197,94,0.1)]",
     heroBackground: "bg-[linear-gradient(135deg,rgba(34,197,94,0.12),transparent_60%)]",
   },
+  hunter: {
+    activeBorder: "border-[#f97316]",
+    activeShadow: "shadow-[0_0_0_1px_rgba(249,115,22,0.35),0_18px_44px_rgba(249,115,22,0.1)]",
+    heroBackground: "bg-[linear-gradient(135deg,rgba(249,115,22,0.12),transparent_60%)]",
+  },
+  rahul: {
+    activeBorder: "border-[#a855f7]",
+    activeShadow: "shadow-[0_0_0_1px_rgba(168,85,247,0.35),0_18px_44px_rgba(168,85,247,0.1)]",
+    heroBackground: "bg-[linear-gradient(135deg,rgba(168,85,247,0.12),transparent_60%)]",
+  },
 };
 
 function SectionShell({

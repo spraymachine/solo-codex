@@ -33,6 +33,18 @@ export const personaMeta: Record<
     secondary: "#86efac",
     description: "Growth, rhythm, and steady daily momentum.",
   },
+  hunter: {
+    label: "Hunter",
+    accent: "#f97316",
+    secondary: "#fdba74",
+    description: "Planning, structure, and high-focus systems.",
+  },
+  rahul: {
+    label: "Rahul",
+    accent: "#a855f7",
+    secondary: "#d8b4fe",
+    description: "Growth, rhythm, and steady daily momentum.",
+  },
 };
 
 export const usePersonaStore = create<PersonaState>()(
