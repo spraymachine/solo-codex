@@ -81,7 +81,10 @@ export function AuthGate({ children }: PropsWithChildren) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      if (event === "SIGNED_OUT" && !nextSession) {
+        clearSupabaseAuthStorage();
+      }
       setSession(nextSession);
       setLoading(false);
     });

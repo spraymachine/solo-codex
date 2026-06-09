@@ -70,6 +70,7 @@ interface WorkState {
   chapters: CourseChapter[];
   milestones: CourseMilestone[];
   loaded: boolean;
+  _userId: string | null;
   _realtimeChannel: RealtimeChannel | null;
   load: () => Promise<void>;
   unsubscribe: () => Promise<void>;
@@ -161,7 +162,7 @@ async function refreshFromRemote(
 ) {
   const remote = await fetchAllWork(userId);
   if (!remote) return;
-  const db = getWorkDb();
+  const db = getWorkDb(userId);
   await db.transaction("rw", [db.courses, db.chapters, db.milestones, db.contacts, db.projects], async () => {
     await Promise.all([
       db.courses.bulkPut(remote.courses),
@@ -180,13 +181,16 @@ async function refreshFromRemote(
   });
 }
 
-export const useWorkStore = create<WorkState>((set, get) => ({
+export const useWorkStore = create<WorkState>((set, get) => {
+  const db = () => getWorkDb(get()._userId ?? undefined);
+  return ({
   contacts: [],
   projects: [],
   courses: [],
   chapters: [],
   milestones: [],
   loaded: false,
+  _userId: null,
   _realtimeChannel: null,
 
   async unsubscribe() {
@@ -199,13 +203,11 @@ export const useWorkStore = create<WorkState>((set, get) => ({
   },
 
   async load() {
-    await migrateLegacyLeadsIfEmpty();
-    const db = getWorkDb();
-
     // Try Supabase first — if authenticated, use as source of truth
     try {
       const userId = await getWorkUserId();
       if (userId) {
+        set({ _userId: userId });
         await refreshFromRemote(userId, set);
         set({ loaded: true });
 
@@ -230,13 +232,15 @@ export const useWorkStore = create<WorkState>((set, get) => ({
       // fall through to local
     }
 
-    // Fallback: local Dexie
+    // Fallback: local Dexie (unauthenticated / offline only)
+    await migrateLegacyLeadsIfEmpty();
+    const localDb = getWorkDb(); // "SoloWorkDB-local"
     const [contacts, projects, courses, chapters, milestones] = await Promise.all([
-      db.contacts.toArray(),
-      db.projects.toArray(),
-      db.courses.toArray(),
-      db.chapters.toArray(),
-      db.milestones.toArray(),
+      localDb.contacts.toArray(),
+      localDb.projects.toArray(),
+      localDb.courses.toArray(),
+      localDb.chapters.toArray(),
+      localDb.milestones.toArray(),
     ]);
     set({
       contacts: sortByCreatedDesc(contacts),
@@ -251,7 +255,7 @@ export const useWorkStore = create<WorkState>((set, get) => ({
   async createContact(input) {
     const now = nowISO();
     const contact: WorkContact = { id: generateId(), archivedAt: null, createdAt: now, updatedAt: now, ...input };
-    await getWorkDb().contacts.add(contact);
+    await db().contacts.add(contact);
     set((state) => ({ contacts: [contact, ...state.contacts] }));
     void syncToSupabase((uid) => sbCreateContact(uid, contact));
     return contact;
@@ -259,7 +263,7 @@ export const useWorkStore = create<WorkState>((set, get) => ({
 
   async updateContact(id, updates) {
     const next = { ...updates, updatedAt: nowISO() };
-    await getWorkDb().contacts.update(id, next);
+    await db().contacts.update(id, next);
     set((state) => ({ contacts: state.contacts.map((c) => (c.id === id ? { ...c, ...next } : c)) }));
     void syncToSupabase((uid) => sbUpdateContact(uid, id, next));
   },
@@ -267,7 +271,7 @@ export const useWorkStore = create<WorkState>((set, get) => ({
   async archiveContact(id) {
     const archivedAt = nowISO();
     const next = { archivedAt, status: "archived" as const, updatedAt: archivedAt };
-    await getWorkDb().contacts.update(id, next);
+    await db().contacts.update(id, next);
     set((state) => ({ contacts: state.contacts.map((c) => (c.id === id ? { ...c, ...next } : c)) }));
     void syncToSupabase((uid) => sbUpdateContact(uid, id, next));
   },
@@ -278,7 +282,7 @@ export const useWorkStore = create<WorkState>((set, get) => ({
     if (!contact) throw new Error("Project requires an existing client or lead.");
     const now = nowISO();
     const project: WorkProject = { id: generateId(), archivedAt: null, createdAt: now, updatedAt: now, ...input };
-    await getWorkDb().projects.add(project);
+    await db().projects.add(project);
     set((state) => ({ projects: [project, ...state.projects] }));
     void syncToSupabase((uid) => sbCreateProject(uid, project));
     return project;
@@ -291,7 +295,7 @@ export const useWorkStore = create<WorkState>((set, get) => ({
       if (!contact) throw new Error("Project requires an existing client or lead.");
     }
     const next = { ...updates, updatedAt: nowISO() };
-    await getWorkDb().projects.update(id, next);
+    await db().projects.update(id, next);
     set((state) => ({ projects: state.projects.map((p) => (p.id === id ? { ...p, ...next } : p)) }));
     void syncToSupabase((uid) => sbUpdateProject(uid, id, next));
   },
@@ -299,14 +303,13 @@ export const useWorkStore = create<WorkState>((set, get) => ({
   async archiveProject(id) {
     const archivedAt = nowISO();
     const next = { archivedAt, status: "archived" as const, updatedAt: archivedAt };
-    await getWorkDb().projects.update(id, next);
+    await db().projects.update(id, next);
     set((state) => ({ projects: state.projects.map((p) => (p.id === id ? { ...p, ...next } : p)) }));
     void syncToSupabase((uid) => sbUpdateProject(uid, id, next));
   },
 
   async saveParsedCourse(parsed) {
     if (!parsed.course || parsed.errors.length > 0) throw new Error("Cannot save a course with parser errors.");
-    const db = getWorkDb();
     const now = nowISO();
     const course: WorkCourse = {
       id: generateId(),
@@ -347,10 +350,10 @@ export const useWorkStore = create<WorkState>((set, get) => ({
       });
     });
 
-    await db.transaction("rw", [db.courses, db.chapters, db.milestones], async () => {
-      await db.courses.add(course);
-      if (chapters.length > 0) await db.chapters.bulkAdd(chapters);
-      if (milestones.length > 0) await db.milestones.bulkAdd(milestones);
+    await db().transaction("rw", [db().courses, db().chapters, db().milestones], async () => {
+      await db().courses.add(course);
+      if (chapters.length > 0) await db().chapters.bulkAdd(chapters);
+      if (milestones.length > 0) await db().milestones.bulkAdd(milestones);
     });
 
     set((state) => ({
@@ -369,7 +372,6 @@ export const useWorkStore = create<WorkState>((set, get) => ({
   },
 
   async createCourse(input) {
-    const db = getWorkDb();
     const now = nowISO();
     const course: WorkCourse = {
       id: generateId(),
@@ -382,14 +384,13 @@ export const useWorkStore = create<WorkState>((set, get) => ({
       createdAt: now,
       updatedAt: now,
     };
-    await db.courses.add(course);
+    await db().courses.add(course);
     set((state) => ({ courses: [course, ...state.courses] }));
     void syncToSupabase((uid) => sbCreateCourse(uid, course));
     return course;
   },
 
   async createChapter(courseId, title) {
-    const db = getWorkDb();
     const existing = get().chapters.filter((c) => c.courseId === courseId);
     const chapter: CourseChapter = {
       id: generateId(),
@@ -399,14 +400,13 @@ export const useWorkStore = create<WorkState>((set, get) => ({
       estimate: "",
       order: existing.length,
     };
-    await db.chapters.add(chapter);
+    await db().chapters.add(chapter);
     set((state) => ({ chapters: [...state.chapters, chapter] }));
     void syncToSupabase((uid) => sbCreateChapter(uid, chapter));
     return chapter;
   },
 
   async createMilestone(chapterId, title) {
-    const db = getWorkDb();
     const existing = get().milestones.filter((m) => m.chapterId === chapterId);
     const milestone: CourseMilestone = {
       id: generateId(),
@@ -419,42 +419,41 @@ export const useWorkStore = create<WorkState>((set, get) => ({
       completed: false,
       order: existing.length,
     };
-    await db.milestones.add(milestone);
+    await db().milestones.add(milestone);
     set((state) => ({ milestones: [...state.milestones, milestone] }));
     void syncToSupabase((uid) => sbCreateMilestone(uid, milestone));
     return milestone;
   },
 
   async toggleMilestone(id, completed) {
-    await getWorkDb().milestones.update(id, { completed });
+    await db().milestones.update(id, { completed });
     set((state) => ({ milestones: state.milestones.map((m) => (m.id === id ? { ...m, completed } : m)) }));
     void syncToSupabase((uid) => sbUpdateMilestone(uid, id, { completed }));
   },
 
   async updateMilestone(id, updates) {
-    await getWorkDb().milestones.update(id, updates);
+    await db().milestones.update(id, updates);
     set((state) => ({ milestones: state.milestones.map((m) => (m.id === id ? { ...m, ...updates } : m)) }));
     void syncToSupabase((uid) => sbUpdateMilestone(uid, id, updates));
   },
 
   async deleteMilestone(id) {
-    await getWorkDb().milestones.delete(id);
+    await db().milestones.delete(id);
     set((state) => ({ milestones: state.milestones.filter((m) => m.id !== id) }));
     void syncToSupabase((uid) => sbDeleteMilestone(uid, id));
   },
 
   async updateChapter(id, updates) {
-    await getWorkDb().chapters.update(id, updates);
+    await db().chapters.update(id, updates);
     set((state) => ({ chapters: state.chapters.map((c) => (c.id === id ? { ...c, ...updates } : c)) }));
     void syncToSupabase((uid) => sbUpdateChapter(uid, id, updates));
   },
 
   async deleteChapter(id) {
-    const db = getWorkDb();
-    const milestoneIds = (await db.milestones.where("chapterId").equals(id).toArray()).map((m) => m.id);
-    await db.transaction("rw", [db.chapters, db.milestones], async () => {
-      await db.milestones.bulkDelete(milestoneIds);
-      await db.chapters.delete(id);
+    const milestoneIds = (await db().milestones.where("chapterId").equals(id).toArray()).map((m) => m.id);
+    await db().transaction("rw", [db().chapters, db().milestones], async () => {
+      await db().milestones.bulkDelete(milestoneIds);
+      await db().chapters.delete(id);
     });
     set((state) => ({
       chapters: state.chapters.filter((c) => c.id !== id),
@@ -468,22 +467,21 @@ export const useWorkStore = create<WorkState>((set, get) => ({
 
   async updateCourse(id, updates) {
     const updatedAt = nowISO();
-    await getWorkDb().courses.update(id, { ...updates, updatedAt });
+    await db().courses.update(id, { ...updates, updatedAt });
     set((state) => ({ courses: state.courses.map((c) => (c.id === id ? { ...c, ...updates, updatedAt } : c)) }));
     void syncToSupabase((uid) => sbUpdateCourse(uid, id, { ...updates, updatedAt }));
   },
 
   async deleteCourse(id) {
-    const db = getWorkDb();
-    const chapterIds = (await db.chapters.where("courseId").equals(id).toArray()).map((c) => c.id);
+    const chapterIds = (await db().chapters.where("courseId").equals(id).toArray()).map((c) => c.id);
     const milestoneIds = (
-      await Promise.all(chapterIds.map((cid) => db.milestones.where("chapterId").equals(cid).toArray()))
+      await Promise.all(chapterIds.map((cid) => db().milestones.where("chapterId").equals(cid).toArray()))
     ).flat().map((m) => m.id);
 
-    await db.transaction("rw", [db.courses, db.chapters, db.milestones], async () => {
-      await db.milestones.bulkDelete(milestoneIds);
-      await db.chapters.bulkDelete(chapterIds);
-      await db.courses.delete(id);
+    await db().transaction("rw", [db().courses, db().chapters, db().milestones], async () => {
+      await db().milestones.bulkDelete(milestoneIds);
+      await db().chapters.bulkDelete(chapterIds);
+      await db().courses.delete(id);
     });
     set((state) => ({
       courses: state.courses.filter((c) => c.id !== id),
@@ -493,4 +491,5 @@ export const useWorkStore = create<WorkState>((set, get) => ({
     // Supabase cascades chapters + milestones on course delete (FK on delete cascade)
     void syncToSupabase((uid) => sbDeleteCourse(uid, id));
   },
-}));
+});
+});

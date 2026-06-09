@@ -21,6 +21,7 @@ import { useRecordsStore } from "@/lib/stores/records-store";
 import { useMissionsStore } from "@/lib/stores/missions-store";
 import { StickyWall } from "@/components/sticky/sticky-wall";
 import { useWorkStore } from "@/lib/stores/work-store";
+import { CourseArcCard } from "@/components/work/course-arc-card";
 import type { Gate, Persona, Reflection, SubQuest } from "@/lib/types";
 
 const WEEKDAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -746,6 +747,7 @@ export default function HomePage() {
   const workLoaded = useWorkStore((state) => state.loaded);
   const workLoad = useWorkStore((state) => state.load);
   const workCourses = useWorkStore((state) => state.courses);
+  const workChapters = useWorkStore((state) => state.chapters);
   const workProjects = useWorkStore((state) => state.projects);
   const workMilestones = useWorkStore((state) => state.milestones);
 
@@ -931,22 +933,14 @@ export default function HomePage() {
 
   const now = new Date();
 
+  useEffect(() => {
+    if (!allowedPersonas.includes(activePersona)) {
+      setActivePersona(allowedPersonas[0]);
+    }
+  }, [activePersona, allowedPersonas, setActivePersona]);
+
   if (!allowedPersonas.includes(activePersona)) {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <motion.div
-            className="h-[2px] w-14 rounded-full bg-[var(--accent-solid)]"
-            animate={{ scaleX: [0.2, 1, 0.2], opacity: [0.4, 1, 0.4] }}
-            transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
-            style={{ originX: 0.5 }}
-          />
-          <p className="font-[family-name:var(--font-display)] text-[0.625rem] uppercase tracking-[0.18em] text-[var(--text-secondary)]">
-            initializing
-          </p>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   return (
@@ -1294,6 +1288,12 @@ export default function HomePage() {
         arc={arcGoals.find((goal) => goal.id === editingArcId) ?? null}
         onClose={() => setEditingArcId(null)}
         onUpdate={handleUpdateGoal}
+      />
+
+      <CourseArcCard
+        courses={workCourses}
+        chapters={workChapters}
+        milestones={workMilestones}
       />
 
       <SectionShell

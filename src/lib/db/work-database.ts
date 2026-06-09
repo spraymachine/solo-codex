@@ -14,8 +14,8 @@ class SoloWorkDB extends Dexie {
   contacts!: EntityTable<WorkContact, "id">;
   projects!: EntityTable<WorkProject, "id">;
 
-  constructor() {
-    super(getWorkDatabaseName());
+  constructor(name: string) {
+    super(name);
     this.version(1).stores({
       courses: "id, status, deadline, createdAt",
       chapters: "id, courseId, order, deadline",
@@ -26,26 +26,28 @@ class SoloWorkDB extends Dexie {
   }
 }
 
-let workDb: SoloWorkDB | null = null;
+const workDbCache = new Map<string, SoloWorkDB>();
 
-export function getWorkDatabaseName() {
-  return "SoloWorkDB";
+export function getWorkDatabaseName(userId?: string) {
+  return userId ? `SoloWorkDB-${userId}` : "SoloWorkDB-local";
 }
 
-export function getWorkDb() {
-  workDb ??= new SoloWorkDB();
-  return workDb;
+export function getWorkDb(userId?: string) {
+  const name = getWorkDatabaseName(userId);
+  if (!workDbCache.has(name)) {
+    workDbCache.set(name, new SoloWorkDB(name));
+  }
+  return workDbCache.get(name)!;
 }
 
 export async function resetWorkDbForTests() {
-  if (workDb) {
-    await workDb.delete();
-    workDb.close();
-    workDb = null;
-    return;
+  for (const [name, db] of workDbCache) {
+    await db.delete();
+    db.close();
+    workDbCache.delete(name);
   }
-
-  const db = new SoloWorkDB();
+  // Also nuke any lingering unnamed instance
+  const db = new SoloWorkDB(getWorkDatabaseName());
   await db.delete();
   db.close();
 }

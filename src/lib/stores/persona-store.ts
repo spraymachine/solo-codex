@@ -11,7 +11,7 @@ interface PersonaState {
 }
 
 const DEFAULT_PERSONA: Persona = "mani";
-const AVAILABLE_PERSONAS: Persona[] = ["mani", "harti"];
+const AVAILABLE_PERSONAS: Persona[] = ["mani", "harti", "persona1", "persona2"];
 
 function isPersona(value: unknown): value is Persona {
   return typeof value === "string" && AVAILABLE_PERSONAS.includes(value as Persona);

@@ -32,5 +32,14 @@ export function isInvalidRefreshTokenError(error: unknown) {
   }
 
   const message = "message" in error && typeof error.message === "string" ? error.message : "";
-  return message.toLowerCase().includes("invalid refresh token");
+  const code = "code" in error && typeof error.code === "string" ? error.code : "";
+  const status = "status" in error && typeof error.status === "number" ? error.status : 0;
+
+  return (
+    message.toLowerCase().includes("invalid refresh token") ||
+    message.toLowerCase().includes("refresh token not found") ||
+    code === "refresh_token_not_found" ||
+    code === "bad_jwt" ||
+    (status === 400 && message.toLowerCase().includes("token"))
+  );
 }
