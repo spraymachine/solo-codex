@@ -1,8 +1,8 @@
 "use client";
 
 import type { ButtonHTMLAttributes, ReactNode } from "react";
-import { useEffect, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion, Reorder, useDragControls } from "framer-motion";
 import Link from "next/link";
 import { useAuth } from "@/components/auth/auth-gate";
 import { Modal } from "@/components/ui/modal";
@@ -22,7 +22,7 @@ import { useMissionsStore } from "@/lib/stores/missions-store";
 import { StickyWall } from "@/components/sticky/sticky-wall";
 import { useWorkStore } from "@/lib/stores/work-store";
 import { CourseArcCard } from "@/components/work/course-arc-card";
-import type { Gate, Persona, Reflection, SubQuest } from "@/lib/types";
+import type { Gate, Mission, Persona, Reflection, SubQuest } from "@/lib/types";
 
 const WEEKDAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const GOAL_RANK_ORDER: Record<Gate["rank"], number> = {
@@ -64,6 +64,7 @@ function SectionShell({
   eyebrow,
   title,
   children,
+  id,
   className = "",
   glowFrom = "top left",
 }: {
@@ -71,12 +72,14 @@ function SectionShell({
   title?: string;
   description: string;
   children: ReactNode;
+  id?: string;
   className?: string;
   glowFrom?: string;
 }) {
   return (
     <section
-      className={`section-dots overflow-hidden rounded-xl border border-[var(--surface-border)] ${className}`}
+      id={id}
+      className={`dashboard-anchor section-dots overflow-hidden rounded-xl border border-[var(--surface-border)] ${className}`}
       style={{
         background: `radial-gradient(ellipse at ${glowFrom}, color-mix(in srgb, var(--accent-solid) 9%, var(--bg-panel)) 0%, var(--bg-panel) 55%)`,
       }}
@@ -717,6 +720,166 @@ function EditArcModal({
   );
 }
 
+function TodoRowContent({
+  mission,
+  complete,
+  onToggle,
+  onDelete,
+  onSetPriority,
+  dragHandle,
+}: {
+  mission: Mission;
+  complete: boolean;
+  onToggle: () => void;
+  onDelete: () => void;
+  onSetPriority: (color: string | null) => void;
+  dragHandle?: ReactNode;
+}) {
+  const colorInputRef = useRef<HTMLInputElement>(null);
+
+  return (
+    <>
+      <button
+        type="button"
+        aria-label={complete ? "Mark todo as open" : "Mark todo as complete"}
+        onClick={onToggle}
+        className="flex min-w-0 flex-1 items-center gap-3 text-left"
+      >
+        <motion.span
+          animate={complete ? { scale: [1, 1.3, 1] } : { scale: 1 }}
+          transition={{ type: "tween", ease: "easeOut", duration: 0.3 }}
+          className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors duration-200 ${
+            complete ? "border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--bg-primary)]" : "border-[var(--checkbox-border)] bg-transparent"
+          }`}
+        >
+          <AnimatePresence>
+            {complete && (
+              <motion.svg
+                key="check"
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0, opacity: 0 }}
+                transition={{ type: "spring", stiffness: 600, damping: 22, delay: 0.04 }}
+                viewBox="0 0 16 16"
+                className="h-3 w-3 fill-none stroke-current"
+              >
+                <path d="M3.5 8.2 6.6 11l5.9-6.2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </motion.svg>
+            )}
+          </AnimatePresence>
+        </motion.span>
+        <motion.p
+          animate={{ opacity: complete ? 0.38 : 1 }}
+          transition={{ duration: 0.25 }}
+          className={`min-w-0 text-sm font-medium text-[var(--text-primary)] ${complete ? "line-through" : ""}`}
+        >
+          {mission.title}
+        </motion.p>
+      </button>
+
+      <input
+        ref={colorInputRef}
+        type="color"
+        defaultValue={mission.priorityColor ?? "#f97316"}
+        onChange={(event) => onSetPriority(event.target.value)}
+        className="sr-only"
+        tabIndex={-1}
+        aria-hidden="true"
+      />
+      <button
+        type="button"
+        aria-label={mission.priorityColor ? "Remove priority" : "Mark as priority"}
+        onClick={() => {
+          if (mission.priorityColor) {
+            onSetPriority(null);
+          } else {
+            colorInputRef.current?.click();
+          }
+        }}
+        className="flex h-8 w-8 shrink-0 items-center justify-center text-[var(--text-secondary)] transition-colors duration-200 hover:text-[var(--text-primary)]"
+      >
+        <svg
+          viewBox="0 0 16 16"
+          className="h-4 w-4"
+          style={mission.priorityColor ? { fill: mission.priorityColor, stroke: mission.priorityColor } : { fill: "none", stroke: "currentColor" }}
+          strokeWidth="1.5"
+          strokeLinejoin="round"
+        >
+          <path d="M8 1.5 9.85 5.6l4.45.5-3.36 3.04.92 4.36L8 11.3l-3.86 2.2.92-4.36L1.7 6.1l4.45-.5Z" />
+        </svg>
+      </button>
+
+      {dragHandle}
+
+      <button
+        type="button"
+        aria-label="Delete todo"
+        onClick={onDelete}
+        className="shrink-0 text-base leading-none text-[var(--text-secondary)] transition-colors duration-300 hover:text-[var(--text-primary)] active:scale-[0.96]"
+      >
+        ×
+      </button>
+    </>
+  );
+}
+
+function TodoListItem({
+  mission,
+  complete,
+  onToggle,
+  onDelete,
+  onSetPriority,
+}: {
+  mission: Mission;
+  complete: boolean;
+  onToggle: () => void;
+  onDelete: () => void;
+  onSetPriority: (color: string | null) => void;
+}) {
+  const dragControls = useDragControls();
+
+  return (
+    <Reorder.Item
+      value={mission}
+      dragListener={false}
+      dragControls={dragControls}
+      className="flex items-center gap-3 rounded-lg border bg-[var(--bg-secondary)] px-4 py-3"
+      style={{
+        borderColor: mission.priorityColor ?? "var(--surface-border)",
+        backgroundColor: mission.priorityColor
+          ? `color-mix(in srgb, ${mission.priorityColor} 12%, var(--bg-secondary))`
+          : undefined,
+      }}
+      whileDrag={{ scale: 1.02, boxShadow: "0 8px 24px rgba(0,0,0,0.25)" }}
+    >
+      <TodoRowContent
+        mission={mission}
+        complete={complete}
+        onToggle={onToggle}
+        onDelete={onDelete}
+        onSetPriority={onSetPriority}
+        dragHandle={
+          <button
+            type="button"
+            aria-label="Drag to reorder"
+            onPointerDown={(event) => dragControls.start(event)}
+            className="flex h-8 w-8 shrink-0 cursor-grab touch-none items-center justify-center text-[var(--text-secondary)] transition-colors duration-200 hover:text-[var(--text-primary)] active:cursor-grabbing"
+          >
+            <svg viewBox="0 0 16 16" className="h-4 w-4 fill-current">
+              <circle cx="5" cy="3" r="1.2" />
+              <circle cx="11" cy="3" r="1.2" />
+              <circle cx="5" cy="8" r="1.2" />
+              <circle cx="11" cy="8" r="1.2" />
+              <circle cx="5" cy="13" r="1.2" />
+              <circle cx="11" cy="13" r="1.2" />
+            </svg>
+          </button>
+        }
+      />
+    </Reorder.Item>
+  );
+}
+
 export default function HomePage() {
   const { user } = useAuth();
   const activePersona = usePersonaStore((state) => state.activePersona);
@@ -728,10 +891,16 @@ export default function HomePage() {
   const continuationTotalDays = useContinuationStore((state) => state.totalDays);
   const selectCurrentDate = useContinuationStore((state) => state.selectCurrentDate);
 
+  const playerLoaded = usePlayerStore((state) => state.loaded);
+  const gatesLoaded = useGatesStore((state) => state.loaded);
+  const missionsLoaded = useMissionsStore((state) => state.loaded);
+  const recordsLoaded = useRecordsStore((state) => state.loaded);
   const missions = useMissionsStore((state) => state.missions);
   const createMission = useMissionsStore((state) => state.createMission);
   const updateMission = useMissionsStore((state) => state.updateMission);
   const deleteMission = useMissionsStore((state) => state.deleteMission);
+  const reorderMissions = useMissionsStore((state) => state.reorderMissions);
+  const setMissionPriority = useMissionsStore((state) => state.setMissionPriority);
 
   const gates = useGatesStore((state) => state.gates);
   const createGate = useGatesStore((state) => state.createGate);
@@ -774,8 +943,14 @@ export default function HomePage() {
         return Number(leftComplete) - Number(rightComplete);
       }
 
+      if (left.order !== right.order) {
+        return left.order - right.order;
+      }
+
       return left.createdAt.localeCompare(right.createdAt);
     });
+  const pendingTodos = dayTodos.filter((mission) => !isMissionComplete(mission));
+  const completedTodosList = dayTodos.filter((mission) => isMissionComplete(mission));
   const arcGoals = [...gates].sort((a, b) => {
     const rankDiff = GOAL_RANK_ORDER[a.rank] - GOAL_RANK_ORDER[b.rank];
     return rankDiff !== 0 ? rankDiff : a.createdAt.localeCompare(b.createdAt);
@@ -831,6 +1006,10 @@ export default function HomePage() {
       linkedGateIds: [],
     });
     setTodoDraft("");
+  }
+
+  function handleReorderTodos(newOrder: Mission[]) {
+    void reorderMissions(newOrder.map((mission) => mission.id));
   }
 
   async function handleToggleTodo(id: string, complete: boolean) {
@@ -939,14 +1118,46 @@ export default function HomePage() {
     }
   }, [activePersona, allowedPersonas, setActivePersona]);
 
-  if (!allowedPersonas.includes(activePersona)) {
+  const personaAllowedForView = allowedPersonas.includes(activePersona);
+  const dashboardReady =
+    personaAllowedForView && playerLoaded && gatesLoaded && missionsLoaded && recordsLoaded && workLoaded;
+
+  useEffect(() => {
+    if (!dashboardReady || !window.location.hash) {
+      return;
+    }
+
+    const target = document.getElementById(window.location.hash.slice(1));
+    if (!target) {
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      target.scrollIntoView({ block: "start" });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [dashboardReady]);
+
+  if (!personaAllowedForView) {
     return null;
   }
 
+  if (!dashboardReady) {
+    return (
+      <div className="flex min-h-[calc(100dvh-6rem)] items-center justify-center px-4">
+        <p className="font-[family-name:var(--font-display)] text-[0.625rem] uppercase tracking-[0.18em] text-[var(--text-secondary)]">
+          loading...
+        </p>
+      </div>
+    );
+  }
+
   return (
-    <div className="mx-auto max-w-[1220px] space-y-8 pb-8 md:space-y-10">
+    <div className="dashboard-shell mx-auto max-w-[1220px] space-y-8 pb-8 md:space-y-10">
       <section
-        className={`section-dots overflow-hidden rounded-2xl border transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] ${PERSONA_CARD_STYLE[activePersona].heroBackground} border-[var(--surface-border)]`}
+        id="overview"
+        className={`dashboard-anchor section-dots overflow-hidden rounded-2xl border transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] ${PERSONA_CARD_STYLE[activePersona].heroBackground} border-[var(--surface-border)]`}
         style={{
           background: `radial-gradient(ellipse at top left, color-mix(in srgb, var(--accent-solid) 14%, var(--bg-panel)) 0%, var(--bg-panel) 55%)`,
         }}
@@ -1036,6 +1247,7 @@ export default function HomePage() {
       <StickyWall activePersona={activePersona} />
 
       <SectionShell
+        id="missions"
         eyebrow="Daily"
         description="Everything here belongs to the selected date only."
         glowFrom="top right"
@@ -1059,68 +1271,47 @@ export default function HomePage() {
               <p className="mt-1 text-[0.625rem] uppercase tracking-[0.14em] text-[var(--text-secondary)] opacity-50">Set one to begin</p>
             </div>
           ) : (
-            dayTodos.map((mission) => {
-              const complete = isMissionComplete(mission);
-
-              return (
+            <>
+              {pendingTodos.length > 0 && (
+                <Reorder.Group
+                  axis="y"
+                  values={pendingTodos}
+                  onReorder={handleReorderTodos}
+                  className="space-y-3"
+                >
+                  {pendingTodos.map((mission) => (
+                    <TodoListItem
+                      key={mission.id}
+                      mission={mission}
+                      complete={false}
+                      onToggle={() => void handleToggleTodo(mission.id, true)}
+                      onDelete={() => void deleteMission(mission.id)}
+                      onSetPriority={(color) => void setMissionPriority(mission.id, color)}
+                    />
+                  ))}
+                </Reorder.Group>
+              )}
+              {completedTodosList.map((mission) => (
                 <div
                   key={mission.id}
                   className="flex items-center gap-3 rounded-lg border border-[var(--surface-border)] bg-[var(--bg-secondary)] px-4 py-3"
                 >
-                  <button
-                    type="button"
-                    aria-label={complete ? "Mark todo as open" : "Mark todo as complete"}
-                    onClick={() => void handleToggleTodo(mission.id, !complete)}
-                    className="flex min-w-0 flex-1 items-center gap-3 text-left"
-                  >
-                    <motion.span
-                      animate={complete ? { scale: [1, 1.3, 1] } : { scale: 1 }}
-                      transition={{ type: "tween", ease: "easeOut", duration: 0.3 }}
-                      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors duration-200 ${
-                        complete ? "border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--bg-primary)]" : "border-[var(--checkbox-border)] bg-transparent"
-                      }`}
-                    >
-                      <AnimatePresence>
-                        {complete && (
-                          <motion.svg
-                            key="check"
-                            initial={{ scale: 0, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0, opacity: 0 }}
-                            transition={{ type: "spring", stiffness: 600, damping: 22, delay: 0.04 }}
-                            viewBox="0 0 16 16"
-                            className="h-3 w-3 fill-none stroke-current"
-                          >
-                            <path d="M3.5 8.2 6.6 11l5.9-6.2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                          </motion.svg>
-                        )}
-                      </AnimatePresence>
-                    </motion.span>
-                    <motion.p
-                      animate={{ opacity: complete ? 0.38 : 1 }}
-                      transition={{ duration: 0.25 }}
-                      className={`min-w-0 text-sm font-medium text-[var(--text-primary)] ${complete ? "line-through" : ""}`}
-                    >
-                      {mission.title}
-                    </motion.p>
-                  </button>
-
-                  <button
-                    type="button"
-                    aria-label="Delete todo"
-                    onClick={() => void deleteMission(mission.id)}
-                    className="shrink-0 text-base leading-none text-[var(--text-secondary)] transition-colors duration-300 hover:text-[var(--text-primary)] active:scale-[0.96]"
-                  >
-                    ×
-                  </button>
+                  <TodoRowContent
+                    mission={mission}
+                    complete
+                    onToggle={() => void handleToggleTodo(mission.id, false)}
+                    onDelete={() => void deleteMission(mission.id)}
+                    onSetPriority={(color) => void setMissionPriority(mission.id, color)}
+                  />
                 </div>
-              );
-            })
+              ))}
+            </>
           )}
         </div>
       </SectionShell>
 
       <SectionShell
+        id="work"
         eyebrow="Arcs"
         description="Each arc is a goal with a time window and trackable steps."
         glowFrom="bottom left"
@@ -1349,6 +1540,7 @@ export default function HomePage() {
 
       <div className="grid gap-8 md:grid-cols-[1.15fr_0.85fr]">
         <SectionShell
+          id="records"
           eyebrow="Calendar"
           title="Calendar"
           description="Navigate months to see arcs and daily entries."
@@ -1386,24 +1578,6 @@ export default function HomePage() {
               ›
             </button>
           </div>
-
-          {/* Arcs active this month */}
-          {arcsThisMonth.length > 0 && (
-            <div className="mb-4 flex flex-col gap-1.5">
-              <p className="text-[0.625rem] font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)] mb-1">Arcs this month</p>
-              {arcsThisMonth.map((arc) => (
-                <div key={arc.id} className="flex overflow-hidden rounded-md border border-[var(--surface-border)] bg-[var(--bg-secondary)]">
-                  <div className="w-[3px] shrink-0" style={{ background: getArcStripeColor(arc.rank) }} />
-                  <div className="flex flex-1 items-center justify-between gap-3 px-3 py-2">
-                    <span className="text-xs font-semibold text-[var(--text-primary)] truncate">{arc.title}</span>
-                    <span className="shrink-0 text-[9px] text-[var(--text-secondary)]">
-                      {formatCalendarRange(arc.date, arc.endDate ?? shiftDate(arc.date, 21))}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
 
           {/* Calendar grid */}
           <div className="grid grid-cols-7 border-l border-t border-[var(--surface-border)] bg-[var(--bg-secondary)]">
@@ -1484,9 +1658,28 @@ export default function HomePage() {
               );
             })}
           </div>
+
+          {/* Arcs active this month */}
+          {arcsThisMonth.length > 0 && (
+            <div className="mt-4 flex flex-col gap-1.5">
+              <p className="text-[0.625rem] font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)] mb-1">Arcs this month</p>
+              {arcsThisMonth.map((arc) => (
+                <div key={arc.id} className="flex overflow-hidden rounded-md border border-[var(--surface-border)] bg-[var(--bg-secondary)]">
+                  <div className="w-[3px] shrink-0" style={{ background: getArcStripeColor(arc.rank) }} />
+                  <div className="flex flex-1 items-center justify-between gap-3 px-3 py-2">
+                    <span className="text-xs font-semibold text-[var(--text-primary)] truncate">{arc.title}</span>
+                    <span className="shrink-0 text-[9px] text-[var(--text-secondary)]">
+                      {formatCalendarRange(arc.date, arc.endDate ?? shiftDate(arc.date, 21))}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </SectionShell>
 
         <SectionShell
+          id="status"
           eyebrow="Status"
           title="Status"
           description="Rhythm, consistency, and cycle progress."

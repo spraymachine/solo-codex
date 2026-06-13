@@ -50,7 +50,6 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     if (persona && usePersonaStore.getState().activePersona !== persona) {
       return;
     }
-    set({ profile: null, xpLog: [], loaded: false });
     const [profile, xpLog] = await Promise.all([
       storage.getProfile({ persona }),
       storage.getXpLog({ persona }),

@@ -20,7 +20,6 @@ export const useLeadsStore = create<LeadsState>((set) => ({
   loaded: false,
 
   async load(persona) {
-    set({ leads: [], loaded: false });
     const leads = await getDb(persona).leads.orderBy("createdAt").reverse().toArray();
     set({ leads, loaded: true });
   },

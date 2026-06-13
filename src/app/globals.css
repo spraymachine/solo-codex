@@ -148,6 +148,20 @@ textarea::placeholder {
   background-size: 22px 22px;
 }
 
+.dashboard-shell {
+  overflow-anchor: none;
+}
+
+.dashboard-anchor {
+  scroll-margin-top: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .dashboard-anchor {
+    scroll-margin-top: 2.5rem;
+  }
+}
+
 @keyframes progress-glow {
   0%, 100% { opacity: 1; }
   50% {

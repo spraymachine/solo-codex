@@ -114,6 +114,52 @@ class SoloLevelingDB extends Dexie {
       stickyNotes: "id, pinnedAt",
       leads: "id, createdAt",
     });
+    this.version(7)
+      .stores({
+        profile: "_id",
+        gates: "id, status, rank, date",
+        quests: "id, gateId, status, order",
+        missions: "id, rank, date, order",
+        inventory: "id",
+        hunterRecords: "date",
+        gymStats: "id",
+        xpLog: "id, timestamp",
+        stickyNotes: "id, pinnedAt",
+        leads: "id, createdAt",
+      })
+      .upgrade(async (tx) => {
+        const byDate = new Map<string, Mission[]>();
+        const missions = await tx.table("missions").toCollection().toArray();
+        missions.sort((a: Mission, b: Mission) => a.createdAt.localeCompare(b.createdAt));
+        for (const mission of missions as Mission[]) {
+          const list = byDate.get(mission.date) ?? [];
+          list.push(mission);
+          byDate.set(mission.date, list);
+        }
+        for (const list of byDate.values()) {
+          for (let i = 0; i < list.length; i += 1) {
+            await tx.table("missions").update(list[i].id, { order: i });
+          }
+        }
+      });
+    this.version(8)
+      .stores({
+        profile: "_id",
+        gates: "id, status, rank, date",
+        quests: "id, gateId, status, order",
+        missions: "id, rank, date, order",
+        inventory: "id",
+        hunterRecords: "date",
+        gymStats: "id",
+        xpLog: "id, timestamp",
+        stickyNotes: "id, pinnedAt",
+        leads: "id, createdAt",
+      })
+      .upgrade(async (tx) => {
+        await tx.table("missions").toCollection().modify((mission: Partial<Mission>) => {
+          mission.priorityColor ??= null;
+        });
+      });
   }
 }
 

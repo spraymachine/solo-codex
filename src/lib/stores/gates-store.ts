@@ -37,7 +37,6 @@ export const useGatesStore = create<GatesState>((set, get) => ({
     if (persona && usePersonaStore.getState().activePersona !== persona) {
       return;
     }
-    set({ gates: [], quests: {}, loaded: false });
 
     const gates = await storage.getGates({ persona });
     const quests: Record<string, Quest[]> = {};

@@ -47,6 +47,8 @@ type TodoRow = {
   linked_gate_ids: string[] | null;
   completed_at: string | null;
   created_at: string | null;
+  order: number | null;
+  priority_color: string | null;
 };
 
 type LogRow = { date: string; text: string | null; timestamp: string };
@@ -90,6 +92,8 @@ function fromTodoRow(row: TodoRow): Mission {
     unit: row.unit ?? "item",
     deadline: row.deadline,
     linkedGateIds: row.linked_gate_ids ?? [],
+    order: row.order ?? 0,
+    priorityColor: row.priority_color,
     completedAt: row.completed_at,
     createdAt: row.created_at ?? new Date().toISOString(),
   };
@@ -269,6 +273,8 @@ async function pushToTables(
           unit: m.unit,
           deadline: m.deadline,
           linked_gate_ids: m.linkedGateIds,
+          order: m.order,
+          priority_color: m.priorityColor,
           completed_at: m.completedAt,
           created_at: m.createdAt,
         })),

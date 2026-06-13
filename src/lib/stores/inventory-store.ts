@@ -26,7 +26,6 @@ export const useInventoryStore = create<InventoryState>((set) => ({
     if (persona && usePersonaStore.getState().activePersona !== persona) {
       return;
     }
-    set({ items: [], loaded: false });
     const items = await storage.getInventoryItems({ persona });
     if (persona && usePersonaStore.getState().activePersona !== persona) {
       return;

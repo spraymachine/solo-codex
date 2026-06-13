@@ -28,7 +28,6 @@ export const useRecordsStore = create<RecordsState>((set) => ({
     if (persona && usePersonaStore.getState().activePersona !== persona) {
       return;
     }
-    set({ records: [], loaded: false, latestPenaltyDate: null });
     const records = await storage.getHunterRecords({ persona });
     const latestPenaltyDate =
       records.find((record) => record.penaltyApplied)?.date ?? null;

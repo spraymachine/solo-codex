@@ -54,6 +54,8 @@ export interface Mission {
   unit: string;
   deadline: string | null;
   linkedGateIds: string[];
+  order: number;
+  priorityColor: string | null;
   createdAt: string;
   completedAt: string | null;
 }

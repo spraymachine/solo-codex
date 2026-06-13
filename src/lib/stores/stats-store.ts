@@ -24,7 +24,6 @@ export const useStatsStore = create<StatsState>((set) => ({
     if (persona && usePersonaStore.getState().activePersona !== persona) {
       return;
     }
-    set({ gymStats: [], loaded: false });
     const gymStats = await storage.getGymStats({ persona });
     if (persona && usePersonaStore.getState().activePersona !== persona) {
       return;

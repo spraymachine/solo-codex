@@ -5,7 +5,7 @@ import { storage } from "@/lib/db/storage";
 import { usePersonaStore } from "@/lib/stores/persona-store";
 import type { Mission, Persona, Quest } from "@/lib/types";
 
-type MissionInput = Omit<Mission, "id" | "createdAt" | "completedAt">;
+type MissionInput = Omit<Mission, "id" | "createdAt" | "completedAt" | "order" | "priorityColor">;
 
 interface MissionsState {
   missions: Mission[];
@@ -14,6 +14,8 @@ interface MissionsState {
   createMission: (input: MissionInput) => Promise<Mission>;
   updateMission: (id: string, updates: Partial<Mission>) => Promise<void>;
   deleteMission: (id: string) => Promise<void>;
+  reorderMissions: (orderedIds: string[]) => Promise<void>;
+  setMissionPriority: (id: string, color: string | null) => Promise<void>;
   syncLinkedProgress: (questsByGate: Record<string, Quest[]>) => Promise<void>;
 }
 
@@ -25,7 +27,6 @@ export const useMissionsStore = create<MissionsState>((set, get) => ({
     if (persona && usePersonaStore.getState().activePersona !== persona) {
       return;
     }
-    set({ missions: [], loaded: false });
     const missions = await storage.getMissions({ persona });
     if (persona && usePersonaStore.getState().activePersona !== persona) {
       return;
@@ -53,6 +54,39 @@ export const useMissionsStore = create<MissionsState>((set, get) => ({
     set((state) => ({
       missions: state.missions.filter((mission) => mission.id !== id),
     }));
+  },
+
+  async setMissionPriority(id, color) {
+    const missions = get().missions;
+    const toClear = missions.filter(
+      (mission) => mission.id !== id && mission.priorityColor !== null,
+    );
+
+    set((state) => ({
+      missions: state.missions.map((mission) => {
+        if (mission.id === id) {
+          return { ...mission, priorityColor: color };
+        }
+        return mission.priorityColor !== null ? { ...mission, priorityColor: null } : mission;
+      }),
+    }));
+
+    await Promise.all([
+      storage.updateMission(id, { priorityColor: color }),
+      ...toClear.map((mission) => storage.updateMission(mission.id, { priorityColor: null })),
+    ]);
+  },
+
+  async reorderMissions(orderedIds) {
+    const orderById = new Map(orderedIds.map((id, index) => [id, index]));
+    set((state) => ({
+      missions: state.missions.map((mission) =>
+        orderById.has(mission.id) ? { ...mission, order: orderById.get(mission.id)! } : mission,
+      ),
+    }));
+    await Promise.all(
+      orderedIds.map((id, index) => storage.updateMission(id, { order: index })),
+    );
   },
 
   async syncLinkedProgress(questsByGate) {

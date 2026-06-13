@@ -219,11 +219,14 @@ export const storage = {
     linkedGateIds: string[];
   }): Promise<Mission> {
     const db = getDb();
+    const date = input.date ?? todayDate();
+    const dayMissions = await db.missions.where("date").equals(date).toArray();
+    const nextOrder = dayMissions.reduce((max, m) => Math.max(max, m.order ?? 0), -1) + 1;
     const mission: Mission = {
       id: generateId(),
       title: input.title,
       rank: input.rank,
-      date: input.date ?? todayDate(),
+      date,
       why: input.why ?? "",
       targetMetric: input.targetMetric,
       currentValue: input.currentValue,
@@ -231,6 +234,8 @@ export const storage = {
       unit: input.unit,
       deadline: input.deadline,
       linkedGateIds: input.linkedGateIds,
+      order: nextOrder,
+      priorityColor: null,
       createdAt: nowISO(),
       completedAt: null,
     };
