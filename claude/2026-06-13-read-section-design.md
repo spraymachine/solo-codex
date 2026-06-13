@@ -88,9 +88,7 @@ interface ReadState {
 }
 ```
 - `load` guards against persona switches mid-flight (same pattern as `records-store.ts`).
-- Optional XP tie-in (the app gamifies actions): award a small XP on `addRecord`,
-  mirroring `config.xp.dailyLog`. **Default: include a tiny award (e.g. `config.xp.wordSaved`).**
-  Easy to drop if unwanted.
+- No XP tie-in. Saving a word grants nothing — it is a glossary, not a scored action.
 
 ### Components — `src/components/read/`
 - `read-page.tsx` — header with saved-word count, "Scan a word" button, search input,
