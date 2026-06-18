@@ -30,6 +30,10 @@ interface SelectedWord {
   word: string;
   definition: string;
   partOfSpeech: string;
+  myDefinition: string;
+  synonyms: string[];
+  allDefinitions: Array<{ partOfSpeech: string; definition: string; example?: string }>;
+  allSynonyms: string[];
   loading: boolean;
 }
 
@@ -287,7 +291,6 @@ export function ReadPage() {
   const records = useReadStore((state) => state.records);
   const loadRecords = useReadStore((state) => state.load);
   const createRecords = useReadStore((state) => state.createRecords);
-  const updateRecord = useReadStore((state) => state.updateRecord);
   const deleteRecord = useReadStore((state) => state.deleteRecord);
 
   const [sourceType, setSourceType] = useState<ReadSourceType>("book");
@@ -369,7 +372,7 @@ export function ReadPage() {
     if (readyWords.length === 0) return;
     setSaving(true);
     try {
-      await createRecords(readyWords.map((w) => ({ word: w.word, definition: w.definition, partOfSpeech: w.partOfSpeech, sourceType })));
+      await createRecords(readyWords.map((w) => ({ word: w.word, definition: w.definition, partOfSpeech: w.partOfSpeech, myDefinition: w.myDefinition, synonyms: w.synonyms, allDefinitions: w.allDefinitions, allSynonyms: w.allSynonyms, sourceType })));
       setSelectedWords([]);
       showFlash(`${readyWords.length} word${readyWords.length === 1 ? "" : "s"} saved`);
     } finally {
@@ -428,13 +431,13 @@ export function ReadPage() {
     if (!cleanWord) return;
     setSelectedWords((items) => [
       ...items,
-      { boxId: box.id, word: cleanWord, definition: "", partOfSpeech: "", loading: true },
+      { boxId: box.id, word: cleanWord, definition: "", partOfSpeech: "", myDefinition: "", synonyms: [], allDefinitions: [], allSynonyms: [], loading: true },
     ]);
     const result = await fetchDictionaryDefinition(cleanWord);
     setSelectedWords((items) =>
       items.map((item) =>
         item.boxId === box.id
-          ? { ...item, word: result.word || cleanWord, definition: result.definition, partOfSpeech: result.partOfSpeech, loading: false }
+          ? { ...item, word: result.word || cleanWord, definition: result.definition, partOfSpeech: result.partOfSpeech, allDefinitions: result.allDefinitions, allSynonyms: result.allSynonyms, loading: false }
           : item,
       ),
     );
@@ -467,6 +470,10 @@ export function ReadPage() {
       word: result.word || word,
       definition: result.definition,
       partOfSpeech: result.partOfSpeech,
+      myDefinition: "",
+      synonyms: [],
+      allDefinitions: result.allDefinitions,
+      allSynonyms: result.allSynonyms,
       sourceType,
     }]);
     showFlash(result.definition ? `"${result.word || word}" saved` : `"${result.word || word}" saved — no definition`);
@@ -776,7 +783,6 @@ export function ReadPage() {
 
         <ReadRecordList
           records={filteredRecords}
-          onUpdate={(id, updates) => void updateRecord(id, updates)}
           onDelete={(id) => void deleteRecord(id)}
         />
       </section>
