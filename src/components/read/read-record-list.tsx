@@ -49,13 +49,13 @@ function RecordCard({ record, onDelete }: { record: ReadRecord; onDelete: (id: s
       )}
 
       {record.myDefinition && (
-        <p className="mb-1 text-xs italic leading-5 text-[var(--accent-soft)]">
+        <p className="mb-1 text-base italic leading-snug text-[var(--accent-soft)]">
           {record.myDefinition}
         </p>
       )}
 
       {record.definition && (
-        <p className="text-xs leading-5 text-[var(--text-secondary)]">{record.definition}</p>
+        <p className="text-base leading-snug text-[var(--text-primary)]">{record.definition}</p>
       )}
 
       {record.synonyms.length > 0 && (
