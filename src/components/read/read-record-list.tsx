@@ -25,61 +25,55 @@ function groupRecords(records: ReadRecord[]) {
   return Array.from(groups.entries());
 }
 
-function RecordEntry({ record, onDelete }: { record: ReadRecord; onDelete: (id: string) => void }) {
+function RecordCard({ record, onDelete }: { record: ReadRecord; onDelete: (id: string) => void }) {
   return (
-    <div className="flex items-start justify-between gap-3 border-b border-[var(--surface-border)] px-4 py-3 last:border-b-0">
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-          <Link
-            href={`/word?id=${record.id}`}
-            className="text-sm font-medium text-[var(--accent-soft)] transition-colors hover:text-[var(--accent-solid)]"
-          >
-            {record.word}
-          </Link>
-          {record.partOfSpeech && (
-            <span className="text-xs italic text-[var(--text-secondary)]">
-              {record.partOfSpeech}
-            </span>
-          )}
-          <span className="ml-auto font-mono text-[0.6rem] tabular-nums text-[var(--text-secondary)]">
-            {record.sourceType} · {formatTime(record.createdAt)}
-          </span>
-        </div>
-
-        {record.myDefinition && (
-          <p className="mt-1 text-xs italic leading-5 text-[var(--accent-soft)]">
-            {record.myDefinition}
-          </p>
-        )}
-
-        {record.definition && (
-          <p className="mt-0.5 text-xs leading-5 text-[var(--text-secondary)]">
-            {record.definition}
-          </p>
-        )}
-
-        {record.synonyms.length > 0 && (
-          <div className="mt-1.5 flex flex-wrap gap-1.5">
-            {record.synonyms.map((syn) => (
-              <span
-                key={syn}
-                className="rounded-full border border-[var(--surface-border)] px-2 py-0.5 text-[0.6rem] text-[var(--text-secondary)]"
-              >
-                {syn}
-              </span>
-            ))}
-          </div>
-        )}
-      </div>
-
+    <div className="relative flex flex-col overflow-hidden rounded-xl border border-[var(--surface-border)] bg-[var(--bg-panel)] p-4">
       <button
         type="button"
         onClick={() => onDelete(record.id)}
         aria-label={`Delete ${record.word}`}
-        className="mt-0.5 shrink-0 text-base leading-none text-[var(--text-secondary)] transition-colors hover:text-red-400"
+        className="absolute right-3 top-3 text-sm leading-none text-[var(--text-secondary)] transition-colors hover:text-red-400"
       >
         ×
       </button>
+
+      <Link
+        href={`/word?id=${record.id}`}
+        className="mb-1 block text-4xl font-bold leading-none text-[var(--accent-soft)] transition-colors hover:text-[var(--accent-solid)]"
+      >
+        {record.word}
+      </Link>
+
+      {record.partOfSpeech && (
+        <p className="mb-2 text-xs italic text-[var(--text-secondary)]">{record.partOfSpeech}</p>
+      )}
+
+      {record.myDefinition && (
+        <p className="mb-1 text-xs italic leading-5 text-[var(--accent-soft)]">
+          {record.myDefinition}
+        </p>
+      )}
+
+      {record.definition && (
+        <p className="text-xs leading-5 text-[var(--text-secondary)]">{record.definition}</p>
+      )}
+
+      {record.synonyms.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {record.synonyms.map((syn) => (
+            <span
+              key={syn}
+              className="rounded-full border border-[var(--surface-border)] px-2 py-0.5 text-[0.6rem] text-[var(--text-secondary)]"
+            >
+              {syn}
+            </span>
+          ))}
+        </div>
+      )}
+
+      <p className="mt-auto pt-3 font-mono text-[0.55rem] tabular-nums text-[var(--text-secondary)] opacity-60">
+        {record.sourceType} · {formatTime(record.createdAt)}
+      </p>
     </div>
   );
 }
@@ -99,13 +93,10 @@ export function ReadRecordList({ records, onDelete }: ReadRecordListProps) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {groupRecords(records).map(([date, items]) => (
-        <div
-          key={date}
-          className="overflow-hidden rounded-xl border border-[var(--surface-border)] bg-[var(--bg-panel)]"
-        >
-          <div className="flex items-center justify-between border-b border-[var(--surface-border)] px-4 py-2">
+        <div key={date}>
+          <div className="mb-2 flex items-center justify-between">
             <p className="text-[0.65rem] font-semibold uppercase tracking-widest text-[var(--accent-soft)]">
               {formatDate(items[0].createdAt)}
             </p>
@@ -113,9 +104,9 @@ export function ReadRecordList({ records, onDelete }: ReadRecordListProps) {
               {items.length}
             </span>
           </div>
-          <div>
+          <div className="grid grid-cols-2 gap-3">
             {items.map((record) => (
-              <RecordEntry key={record.id} record={record} onDelete={onDelete} />
+              <RecordCard key={record.id} record={record} onDelete={onDelete} />
             ))}
           </div>
         </div>

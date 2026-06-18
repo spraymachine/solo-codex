@@ -102,7 +102,8 @@ export function WordPage({ id }: { id: string }) {
   const icon = SOURCE_ICON[record.sourceType] ?? "📄";
 
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
+    <div className="min-h-screen bg-[var(--bg-primary)] px-4 py-8 text-[var(--text-primary)]">
+    <div className="mx-auto max-w-lg overflow-hidden rounded-2xl border border-[var(--surface-border)] bg-[var(--bg-panel)]">
       {/* Header */}
       <div className="flex items-center gap-3 border-b border-[var(--surface-border)] bg-[var(--bg-panel)] px-5 py-4">
         <Link
@@ -282,6 +283,7 @@ export function WordPage({ id }: { id: string }) {
           {saving ? "Saving…" : "Save changes"}
         </button>
       </div>
+    </div>
     </div>
   );
 }
