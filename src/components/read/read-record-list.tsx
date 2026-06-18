@@ -31,7 +31,7 @@ function RecordEntry({ record, onDelete }: { record: ReadRecord; onDelete: (id: 
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
           <Link
-            href={`/word/${record.id}`}
+            href={`/word?id=${record.id}`}
             className="font-[family-name:var(--font-display)] text-base font-bold tracking-tight text-[var(--text-primary)] transition-colors hover:text-[var(--accent-soft)]"
           >
             {record.word}
