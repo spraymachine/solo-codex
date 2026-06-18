@@ -521,7 +521,6 @@ export function ReadPage() {
         ref={inputRef}
         type="file"
         accept="image/*"
-        capture="environment"
         className="hidden"
         onChange={(event: ChangeEvent<HTMLInputElement>) => {
           const file = event.target.files?.[0] ?? null;
