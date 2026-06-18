@@ -143,6 +143,10 @@ export interface ReadRecord {
   word: string;
   definition: string;
   partOfSpeech: string;
+  myDefinition: string;
+  synonyms: string[];
+  allDefinitions: Array<{ partOfSpeech: string; definition: string; example?: string }>;
+  allSynonyms: string[];
   sourceType: ReadSourceType;
   createdAt: string;
   updatedAt: string;
