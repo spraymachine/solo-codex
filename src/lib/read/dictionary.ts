@@ -1,16 +1,27 @@
+export interface DefinitionEntry {
+  partOfSpeech: string;
+  definition: string;
+  example?: string;
+}
+
 export interface ReadDefinition {
   word: string;
   definition: string;
   partOfSpeech: string;
+  allDefinitions: DefinitionEntry[];
+  allSynonyms: string[];
 }
 
 interface DictionaryDefinition {
   definition?: unknown;
+  example?: unknown;
+  synonyms?: unknown;
 }
 
 interface DictionaryMeaning {
   partOfSpeech?: unknown;
   definitions?: unknown;
+  synonyms?: unknown;
 }
 
 interface DictionaryEntry {
@@ -30,24 +41,60 @@ function cleanWiktionaryText(raw: string): string {
     .trim();
 }
 
-export function parseDictionaryDefinition(payload: unknown, resolvedWord: string): ReadDefinition | null {
-  if (!Array.isArray(payload)) return null;
+export function parseDictionaryDefinition(payload: unknown, resolvedWord: string): ReadDefinition {
+  const empty: ReadDefinition = { word: resolvedWord, definition: "", partOfSpeech: "", allDefinitions: [], allSynonyms: [] };
+
+  if (!Array.isArray(payload)) return empty;
+
+  const allDefinitions: DefinitionEntry[] = [];
+  const synSet = new Set<string>();
+  let firstWord = resolvedWord;
+  let firstDef = "";
+  let firstPos = "";
 
   for (const entry of payload as DictionaryEntry[]) {
-    const word =
-      typeof entry.word === "string" && entry.word.trim() ? entry.word.trim() : resolvedWord;
+    const word = typeof entry.word === "string" && entry.word.trim() ? entry.word.trim() : resolvedWord;
+    if (firstWord === resolvedWord) firstWord = word;
+
     const meanings = Array.isArray(entry.meanings) ? entry.meanings : [];
     for (const meaning of meanings as DictionaryMeaning[]) {
       const pos = typeof meaning.partOfSpeech === "string" ? meaning.partOfSpeech.trim() : "";
+
+      if (Array.isArray(meaning.synonyms)) {
+        for (const s of meaning.synonyms as unknown[]) {
+          if (typeof s === "string" && s.trim()) synSet.add(s.trim());
+        }
+      }
+
       const defs = Array.isArray(meaning.definitions) ? meaning.definitions : [];
       for (const def of defs as DictionaryDefinition[]) {
         const text = typeof def.definition === "string" ? def.definition.trim() : "";
-        if (text) return { word, definition: text, partOfSpeech: pos };
+        if (!text) continue;
+
+        const example = typeof def.example === "string" && def.example.trim() ? def.example.trim() : undefined;
+        const defEntry: DefinitionEntry = example
+          ? { partOfSpeech: pos, definition: text, example }
+          : { partOfSpeech: pos, definition: text };
+        allDefinitions.push(defEntry);
+
+        if (!firstDef) { firstDef = text; firstPos = pos; }
+
+        if (Array.isArray(def.synonyms)) {
+          for (const s of def.synonyms as unknown[]) {
+            if (typeof s === "string" && s.trim()) synSet.add(s.trim());
+          }
+        }
       }
     }
   }
 
-  return null;
+  return {
+    word: firstWord,
+    definition: firstDef,
+    partOfSpeech: firstPos,
+    allDefinitions,
+    allSynonyms: Array.from(synSet),
+  };
 }
 
 export function parseWiktionaryDefinition(payload: unknown, resolvedWord: string): ReadDefinition | null {
@@ -61,7 +108,7 @@ export function parseWiktionaryDefinition(payload: unknown, resolvedWord: string
       for (const def of defs as Array<{ definition?: unknown }>) {
         const raw = typeof def.definition === "string" ? def.definition : "";
         const text = cleanWiktionaryText(raw);
-        if (text) return { word: resolvedWord, definition: text, partOfSpeech: pos };
+        if (text) return { word: resolvedWord, definition: text, partOfSpeech: pos, allDefinitions: [], allSynonyms: [] };
       }
     }
   }
@@ -71,7 +118,7 @@ export function parseWiktionaryDefinition(payload: unknown, resolvedWord: string
 
 export async function fetchDictionaryDefinition(word: string): Promise<ReadDefinition> {
   const normalizedWord = normalizeLookupWord(word);
-  if (!normalizedWord) return { word, definition: "", partOfSpeech: "" };
+  if (!normalizedWord) return { word, definition: "", partOfSpeech: "", allDefinitions: [], allSynonyms: [] };
 
   const primary = await fetch(
     `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(normalizedWord)}`,
@@ -79,7 +126,7 @@ export async function fetchDictionaryDefinition(word: string): Promise<ReadDefin
 
   if (primary.ok) {
     const result = parseDictionaryDefinition(await primary.json(), normalizedWord);
-    if (result?.definition) return result;
+    if (result.definition) return result;
   }
 
   try {
@@ -94,5 +141,5 @@ export async function fetchDictionaryDefinition(word: string): Promise<ReadDefin
     // Wiktionary unavailable
   }
 
-  return { word: normalizedWord, definition: "", partOfSpeech: "" };
+  return { word: normalizedWord, definition: "", partOfSpeech: "", allDefinitions: [], allSynonyms: [] };
 }

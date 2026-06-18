@@ -48,30 +48,72 @@ describe("Read parsers", () => {
   });
 
   it("extracts the first dictionary definition", () => {
-    const definition = parseDictionaryDefinition("harvest", [
+    const payload = [
       {
         word: "harvest",
         meanings: [
           {
             partOfSpeech: "noun",
-            definitions: [{ definition: "The process of gathering a crop." }],
+            synonyms: [],
+            definitions: [{ definition: "The process of gathering a crop.", synonyms: [] }],
           },
         ],
       },
-    ]);
-
-    expect(definition).toEqual({
-      word: "harvest",
-      definition: "The process of gathering a crop.",
-      partOfSpeech: "noun",
-    });
+    ];
+    const result = parseDictionaryDefinition(payload, "harvest");
+    expect(result.word).toBe("harvest");
+    expect(result.definition).toBe("The process of gathering a crop.");
+    expect(result.partOfSpeech).toBe("noun");
+    expect(result.allDefinitions).toEqual([{ partOfSpeech: "noun", definition: "The process of gathering a crop." }]);
+    expect(result.allSynonyms).toEqual([]);
   });
 
   it("returns an editable blank definition when dictionary has no match", () => {
-    expect(parseDictionaryDefinition("unknown", { title: "No Definitions Found" })).toEqual({
-      word: "unknown",
-      definition: "",
-      partOfSpeech: "",
-    });
+    const result = parseDictionaryDefinition({ title: "No Definitions Found" }, "unknown");
+    expect(result).toEqual({ word: "unknown", definition: "", partOfSpeech: "", allDefinitions: [], allSynonyms: [] });
+  });
+
+  it("extracts all definitions and synonyms from a dictionary payload", () => {
+    const payload = [
+      {
+        word: "ephemeral",
+        meanings: [
+          {
+            partOfSpeech: "adjective",
+            synonyms: ["fleeting", "transient"],
+            definitions: [
+              {
+                definition: "Lasting for a very short time.",
+                example: "fashions are ephemeral",
+                synonyms: ["momentary"],
+              },
+              {
+                definition: "Denoting a plant with a very short life cycle.",
+                synonyms: [],
+              },
+            ],
+          },
+          {
+            partOfSpeech: "noun",
+            synonyms: [],
+            definitions: [
+              { definition: "An ephemeral plant.", synonyms: [] },
+            ],
+          },
+        ],
+      },
+    ];
+
+    const result = parseDictionaryDefinition(payload, "ephemeral");
+
+    expect(result.word).toBe("ephemeral");
+    expect(result.definition).toBe("Lasting for a very short time.");
+    expect(result.partOfSpeech).toBe("adjective");
+    expect(result.allDefinitions).toEqual([
+      { partOfSpeech: "adjective", definition: "Lasting for a very short time.", example: "fashions are ephemeral" },
+      { partOfSpeech: "adjective", definition: "Denoting a plant with a very short life cycle." },
+      { partOfSpeech: "noun", definition: "An ephemeral plant." },
+    ]);
+    expect(result.allSynonyms).toEqual(["fleeting", "transient", "momentary"]);
   });
 });
