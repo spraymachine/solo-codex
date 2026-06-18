@@ -9,6 +9,10 @@ interface ReadRecordInput {
   word: string;
   definition: string;
   partOfSpeech: string;
+  myDefinition: string;
+  synonyms: string[];
+  allDefinitions: Array<{ partOfSpeech: string; definition: string; example?: string }>;
+  allSynonyms: string[];
   sourceType: ReadSourceType;
 }
 
@@ -19,7 +23,7 @@ interface ReadState {
   createRecords: (items: ReadRecordInput[]) => Promise<void>;
   updateRecord: (
     id: string,
-    updates: Partial<Pick<ReadRecord, "word" | "definition" | "partOfSpeech" | "sourceType">>,
+    updates: Partial<Pick<ReadRecord, "word" | "definition" | "partOfSpeech" | "sourceType" | "myDefinition" | "synonyms">>,
   ) => Promise<void>;
   deleteRecord: (id: string) => Promise<void>;
 }
@@ -48,6 +52,10 @@ export const useReadStore = create<ReadState>((set) => ({
             word: item.word,
             definition: item.definition,
             partOfSpeech: item.partOfSpeech,
+            myDefinition: item.myDefinition,
+            synonyms: item.synonyms,
+            allDefinitions: item.allDefinitions,
+            allSynonyms: item.allSynonyms,
             sourceType: item.sourceType,
           }),
         ),
@@ -67,11 +75,7 @@ export const useReadStore = create<ReadState>((set) => ({
     set((state) => ({
       records: state.records.map((record) =>
         record.id === id
-          ? {
-              ...record,
-              ...updates,
-              updatedAt: new Date().toISOString(),
-            }
+          ? { ...record, ...updates, updatedAt: new Date().toISOString() }
           : record,
       ),
     }));

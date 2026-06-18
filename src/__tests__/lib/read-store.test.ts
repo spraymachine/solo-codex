@@ -19,6 +19,10 @@ describe("read store", () => {
         word: "thesis",
         definition: "A statement or theory put forward as a premise.",
         partOfSpeech: "noun",
+        myDefinition: "",
+        synonyms: [],
+        allDefinitions: [],
+        allSynonyms: [],
         sourceType: "book",
       },
     ]);
@@ -38,6 +42,10 @@ describe("read store", () => {
         word: "syntax",
         definition: "The arrangement of words and phrases.",
         partOfSpeech: "noun",
+        myDefinition: "",
+        synonyms: [],
+        allDefinitions: [],
+        allSynonyms: [],
         sourceType: "note",
       },
     ]);
@@ -53,6 +61,10 @@ describe("read store", () => {
         word: "orbit",
         definition: "A curved path around a star, planet, or moon.",
         partOfSpeech: "noun",
+        myDefinition: "",
+        synonyms: [],
+        allDefinitions: [],
+        allSynonyms: [],
         sourceType: "newspaper",
       },
     ]);
@@ -61,5 +73,72 @@ describe("read store", () => {
     await useReadStore.getState().load("mani");
 
     expect(useReadStore.getState().records.map((record) => record.word)).toEqual(["syntax"]);
+  });
+
+  it("stores and loads myDefinition, synonyms, allDefinitions, allSynonyms", async () => {
+    await useReadStore.getState().createRecords([
+      {
+        word: "ephemeral",
+        definition: "Lasting for a very short time.",
+        partOfSpeech: "adjective",
+        myDefinition: "things that don't last long, like a vibe",
+        synonyms: ["fleeting", "transient"],
+        allDefinitions: [
+          { partOfSpeech: "adjective", definition: "Lasting for a very short time.", example: "fashions are ephemeral" },
+        ],
+        allSynonyms: ["fleeting", "transient", "momentary"],
+        sourceType: "book",
+      },
+    ]);
+
+    const record = useReadStore.getState().records[0];
+    expect(record.myDefinition).toBe("things that don't last long, like a vibe");
+    expect(record.synonyms).toEqual(["fleeting", "transient"]);
+    expect(record.allDefinitions).toEqual([
+      { partOfSpeech: "adjective", definition: "Lasting for a very short time.", example: "fashions are ephemeral" },
+    ]);
+    expect(record.allSynonyms).toEqual(["fleeting", "transient", "momentary"]);
+  });
+
+  it("enforces max 2 synonyms on create", async () => {
+    await useReadStore.getState().createRecords([
+      {
+        word: "verbose",
+        definition: "Using more words than needed.",
+        partOfSpeech: "adjective",
+        myDefinition: "",
+        synonyms: ["wordy", "long-winded", "prolix"],
+        allDefinitions: [],
+        allSynonyms: [],
+        sourceType: "book",
+      },
+    ]);
+
+    expect(useReadStore.getState().records[0].synonyms).toHaveLength(2);
+  });
+
+  it("updates myDefinition and synonyms via updateRecord", async () => {
+    await useReadStore.getState().createRecords([
+      {
+        word: "lucid",
+        definition: "Expressed clearly.",
+        partOfSpeech: "adjective",
+        myDefinition: "",
+        synonyms: [],
+        allDefinitions: [],
+        allSynonyms: [],
+        sourceType: "book",
+      },
+    ]);
+
+    const id = useReadStore.getState().records[0].id;
+    await useReadStore.getState().updateRecord(id, {
+      myDefinition: "super clear",
+      synonyms: ["clear", "coherent"],
+    });
+
+    const updated = useReadStore.getState().records.find((r) => r.id === id);
+    expect(updated?.myDefinition).toBe("super clear");
+    expect(updated?.synonyms).toEqual(["clear", "coherent"]);
   });
 });
