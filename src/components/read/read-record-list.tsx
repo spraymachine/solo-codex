@@ -27,17 +27,17 @@ function groupRecords(records: ReadRecord[]) {
 
 function RecordEntry({ record, onDelete }: { record: ReadRecord; onDelete: (id: string) => void }) {
   return (
-    <div className="flex items-start justify-between gap-4 border-b border-[var(--surface-border)] px-5 py-4 last:border-b-0">
+    <div className="flex items-start justify-between gap-3 border-b border-[var(--surface-border)] px-4 py-3 last:border-b-0">
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
           <Link
             href={`/word?id=${record.id}`}
-            className="font-[family-name:var(--font-display)] text-base font-bold tracking-tight text-[var(--text-primary)] transition-colors hover:text-[var(--accent-soft)]"
+            className="text-sm font-medium text-[var(--accent-soft)] transition-colors hover:text-[var(--accent-solid)]"
           >
             {record.word}
           </Link>
           {record.partOfSpeech && (
-            <span className="font-mono text-[0.65rem] italic text-[var(--text-secondary)]">
+            <span className="text-xs italic text-[var(--text-secondary)]">
               {record.partOfSpeech}
             </span>
           )}
@@ -63,7 +63,7 @@ function RecordEntry({ record, onDelete }: { record: ReadRecord; onDelete: (id: 
             {record.synonyms.map((syn) => (
               <span
                 key={syn}
-                className="rounded-full border border-[var(--surface-border)] px-2 py-0.5 font-mono text-[0.6rem] text-[var(--text-secondary)]"
+                className="rounded-full border border-[var(--surface-border)] px-2 py-0.5 text-[0.6rem] text-[var(--text-secondary)]"
               >
                 {syn}
               </span>
@@ -89,10 +89,8 @@ export function ReadRecordList({ records, onDelete }: ReadRecordListProps) {
     return (
       <div className="grid min-h-[180px] place-items-center rounded-xl border border-dashed border-[var(--surface-border)] bg-[var(--bg-panel)] p-6 text-center">
         <div>
-          <p className="font-[family-name:var(--font-display)] text-sm font-bold uppercase tracking-[0.1em] text-[var(--text-secondary)]">
-            No saved words
-          </p>
-          <p className="mt-1.5 text-xs text-[var(--text-secondary)] opacity-60">
+          <p className="text-sm font-medium text-[var(--text-secondary)]">No saved words</p>
+          <p className="mt-1 text-xs text-[var(--text-secondary)] opacity-60">
             Look up a word or scan a page above to start your ledger.
           </p>
         </div>
@@ -101,21 +99,20 @@ export function ReadRecordList({ records, onDelete }: ReadRecordListProps) {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       {groupRecords(records).map(([date, items]) => (
         <div
           key={date}
           className="overflow-hidden rounded-xl border border-[var(--surface-border)] bg-[var(--bg-panel)]"
         >
-          <div className="flex items-center justify-between border-b border-[var(--surface-border)] bg-[var(--bg-panel-strong)] px-5 py-3">
-            <p className="font-[family-name:var(--font-display)] text-[0.625rem] font-bold uppercase tracking-[0.16em] text-[var(--accent-soft)]">
+          <div className="flex items-center justify-between border-b border-[var(--surface-border)] px-4 py-2">
+            <p className="text-[0.65rem] font-semibold uppercase tracking-widest text-[var(--accent-soft)]">
               {formatDate(items[0].createdAt)}
             </p>
-            <span className="font-mono text-[0.625rem] tabular-nums text-[var(--text-secondary)]">
+            <span className="font-mono text-[0.6rem] tabular-nums text-[var(--text-secondary)]">
               {items.length}
             </span>
           </div>
-
           <div>
             {items.map((record) => (
               <RecordEntry key={record.id} record={record} onDelete={onDelete} />
