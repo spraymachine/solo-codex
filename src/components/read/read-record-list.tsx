@@ -48,12 +48,12 @@ function RecordCard({ record, onDelete }: { record: ReadRecord; onDelete: (id: s
         <p className="mb-2 text-xs italic text-[var(--text-secondary)]">{record.partOfSpeech}</p>
       )}
 
-      <p className={`mb-1 text-[13px] italic leading-snug text-[var(--accent-soft)] ${record.myDefinition ? "" : "invisible"}`}>
+      <p className={`mb-1 text-[15px] italic leading-snug text-[var(--accent-soft)] ${record.myDefinition ? "" : "invisible"}`}>
         {record.myDefinition || " "}
       </p>
 
       {record.definition && (
-        <p className="text-[13px] leading-snug text-[var(--text-primary)]">{record.definition}</p>
+        <p className="text-[15px] leading-snug text-[var(--text-primary)]">{record.definition}</p>
       )}
 
       {record.synonyms.length > 0 && (
