@@ -1,5 +1,9 @@
 import { WordPage } from "@/components/word/word-page";
 
+export function generateStaticParams() {
+  return [];
+}
+
 export default async function WordRoutePage({
   params,
 }: {
