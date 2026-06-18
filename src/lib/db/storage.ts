@@ -10,6 +10,8 @@ import type {
   PlayerProfile,
   Quest,
   QuestPriority,
+  ReadRecord,
+  ReadSourceType,
   Reflection,
   Rank,
   XpLogEntry,
@@ -352,6 +354,49 @@ export const storage = {
     return next;
   },
 
+  async getReadRecords(options?: StorageOptions): Promise<ReadRecord[]> {
+    const db = getDb(options?.persona);
+    return db.readRecords.orderBy("createdAt").reverse().toArray();
+  },
+
+  async createReadRecord(input: {
+    word: string;
+    definition: string;
+    partOfSpeech: string;
+    sourceType: ReadSourceType;
+  }): Promise<ReadRecord> {
+    const db = getDb();
+    const timestamp = nowISO();
+    const record: ReadRecord = {
+      id: generateId(),
+      word: input.word.trim(),
+      definition: input.definition.trim(),
+      partOfSpeech: input.partOfSpeech.trim(),
+      sourceType: input.sourceType,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+
+    await db.readRecords.add(record);
+    return record;
+  },
+
+  async updateReadRecord(
+    id: string,
+    updates: Partial<Pick<ReadRecord, "word" | "definition" | "partOfSpeech" | "sourceType">>,
+  ): Promise<void> {
+    const db = getDb();
+    await db.readRecords.update(id, {
+      ...updates,
+      updatedAt: nowISO(),
+    });
+  },
+
+  async deleteReadRecord(id: string): Promise<void> {
+    const db = getDb();
+    await db.readRecords.delete(id);
+  },
+
   async markPenaltyApplied(date: string): Promise<HunterRecord> {
     const db = getDb();
     const existing = await db.hunterRecords.get(date);
@@ -427,6 +472,7 @@ export const storage = {
       db.quests.clear(),
       db.missions.clear(),
       db.inventory.clear(),
+      db.readRecords.clear(),
       db.hunterRecords.clear(),
       db.gymStats.clear(),
       db.xpLog.clear(),

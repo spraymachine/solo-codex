@@ -18,6 +18,7 @@ import { useGatesStore } from "@/lib/stores/gates-store";
 import { personaMeta, usePersonaStore } from "@/lib/stores/persona-store";
 import { usePlayerStore } from "@/lib/stores/player-store";
 import { useRecordsStore } from "@/lib/stores/records-store";
+import { useReadStore } from "@/lib/stores/read-store";
 import { useMissionsStore } from "@/lib/stores/missions-store";
 import { StickyWall } from "@/components/sticky/sticky-wall";
 import { useWorkStore } from "@/lib/stores/work-store";
@@ -910,6 +911,7 @@ export default function HomePage() {
   const records = useRecordsStore((state) => state.records);
   const saveReflection = useRecordsStore((state) => state.saveReflection);
   const addGratitude = useRecordsStore((state) => state.addGratitude);
+  const readRecords = useReadStore((state) => state.records);
 
   const profile = usePlayerStore((state) => state.profile);
 
@@ -1206,7 +1208,7 @@ export default function HomePage() {
           })}
         </div>
 
-        <div className="px-3 pb-3 md:px-4 md:pb-4">
+        <div className="grid gap-3 px-3 pb-3 md:grid-cols-2 md:px-4 md:pb-4">
           <Link
             href="/work"
             className="flex items-center justify-between rounded-xl border border-[var(--surface-border)] bg-[var(--bg-secondary)] px-5 py-4 transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[var(--bg-panel-strong)] active:scale-[0.99] md:px-6 md:py-5"
@@ -1238,6 +1240,28 @@ export default function HomePage() {
               ) : (
                 <p className="mt-2 font-mono text-xs text-[var(--text-secondary)]">Loading…</p>
               )}
+            </div>
+            <span className="ml-4 shrink-0 text-[var(--text-secondary)]">→</span>
+          </Link>
+          <Link
+            href="/read"
+            className="flex items-center justify-between rounded-xl border border-[var(--surface-border)] bg-[var(--bg-secondary)] px-5 py-4 transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[var(--bg-panel-strong)] active:scale-[0.99] md:px-6 md:py-5"
+          >
+            <div className="min-w-0">
+              <p className="font-[family-name:var(--font-display)] text-[0.625rem] font-bold uppercase tracking-[0.16em] text-[var(--text-secondary)]">
+                Read
+              </p>
+              <div className="mt-2 flex flex-wrap items-baseline gap-x-5 gap-y-1">
+                <span className="font-[family-name:var(--font-display)] text-2xl font-bold leading-none text-[var(--text-primary)]">
+                  {readRecords.length}
+                  <span className="ml-1.5 text-xs font-normal text-[var(--text-secondary)]">
+                    saved {readRecords.length === 1 ? "word" : "words"}
+                  </span>
+                </span>
+                <span className="font-mono text-xs tabular-nums text-[var(--text-secondary)]">
+                  camera OCR
+                </span>
+              </div>
             </div>
             <span className="ml-4 shrink-0 text-[var(--text-secondary)]">→</span>
           </Link>

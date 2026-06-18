@@ -136,6 +136,18 @@ export interface Lead {
   createdAt: string;
 }
 
+export type ReadSourceType = "book" | "note" | "newspaper" | "other";
+
+export interface ReadRecord {
+  id: string;
+  word: string;
+  definition: string;
+  partOfSpeech: string;
+  sourceType: ReadSourceType;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export type CourseStatus = "planned" | "active" | "paused" | "completed";
 export type WorkContactStatus = "lead" | "prospect" | "client" | "lost" | "archived";
 export type WorkProjectStatus = "planned" | "active" | "paused" | "completed" | "archived";
