@@ -13,19 +13,12 @@ interface ReadRecordListProps {
 
 const sourceOptions: ReadSourceType[] = ["book", "note", "newspaper", "other"];
 
-function formatRecordTime(value: string) {
-  return new Intl.DateTimeFormat("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(new Date(value));
+function formatTime(value: string) {
+  return new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" }).format(new Date(value));
 }
 
-function formatRecordDate(value: string) {
-  return new Intl.DateTimeFormat("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  }).format(new Date(value));
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat("en-US", { weekday: "short", month: "short", day: "numeric" }).format(new Date(value));
 }
 
 function groupRecords(records: ReadRecord[]) {
@@ -37,22 +30,20 @@ function groupRecords(records: ReadRecord[]) {
   return Array.from(groups.entries());
 }
 
-const fieldClass =
-  "w-full rounded-2xl border border-[var(--surface-border)] bg-[var(--bg-panel-strong)] px-4 py-3 text-sm text-[var(--text-primary)] outline-none transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] focus:border-[var(--accent-solid)]";
+const fieldCls =
+  "w-full rounded-lg border border-transparent bg-transparent px-2.5 py-1.5 text-sm text-[var(--text-primary)] outline-none transition-colors duration-200 hover:border-[var(--surface-border)] focus:border-[var(--accent-solid)] focus:bg-[var(--bg-panel)] placeholder:text-[var(--text-secondary)]";
 
 export function ReadRecordList({ records, onUpdate, onDelete }: ReadRecordListProps) {
   if (records.length === 0) {
     return (
-      <div className="rounded-[2rem] border border-[var(--surface-border)] bg-[color:color-mix(in_srgb,var(--bg-panel-strong)_72%,transparent)] p-1.5 shadow-[0_24px_80px_rgba(0,0,0,0.16)]">
-        <div className="flex min-h-56 items-center justify-center rounded-[calc(2rem-0.375rem)] border border-[var(--surface-highlight)] bg-[var(--bg-panel)] px-6 py-10 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
-          <div>
-            <p className="font-[family-name:var(--font-display)] text-3xl font-bold uppercase tracking-[0.04em] text-[var(--text-primary)]">
-              No Read records
-            </p>
-            <p className="mt-2 text-sm text-[var(--text-secondary)]">
-              Saved words will appear as editable table rows.
-            </p>
-          </div>
+      <div className="grid min-h-[180px] place-items-center rounded-xl border border-dashed border-[var(--surface-border)] bg-[var(--bg-panel)] p-6 text-center">
+        <div>
+          <p className="font-[family-name:var(--font-display)] text-sm font-bold uppercase tracking-[0.1em] text-[var(--text-secondary)]">
+            No saved words
+          </p>
+          <p className="mt-1.5 text-xs text-[var(--text-secondary)] opacity-60">
+            Look up a word or scan a page above to start your ledger.
+          </p>
         </div>
       </div>
     );
@@ -61,108 +52,106 @@ export function ReadRecordList({ records, onUpdate, onDelete }: ReadRecordListPr
   return (
     <div className="space-y-5">
       {groupRecords(records).map(([date, items]) => (
-        <section key={date} className="space-y-2">
-          <h2 className="font-[family-name:var(--font-display)] text-xs font-bold uppercase tracking-[0.18em] text-[var(--accent-soft)]">
-            {formatRecordDate(items[0].createdAt)}
-          </h2>
-          <div className="rounded-[2rem] border border-[var(--surface-border)] bg-[color:color-mix(in_srgb,var(--bg-panel-strong)_72%,transparent)] p-1.5 shadow-[0_24px_80px_rgba(0,0,0,0.16)]">
-            <div className="rounded-[calc(2rem-0.375rem)] border border-[var(--surface-highlight)] bg-[var(--bg-panel)] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] md:p-5">
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[980px] border-separate border-spacing-y-2 text-left">
-                  <thead>
-                    <tr className="text-[0.65rem] uppercase tracking-[0.14em] text-[var(--text-secondary)]">
-                      <th className="w-[18%] px-3 pb-2 font-medium">Word</th>
-                      <th className="w-[14%] px-3 pb-2 font-medium">Type</th>
-                      <th className="w-[42%] px-3 pb-2 font-medium">Definition</th>
-                      <th className="w-[14%] px-3 pb-2 font-medium">Source</th>
-                      <th className="w-[8%] px-3 pb-2 font-medium">Saved</th>
-                      <th className="w-[4%] px-3 pb-2 font-medium" aria-label="Actions" />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {items.map((record) => (
-                      <tr
-                        key={record.id}
-                        className="align-top transition-transform duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5"
-                      >
-                        <td className="rounded-l-3xl bg-[var(--bg-secondary)] px-3 py-3">
-                          <input
-                            value={record.word}
-                            onChange={(event) =>
-                              onUpdate(record.id, { word: event.target.value })
-                            }
-                            className={fieldClass}
-                            aria-label={`Word for ${record.word}`}
-                          />
-                        </td>
-                        <td className="bg-[var(--bg-secondary)] px-3 py-3">
-                          <input
-                            value={record.partOfSpeech}
-                            onChange={(event) =>
-                              onUpdate(record.id, { partOfSpeech: event.target.value })
-                            }
-                            className={fieldClass}
-                            aria-label={`Type for ${record.word}`}
-                          />
-                        </td>
-                        <td className="bg-[var(--bg-secondary)] px-3 py-3">
-                          <textarea
-                            value={record.definition}
-                            onChange={(event) =>
-                              onUpdate(record.id, { definition: event.target.value })
-                            }
-                            rows={2}
-                            className={`${fieldClass} resize-y leading-6`}
-                            aria-label={`Definition for ${record.word}`}
-                          />
-                        </td>
-                        <td className="bg-[var(--bg-secondary)] px-3 py-3">
-                          <select
-                            value={record.sourceType}
-                            onChange={(event) =>
-                              onUpdate(record.id, {
-                                sourceType: event.target.value as ReadSourceType,
-                              })
-                            }
-                            className={fieldClass}
-                            aria-label={`Source for ${record.word}`}
-                          >
-                            {sourceOptions.map((source) => (
-                              <option key={source} value={source}>
-                                {source}
-                              </option>
-                            ))}
-                          </select>
-                        </td>
-                        <td className="bg-[var(--bg-secondary)] px-3 py-3">
-                          <time
-                            dateTime={record.createdAt}
-                            className="block whitespace-nowrap pt-3 font-mono text-xs text-[var(--text-secondary)]"
-                          >
-                            {formatRecordTime(record.createdAt)}
-                          </time>
-                        </td>
-                        <td className="rounded-r-3xl bg-[var(--bg-secondary)] px-3 py-3">
-                          <button
-                            type="button"
-                            onClick={() => onDelete(record.id)}
-                            className="mt-2 rounded-full border border-transparent px-3 py-2 text-xs text-[var(--text-secondary)] transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-[var(--surface-border)] hover:text-red-500"
-                            aria-label={`Delete ${record.word}`}
-                          >
-                            ×
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <div className="mt-3 border-t border-[var(--surface-border)] pt-3 text-xs leading-5 text-[var(--text-secondary)] md:hidden">
-                Swipe table sideways to edit every field.
-              </div>
-            </div>
+        <div
+          key={date}
+          className="overflow-hidden rounded-xl border border-[var(--surface-border)] bg-[var(--bg-panel)]"
+        >
+          {/* Group header */}
+          <div className="flex items-center justify-between border-b border-[var(--surface-border)] bg-[var(--bg-panel-strong)] px-5 py-3">
+            <p className="font-[family-name:var(--font-display)] text-[0.625rem] font-bold uppercase tracking-[0.16em] text-[var(--accent-soft)]">
+              {formatDate(items[0].createdAt)}
+            </p>
+            <span className="font-mono text-[0.625rem] tabular-nums text-[var(--text-secondary)]">
+              {items.length}
+            </span>
           </div>
-        </section>
+
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[760px] border-collapse text-left">
+              <thead>
+                <tr className="border-b border-[var(--surface-border)]">
+                  {["Word", "Type", "Definition", "Source", "Time", ""].map((col, i) => (
+                    <th
+                      key={col || i}
+                      className="px-3 py-2.5 font-[family-name:var(--font-display)] text-[0.5rem] font-bold uppercase tracking-[0.18em] text-[var(--text-secondary)]"
+                    >
+                      {col}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[var(--surface-border)]">
+                {items.map((record) => (
+                  <tr key={record.id} className="group transition-colors duration-150 hover:bg-[var(--surface-highlight)]">
+                    <td className="w-[16%] px-2 py-2 align-top">
+                      <input
+                        value={record.word}
+                        onChange={(e) => onUpdate(record.id, { word: e.target.value })}
+                        className={`${fieldCls} font-[family-name:var(--font-display)] font-bold`}
+                        aria-label={`Word: ${record.word}`}
+                      />
+                    </td>
+                    <td className="w-[11%] px-2 py-2 align-top">
+                      <input
+                        value={record.partOfSpeech}
+                        placeholder="—"
+                        onChange={(e) => onUpdate(record.id, { partOfSpeech: e.target.value })}
+                        className={`${fieldCls} font-mono text-xs italic`}
+                        aria-label={`Type for ${record.word}`}
+                      />
+                    </td>
+                    <td className="w-[42%] px-2 py-2 align-top">
+                      <textarea
+                        value={record.definition}
+                        placeholder="No definition"
+                        onChange={(e) => onUpdate(record.id, { definition: e.target.value })}
+                        rows={2}
+                        className={`${fieldCls} resize-none leading-6`}
+                        aria-label={`Definition for ${record.word}`}
+                      />
+                    </td>
+                    <td className="w-[13%] px-2 py-2 align-top">
+                      <select
+                        value={record.sourceType}
+                        onChange={(e) => onUpdate(record.id, { sourceType: e.target.value as ReadSourceType })}
+                        className={`${fieldCls} cursor-pointer capitalize`}
+                        aria-label={`Source for ${record.word}`}
+                      >
+                        {sourceOptions.map((s) => (
+                          <option key={s} value={s}>{s}</option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="w-[10%] px-3 py-2 align-top">
+                      <time
+                        dateTime={record.createdAt}
+                        className="block whitespace-nowrap pt-2 font-mono text-[0.7rem] tabular-nums text-[var(--text-secondary)]"
+                      >
+                        {formatTime(record.createdAt)}
+                      </time>
+                    </td>
+                    <td className="w-[6%] px-2 py-2 text-right align-top">
+                      <button
+                        type="button"
+                        onClick={() => onDelete(record.id)}
+                        className="pt-1.5 text-base leading-none text-[var(--text-secondary)] opacity-0 transition-all duration-200 hover:text-red-400 group-hover:opacity-100"
+                        aria-label={`Delete ${record.word}`}
+                      >
+                        ×
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="border-t border-[var(--surface-border)] px-5 py-2 md:hidden">
+            <p className="font-mono text-[0.6rem] uppercase tracking-[0.14em] text-[var(--text-secondary)] opacity-60">
+              Scroll sideways to edit all fields
+            </p>
+          </div>
+        </div>
       ))}
     </div>
   );

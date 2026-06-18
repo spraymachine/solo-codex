@@ -178,62 +178,6 @@ textarea::placeholder {
   animation-delay: 90ms;
 }
 
-.read-reveal-delay-2 {
-  animation-delay: 160ms;
-}
-
-.read-canvas {
-  position: relative;
-  isolation: isolate;
-  background:
-    linear-gradient(115deg, transparent 0%, color-mix(in srgb, var(--accent-solid) 5%, transparent) 48%, transparent 82%),
-    repeating-linear-gradient(
-      90deg,
-      color-mix(in srgb, var(--text-primary) 3%, transparent) 0,
-      color-mix(in srgb, var(--text-primary) 3%, transparent) 1px,
-      transparent 1px,
-      transparent 112px
-    ),
-    var(--bg-primary);
-}
-
-.read-canvas::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background:
-    radial-gradient(circle at 12% 18%, color-mix(in srgb, var(--accent-solid) 14%, transparent), transparent 24rem),
-    radial-gradient(circle at 84% 8%, rgba(245, 158, 11, 0.08), transparent 22rem),
-    radial-gradient(circle at 70% 78%, color-mix(in srgb, var(--accent-solid) 10%, transparent), transparent 26rem);
-}
-
-.read-plate {
-  background-image:
-    linear-gradient(135deg, transparent 0%, color-mix(in srgb, var(--accent-solid) 7%, transparent) 52%, transparent 100%),
-    repeating-linear-gradient(
-      0deg,
-      color-mix(in srgb, var(--text-primary) 4%, transparent) 0,
-      color-mix(in srgb, var(--text-primary) 4%, transparent) 1px,
-      transparent 1px,
-      transparent 28px
-    );
-}
-
-.read-empty-capture,
-.read-preview-plane {
-  background-image:
-    radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--accent-solid) 10%, transparent), transparent 18rem),
-    repeating-linear-gradient(
-      0deg,
-      color-mix(in srgb, var(--text-primary) 4%, transparent) 0,
-      color-mix(in srgb, var(--text-primary) 4%, transparent) 1px,
-      transparent 1px,
-      transparent 34px
-    );
-}
-
 @keyframes read-reveal {
   from {
     opacity: 0;

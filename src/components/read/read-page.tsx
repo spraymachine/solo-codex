@@ -1,8 +1,16 @@
 "use client";
 
-import { type ChangeEvent, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type ChangeEvent,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import Link from "next/link";
-import { fetchDictionaryDefinition, type ReadDefinition } from "@/lib/read/dictionary";
+import { fetchDictionaryDefinition } from "@/lib/read/dictionary";
 import {
   cleanReadWord,
   getOcrSpaceApiKey,
@@ -17,8 +25,11 @@ import { ReadRecordList } from "./read-record-list";
 
 type CaptureState = "idle" | "reading" | "ready" | "error";
 
-interface SelectedWord extends ReadDefinition {
+interface SelectedWord {
   boxId: string;
+  word: string;
+  definition: string;
+  partOfSpeech: string;
   loading: boolean;
 }
 
@@ -29,165 +40,94 @@ const sourceOptions: Array<{ value: ReadSourceType; label: string }> = [
   { value: "other", label: "Other" },
 ];
 
-function PremiumShell({
-  children,
-  className = "",
-  innerClassName = "",
-}: {
-  children: ReactNode;
-  className?: string;
-  innerClassName?: string;
-}) {
+/* ---------- Dashboard-schema primitives ---------- */
+
+function Label({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
-    <div
+    <p
       className={cn(
-        "rounded-[2rem] border border-[var(--surface-border)] bg-[color:color-mix(in_srgb,var(--bg-panel-strong)_72%,transparent)] p-1.5 shadow-[0_24px_80px_rgba(0,0,0,0.18)]",
+        "font-[family-name:var(--font-display)] text-[0.625rem] font-bold uppercase tracking-[0.14em] text-[var(--text-secondary)]",
         className,
       )}
     >
-      <div
-        className={cn(
-          "rounded-[calc(2rem-0.375rem)] border border-[var(--surface-highlight)] bg-[var(--bg-panel)] shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]",
-          innerClassName,
-        )}
-      >
-        {children}
-      </div>
-    </div>
-  );
-}
-
-function Eyebrow({ children, tone = "accent" }: { children: ReactNode; tone?: "accent" | "muted" }) {
-  return (
-    <span
-      className={cn(
-        "inline-flex rounded-full border px-3 py-1 text-[0.62rem] font-bold uppercase tracking-[0.18em]",
-        tone === "accent"
-          ? "border-[color:color-mix(in_srgb,var(--accent-solid)_34%,transparent)] bg-[color:color-mix(in_srgb,var(--accent-solid)_8%,transparent)] text-[var(--accent-soft)]"
-          : "border-[var(--surface-border)] text-[var(--text-secondary)]",
-      )}
-    >
       {children}
-    </span>
+    </p>
   );
 }
 
-function ActionPill({
+function ActionButton({
   children,
   onClick,
   disabled = false,
-  icon = "+",
+  className = "",
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   onClick: () => void;
   disabled?: boolean;
-  icon?: string;
+  className?: string;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="group inline-flex items-center gap-4 rounded-full border border-[color:color-mix(in_srgb,var(--accent-solid)_26%,transparent)] bg-[color:color-mix(in_srgb,var(--accent-solid)_15%,var(--bg-panel))] py-2 pl-5 pr-2 text-sm font-semibold text-[var(--text-primary)] shadow-[0_18px_48px_rgba(0,0,0,0.16)] transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:color-mix(in_srgb,var(--accent-solid)_22%,var(--bg-panel))] active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
+      className={cn(
+        "inline-flex items-center justify-center rounded-lg bg-[var(--accent-solid)] px-4 py-2 text-sm font-semibold text-white transition-all duration-200 hover:opacity-85 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40",
+        className,
+      )}
     >
-      <span>{children}</span>
-      <span className="grid h-9 w-9 place-items-center rounded-full bg-[color:color-mix(in_srgb,var(--accent-solid)_18%,transparent)] text-base transition-transform duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-1 group-hover:-translate-y-[1px] group-hover:scale-105">
-        {icon}
-      </span>
+      {children}
     </button>
   );
 }
 
-function MetricTile({ label, value }: { label: string; value: string | number }) {
+function GhostButton({
+  children,
+  onClick,
+  disabled = false,
+  className = "",
+  title,
+}: {
+  children: ReactNode;
+  onClick: () => void;
+  disabled?: boolean;
+  className?: string;
+  title?: string;
+}) {
   return (
-    <div className="rounded-[1.35rem] border border-[var(--surface-border)] bg-[color:color-mix(in_srgb,var(--bg-secondary)_84%,transparent)] px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-      <p className="font-mono text-[0.62rem] uppercase tracking-[0.18em] text-[var(--text-secondary)]">
-        {label}
-      </p>
-      <p className="mt-1 font-[family-name:var(--font-display)] text-2xl font-bold leading-none text-[var(--text-primary)]">
-        {value}
-      </p>
-    </div>
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+      className={cn(
+        "inline-flex items-center justify-center rounded-lg border border-[var(--surface-border)] bg-transparent px-3 py-2 text-sm font-medium text-[var(--text-secondary)] transition-colors duration-200 hover:border-[var(--accent-solid)]/40 hover:text-[var(--text-primary)] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40",
+        className,
+      )}
+    >
+      {children}
+    </button>
   );
 }
 
-function ScannerPlate({
-  records,
-  selectedWords,
-  newestRecord,
-}: {
-  records: number;
-  selectedWords: number;
-  newestRecord: string;
-}) {
-  return (
-    <div className="read-plate relative min-h-[420px] overflow-hidden rounded-[2rem] border border-[var(--surface-border)] bg-[var(--bg-secondary)] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-      <div className="absolute right-5 top-5 z-[1] rounded-full border border-[color:color-mix(in_srgb,var(--accent-solid)_34%,transparent)] bg-[var(--bg-panel)] px-3 py-1 font-mono text-[0.62rem] uppercase tracking-[0.16em] text-[var(--accent-soft)]">
-        local
-      </div>
-      <div className="absolute left-5 top-5 h-24 w-24 rounded-full border border-[var(--surface-border)] bg-[radial-gradient(circle,color-mix(in_srgb,var(--accent-solid)_22%,transparent),transparent_64%)]" />
-      <div className="relative z-[1] mt-16 rotate-[-3deg] rounded-[1.4rem] border border-[var(--surface-border)] bg-[var(--bg-panel)] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.05)]">
-        <div className="mb-5 flex items-center justify-between gap-4">
-          <div className="h-3 w-20 rounded-full bg-[color:color-mix(in_srgb,var(--accent-solid)_34%,transparent)]" />
-          <div className="h-3 w-3 rounded-full bg-[var(--accent-soft)] shadow-[0_0_22px_color-mix(in_srgb,var(--accent-solid)_70%,transparent)]" />
-        </div>
-        <div className="space-y-3">
-          {["w-11/12", "w-8/12", "w-10/12", "w-6/12", "w-9/12"].map((width, index) => (
-            <div
-              key={width}
-              className={cn(
-                "h-3 rounded-full bg-[color:color-mix(in_srgb,var(--text-primary)_12%,transparent)]",
-                width,
-                index === 2 ? "bg-[color:color-mix(in_srgb,var(--accent-solid)_42%,transparent)]" : "",
-              )}
-            />
-          ))}
-        </div>
-        <div className="mt-8 grid grid-cols-3 gap-2">
-          <MetricTile label="Saved" value={records} />
-          <MetricTile label="Picked" value={selectedWords} />
-          <MetricTile label="Latest" value={newestRecord} />
-        </div>
-      </div>
-      <div className="absolute bottom-5 left-5 right-5 grid grid-cols-4 gap-2">
-        {sourceOptions.map((option) => (
-          <div
-            key={option.value}
-            className="rounded-full border border-[var(--surface-border)] bg-[color:color-mix(in_srgb,var(--bg-panel)_72%,transparent)] px-3 py-2 text-center text-[0.58rem] uppercase tracking-[0.14em] text-[var(--text-secondary)]"
-          >
-            {option.label}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
+/* ---------- Image helpers (unchanged) ---------- */
 
 function loadImage(file: File) {
   return new Promise<HTMLImageElement>((resolve, reject) => {
     const url = URL.createObjectURL(file);
     const image = new Image();
-    image.onload = () => {
-      URL.revokeObjectURL(url);
-      resolve(image);
-    };
-    image.onerror = () => {
-      URL.revokeObjectURL(url);
-      reject(new Error("Image could not be loaded."));
-    };
+    image.onload = () => { URL.revokeObjectURL(url); resolve(image); };
+    image.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Image could not be loaded.")); };
     image.src = url;
   });
 }
 
 function canvasToBlob(canvas: HTMLCanvasElement, quality: number) {
-  return new Promise<Blob | null>((resolve) => {
-    canvas.toBlob(resolve, "image/jpeg", quality);
-  });
+  return new Promise<Blob | null>((resolve) => { canvas.toBlob(resolve, "image/jpeg", quality); });
 }
 
 async function compressForOcr(file: File) {
   if (file.size <= 950_000) return file;
-
   const image = await loadImage(file);
   const maxSide = 1600;
   const scale = Math.min(1, maxSide / Math.max(image.naturalWidth, image.naturalHeight));
@@ -196,18 +136,12 @@ async function compressForOcr(file: File) {
   canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
   const context = canvas.getContext("2d");
   if (!context) return file;
-
   context.drawImage(image, 0, 0, canvas.width, canvas.height);
-
   for (const quality of [0.86, 0.74, 0.62, 0.5]) {
     const blob = await canvasToBlob(canvas, quality);
-    if (blob && blob.size <= 950_000) {
-      return new File([blob], file.name.replace(/\.[^.]+$/, ".jpg"), {
-        type: "image/jpeg",
-      });
-    }
+    if (blob && blob.size <= 950_000)
+      return new File([blob], file.name.replace(/\.[^.]+$/, ".jpg"), { type: "image/jpeg" });
   }
-
   const blob = await canvasToBlob(canvas, 0.42);
   return blob
     ? new File([blob], file.name.replace(/\.[^.]+$/, ".jpg"), { type: "image/jpeg" })
@@ -223,26 +157,21 @@ async function readImageWithOcrSpace(file: File) {
   formData.append("detectOrientation", "true");
   formData.append("scale", "true");
   formData.append("OCREngine", "2");
-
-  const response = await fetch("https://api.ocr.space/parse/image", {
-    method: "POST",
-    body: formData,
-  });
-
-  if (!response.ok) {
-    throw new Error("OCR request failed.");
-  }
-
+  const response = await fetch("https://api.ocr.space/parse/image", { method: "POST", body: formData });
+  if (!response.ok) throw new Error("OCR request failed.");
   return parseOcrSpaceWords(await response.json());
 }
 
-function SelectedWordRows({
+/* ---------- Word queue ---------- */
+
+function WordQueue({
   words,
   sourceType,
   saving,
   onChange,
   onRemove,
   onSave,
+  onClear,
 }: {
   words: SelectedWord[];
   sourceType: ReadSourceType;
@@ -250,94 +179,106 @@ function SelectedWordRows({
   onChange: (boxId: string, updates: Partial<SelectedWord>) => void;
   onRemove: (boxId: string) => void;
   onSave: () => void;
+  onClear: () => void;
 }) {
-  if (words.length === 0) {
-    return (
-      <PremiumShell className="read-reveal read-reveal-delay-1 h-full" innerClassName="min-h-56 p-6">
-        <div className="flex h-full min-h-44 flex-col justify-between">
-          <div>
-            <Eyebrow tone="muted">Definition queue</Eyebrow>
-            <h2 className="mt-5 font-[family-name:var(--font-display)] text-3xl font-bold uppercase tracking-[0.03em] text-[var(--text-primary)]">
-              Tap text to build a record
-            </h2>
-          </div>
-          <p className="mt-8 max-w-sm text-sm leading-6 text-[var(--text-secondary)]">
-            Selected words land here as editable fields before they enter your private table.
-          </p>
-        </div>
-      </PremiumShell>
-    );
-  }
+  const undefinedCount = words.filter((w) => !w.loading && !w.definition.trim()).length;
+  const anyLoading = words.some((w) => w.loading);
 
   return (
-    <PremiumShell className="read-reveal read-reveal-delay-1" innerClassName="p-5 md:p-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <Eyebrow>Selected</Eyebrow>
-          <h2 className="mt-1 font-[family-name:var(--font-display)] text-3xl font-bold uppercase tracking-[0.04em] text-[var(--text-primary)]">
-            {words.length} word{words.length === 1 ? "" : "s"}
-          </h2>
+    <div className="flex h-full flex-col overflow-hidden rounded-xl border border-[var(--surface-border)] bg-[var(--bg-panel)]">
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-[var(--surface-border)] bg-[var(--bg-panel-strong)] px-5 py-3.5">
+        <div className="flex items-center gap-2.5">
+          <Label>Queue</Label>
+          <span className="font-mono text-xs tabular-nums text-[var(--text-secondary)]">
+            {words.length}
+          </span>
+          {undefinedCount > 0 && (
+            <span className="font-mono text-[0.625rem] tabular-nums text-amber-500">
+              {undefinedCount} undefined
+            </span>
+          )}
         </div>
-        <ActionPill onClick={onSave} disabled={saving}>
-          {saving ? "Saving" : `Save ${sourceType}`}
-        </ActionPill>
+        {words.length > 0 && (
+          <button
+            type="button"
+            onClick={onClear}
+            className="text-[0.625rem] font-medium uppercase tracking-[0.1em] text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]"
+          >
+            Clear
+          </button>
+        )}
       </div>
 
-      <div className="mt-5 space-y-4">
-        {words.map((word) => (
-          <div
-            key={word.boxId}
-            className="rounded-[1.5rem] border border-[var(--surface-border)] bg-[var(--bg-secondary)] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition-transform duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5"
-          >
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <label className="min-w-40 flex-1">
-                <span className="text-[0.65rem] uppercase tracking-[0.14em] text-[var(--text-secondary)]">
-                  Word
-                </span>
-                <input
-                  value={word.word}
-                  onChange={(event) => onChange(word.boxId, { word: event.target.value })}
-                  className="mt-1 w-full rounded-2xl border border-[var(--surface-border)] bg-[var(--bg-panel-strong)] px-4 py-3 text-sm text-[var(--text-primary)] outline-none transition-colors duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] focus:border-[var(--accent-solid)]"
+      {/* Body */}
+      {words.length === 0 ? (
+        <div className="flex flex-1 flex-col items-center justify-center px-6 py-12 text-center">
+          <p className="font-[family-name:var(--font-display)] text-sm font-bold uppercase tracking-[0.1em] text-[var(--text-secondary)]">
+            Queue empty
+          </p>
+          <p className="mt-2 max-w-[24ch] text-xs leading-5 text-[var(--text-secondary)] opacity-60">
+            Tap highlighted words on the image to collect them here before saving.
+          </p>
+        </div>
+      ) : (
+        <>
+          <div className="flex-1 divide-y divide-[var(--surface-border)] overflow-y-auto">
+            {words.map((word) => (
+              <div key={word.boxId} className="group px-5 py-4">
+                <div className="flex items-center justify-between gap-2">
+                  <input
+                    value={word.word}
+                    onChange={(e) => onChange(word.boxId, { word: e.target.value })}
+                    className="min-w-0 flex-1 bg-transparent font-[family-name:var(--font-display)] text-base font-bold tracking-[0.01em] text-[var(--text-primary)] outline-none"
+                  />
+                  <input
+                    value={word.partOfSpeech}
+                    placeholder="type"
+                    onChange={(e) => onChange(word.boxId, { partOfSpeech: e.target.value })}
+                    className="w-16 shrink-0 bg-transparent text-right font-mono text-[0.7rem] italic text-[var(--text-secondary)] outline-none placeholder:opacity-50"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => onRemove(word.boxId)}
+                    className="shrink-0 text-base leading-none text-[var(--text-secondary)] opacity-0 transition-all duration-200 hover:text-red-400 group-hover:opacity-100"
+                    aria-label="Remove"
+                  >
+                    ×
+                  </button>
+                </div>
+                <textarea
+                  value={word.loading ? "" : word.definition}
+                  disabled={word.loading}
+                  placeholder={word.loading ? "Fetching definition…" : "No definition — add one"}
+                  onChange={(e) => onChange(word.boxId, { definition: e.target.value })}
+                  rows={2}
+                  className={cn(
+                    "mt-2 w-full resize-none rounded-lg border bg-[var(--bg-secondary)] px-3 py-2 text-xs leading-5 text-[var(--text-primary)] outline-none transition-colors duration-200 focus:border-[var(--accent-solid)] placeholder:text-[var(--text-secondary)] disabled:opacity-50",
+                    !word.loading && !word.definition.trim()
+                      ? "border-amber-500/40"
+                      : "border-[var(--surface-border)]",
+                  )}
                 />
-              </label>
-              <label className="w-32">
-                <span className="text-[0.65rem] uppercase tracking-[0.14em] text-[var(--text-secondary)]">
-                  Type
-                </span>
-                <input
-                  value={word.partOfSpeech}
-                  onChange={(event) =>
-                    onChange(word.boxId, { partOfSpeech: event.target.value })
-                  }
-                  className="mt-1 w-full rounded-2xl border border-[var(--surface-border)] bg-[var(--bg-panel-strong)] px-4 py-3 text-sm text-[var(--text-primary)] outline-none transition-colors duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] focus:border-[var(--accent-solid)]"
-                />
-              </label>
-              <button
-                type="button"
-                onClick={() => onRemove(word.boxId)}
-                className="rounded-full border border-[var(--surface-border)] px-3 py-2 text-xs text-[var(--text-secondary)] transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 hover:text-red-500"
-              >
-                Remove
-              </button>
-            </div>
-            <label className="mt-3 block">
-              <span className="text-[0.65rem] uppercase tracking-[0.14em] text-[var(--text-secondary)]">
-                Definition
-              </span>
-              <textarea
-                value={word.loading ? "Loading definition..." : word.definition}
-                disabled={word.loading}
-                onChange={(event) => onChange(word.boxId, { definition: event.target.value })}
-                rows={3}
-                className="mt-1 w-full resize-none rounded-2xl border border-[var(--surface-border)] bg-[var(--bg-panel-strong)] px-4 py-3 text-sm leading-6 text-[var(--text-primary)] outline-none transition-colors duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] focus:border-[var(--accent-solid)] disabled:opacity-70"
-              />
-            </label>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
-    </PremiumShell>
+
+          {/* Footer */}
+          <div className="flex items-center justify-between gap-3 border-t border-[var(--surface-border)] bg-[var(--bg-panel-strong)] px-5 py-3">
+            <span className="hidden font-mono text-[0.625rem] text-[var(--text-secondary)] sm:inline">
+              ⌘↵ to save
+            </span>
+            <ActionButton onClick={onSave} disabled={saving || anyLoading} className="ml-auto">
+              {saving ? "Saving…" : `Save to ${sourceType}`}
+            </ActionButton>
+          </div>
+        </>
+      )}
+    </div>
   );
 }
+
+/* ---------- Page ---------- */
 
 export function ReadPage() {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -354,33 +295,41 @@ export function ReadPage() {
   const [error, setError] = useState("");
   const [previewUrl, setPreviewUrl] = useState("");
   const [imageMetrics, setImageMetrics] = useState({
-    naturalWidth: 0,
-    naturalHeight: 0,
-    displayWidth: 0,
-    displayHeight: 0,
+    naturalWidth: 0, naturalHeight: 0, displayWidth: 0, displayHeight: 0,
   });
   const [ocrWords, setOcrWords] = useState<OcrWordBox[]>([]);
   const [selectedWords, setSelectedWords] = useState<SelectedWord[]>([]);
   const [saving, setSaving] = useState(false);
+  const [textInput, setTextInput] = useState("");
+  const [searching, setSearching] = useState(false);
+  const [flash, setFlash] = useState<string | null>(null);
+  const [filterQuery, setFilterQuery] = useState("");
 
   const selectedBoxIds = useMemo(
-    () => new Set(selectedWords.map((word) => word.boxId)),
+    () => new Set(selectedWords.map((w) => w.boxId)),
     [selectedWords],
   );
-  const newestRecord = records[0]?.createdAt
-    ? new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(
-        new Date(records[0].createdAt),
-      )
-    : "none";
+
+  const filteredRecords = useMemo(() => {
+    const q = filterQuery.trim().toLowerCase();
+    if (!q) return records;
+    return records.filter(
+      (r) =>
+        r.word.toLowerCase().includes(q) ||
+        r.definition.toLowerCase().includes(q) ||
+        r.partOfSpeech.toLowerCase().includes(q),
+    );
+  }, [records, filterQuery]);
+
+  function showFlash(msg: string) {
+    setFlash(msg);
+    setTimeout(() => setFlash(null), 2200);
+  }
+
+  useEffect(() => { void loadRecords(activePersona); }, [activePersona, loadRecords]);
 
   useEffect(() => {
-    void loadRecords(activePersona);
-  }, [activePersona, loadRecords]);
-
-  useEffect(() => {
-    return () => {
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
-    };
+    return () => { if (previewUrl) URL.revokeObjectURL(previewUrl); };
   }, [previewUrl]);
 
   useEffect(() => {
@@ -388,26 +337,22 @@ export function ReadPage() {
     if (!image) return;
 
     function updateImageMetrics() {
-      const imageElement = imageRef.current;
-      if (!imageElement) return;
-      const bounds = imageElement.getBoundingClientRect();
-      setImageMetrics((current) => {
+      const el = imageRef.current;
+      if (!el) return;
+      const bounds = el.getBoundingClientRect();
+      setImageMetrics((cur) => {
         const next = {
-          naturalWidth: imageElement.naturalWidth,
-          naturalHeight: imageElement.naturalHeight,
+          naturalWidth: el.naturalWidth,
+          naturalHeight: el.naturalHeight,
           displayWidth: bounds.width,
           displayHeight: bounds.height,
         };
-
         if (
-          current.naturalWidth === next.naturalWidth &&
-          current.naturalHeight === next.naturalHeight &&
-          Math.round(current.displayWidth) === Math.round(next.displayWidth) &&
-          Math.round(current.displayHeight) === Math.round(next.displayHeight)
-        ) {
-          return current;
-        }
-
+          cur.naturalWidth === next.naturalWidth &&
+          cur.naturalHeight === next.naturalHeight &&
+          Math.round(cur.displayWidth) === Math.round(next.displayWidth) &&
+          Math.round(cur.displayHeight) === Math.round(next.displayHeight)
+        ) return cur;
         return next;
       });
     }
@@ -416,37 +361,56 @@ export function ReadPage() {
     const observer = new ResizeObserver(updateImageMetrics);
     observer.observe(image);
     window.addEventListener("resize", updateImageMetrics);
-
-    return () => {
-      observer.disconnect();
-      window.removeEventListener("resize", updateImageMetrics);
-    };
+    return () => { observer.disconnect(); window.removeEventListener("resize", updateImageMetrics); };
   }, [previewUrl]);
+
+  const saveSelectedWords = useCallback(async () => {
+    const readyWords = selectedWords.filter((w) => w.word.trim() && !w.loading);
+    if (readyWords.length === 0) return;
+    setSaving(true);
+    try {
+      await createRecords(readyWords.map((w) => ({ word: w.word, definition: w.definition, partOfSpeech: w.partOfSpeech, sourceType })));
+      setSelectedWords([]);
+      showFlash(`${readyWords.length} word${readyWords.length === 1 ? "" : "s"} saved`);
+    } finally {
+      setSaving(false);
+    }
+  }, [selectedWords, sourceType, createRecords]);
+
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && selectedWords.length > 0) {
+        e.preventDefault();
+        void saveSelectedWords();
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [saveSelectedWords, selectedWords.length]);
+
+  function clearCapture() {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewUrl("");
+    setCaptureState("idle");
+    setError("");
+    setOcrWords([]);
+    setSelectedWords([]);
+    setImageMetrics({ naturalWidth: 0, naturalHeight: 0, displayWidth: 0, displayHeight: 0 });
+  }
 
   async function handleFile(file: File | null) {
     if (!file) return;
-
     setCaptureState("reading");
     setError("");
     setOcrWords([]);
     setSelectedWords([]);
     setImageMetrics({ naturalWidth: 0, naturalHeight: 0, displayWidth: 0, displayHeight: 0 });
-
     try {
       const compressed = await compressForOcr(file);
       const nextUrl = URL.createObjectURL(compressed);
-      setPreviewUrl((current) => {
-        if (current) URL.revokeObjectURL(current);
-        return nextUrl;
-      });
-
+      setPreviewUrl((cur) => { if (cur) URL.revokeObjectURL(cur); return nextUrl; });
       const words = await readImageWithOcrSpace(compressed);
-      if (words.length === 0) {
-        setCaptureState("error");
-        setError("No words found.");
-        return;
-      }
-
+      if (words.length === 0) { setCaptureState("error"); setError("No words found."); return; }
       setOcrWords(words);
       setCaptureState("ready");
     } catch (err) {
@@ -460,115 +424,90 @@ export function ReadPage() {
       setSelectedWords((items) => items.filter((item) => item.boxId !== box.id));
       return;
     }
-
     const cleanWord = cleanReadWord(box.text);
     if (!cleanWord) return;
-
     setSelectedWords((items) => [
       ...items,
-      {
-        boxId: box.id,
-        word: cleanWord,
-        definition: "",
-        partOfSpeech: "",
-        loading: true,
-      },
+      { boxId: box.id, word: cleanWord, definition: "", partOfSpeech: "", loading: true },
     ]);
-
-    const definition = await fetchDictionaryDefinition(cleanWord);
+    const result = await fetchDictionaryDefinition(cleanWord);
     setSelectedWords((items) =>
       items.map((item) =>
         item.boxId === box.id
-          ? {
-              ...item,
-              word: definition.word || cleanWord,
-              definition: definition.definition,
-              partOfSpeech: definition.partOfSpeech,
-              loading: false,
-            }
+          ? { ...item, word: result.word || cleanWord, definition: result.definition, partOfSpeech: result.partOfSpeech, loading: false }
           : item,
       ),
     );
   }
 
+  function selectAllOcrWords() {
+    const unselected = ocrWords.filter((w) => !selectedBoxIds.has(w.id));
+    for (const word of unselected) void selectWord(word);
+  }
+
   function updateSelectedWord(boxId: string, updates: Partial<SelectedWord>) {
-    setSelectedWords((items) =>
-      items.map((item) => (item.boxId === boxId ? { ...item, ...updates } : item)),
-    );
+    setSelectedWords((items) => items.map((item) => (item.boxId === boxId ? { ...item, ...updates } : item)));
   }
 
-  async function saveSelectedWords() {
-    const readyWords = selectedWords.filter((word) => word.word.trim() && !word.loading);
-    if (readyWords.length === 0) return;
+  async function handleTextSearch() {
+    const word = textInput.trim();
+    if (!word || searching) return;
 
-    setSaving(true);
-    try {
-      await createRecords(
-        readyWords.map((word) => ({
-          word: word.word,
-          definition: word.definition,
-          partOfSpeech: word.partOfSpeech,
-          sourceType,
-        })),
-      );
-      setSelectedWords([]);
-    } finally {
-      setSaving(false);
+    const existing = records.find((r) => r.word.toLowerCase() === word.toLowerCase());
+    if (existing) {
+      showFlash(`"${existing.word}" already in ledger`);
+      setTextInput("");
+      return;
     }
+
+    setSearching(true);
+    setTextInput("");
+    const result = await fetchDictionaryDefinition(word);
+    await createRecords([{
+      word: result.word || word,
+      definition: result.definition,
+      partOfSpeech: result.partOfSpeech,
+      sourceType,
+    }]);
+    showFlash(result.definition ? `"${result.word || word}" saved` : `"${result.word || word}" saved — no definition`);
+    setSearching(false);
   }
+
+  const statusText =
+    captureState === "reading" ? "Reading…"
+    : captureState === "ready" ? `${ocrWords.length} words · ${selectedBoxIds.size} selected`
+    : captureState === "error" ? error
+    : "Ready";
 
   return (
-    <div className="read-canvas min-h-screen overflow-hidden bg-[var(--bg-primary)] text-[var(--text-primary)]">
-      <header className="relative px-4 pb-8 pt-8 md:px-8 md:pb-12 md:pt-12">
-        <div className="read-reveal mx-auto max-w-[1480px]">
-          <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+    <div className="min-h-screen text-[var(--text-primary)]">
+
+      {/* Flash */}
+      {flash && (
+        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-lg border border-[var(--surface-border)] bg-[var(--bg-panel-strong)] px-4 py-2.5 text-xs font-medium text-[var(--text-primary)] shadow-[0_8px_32px_rgba(0,0,0,0.32)]">
+          {flash}
+        </div>
+      )}
+
+      {/* Header */}
+      <header className="section-dots relative overflow-hidden border-b border-[var(--surface-border)] bg-[var(--bg-panel)]">
+        <div className="relative z-10 px-5 py-5 md:px-8 md:py-6">
+          <div className="flex items-center justify-between">
             <Link
               href="/"
-              className="group inline-flex items-center gap-3 rounded-full border border-[var(--surface-border)] bg-[var(--bg-panel)] py-2 pl-2 pr-5 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-secondary)] shadow-[0_18px_42px_rgba(0,0,0,0.14)] transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] hover:text-[var(--text-primary)] active:scale-[0.98]"
+              className="inline-flex items-center gap-1.5 font-[family-name:var(--font-display)] text-xs font-bold uppercase tracking-[0.12em] text-[var(--text-secondary)] transition-colors hover:text-[var(--accent-soft)]"
             >
-              <span className="grid h-8 w-8 place-items-center rounded-full bg-[var(--bg-secondary)] transition-transform duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:-translate-x-1">
-                ←
-              </span>
-              Dashboard
+              ← Dashboard
             </Link>
-            <span
-              className="rounded-full border px-4 py-2 text-[0.65rem] uppercase tracking-[0.18em]"
-              style={{
-                borderColor: personaMeta[activePersona].accent,
-                color: personaMeta[activePersona].accent,
-              }}
-            >
-              {personaMeta[activePersona].label} private
+            <span className="font-mono text-[0.625rem] uppercase tracking-[0.2em] text-[var(--accent-soft)]">
+              {personaMeta[activePersona].label} · private
             </span>
           </div>
-
-          <PremiumShell innerClassName="relative overflow-hidden p-6 md:p-9">
-            <div className="grid gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(420px,0.95fr)] lg:items-stretch">
-              <div>
-                <Eyebrow>Read module</Eyebrow>
-                <h1 className="mt-6 max-w-4xl font-[family-name:var(--font-display)] text-6xl font-bold uppercase leading-[0.84] tracking-[0.03em] text-[var(--text-primary)] md:text-8xl lg:text-[8.4rem]">
-                  Capture the margin.
-                </h1>
-                <p className="mt-6 max-w-2xl text-base leading-7 text-[var(--text-secondary)] md:text-lg">
-                  Photograph a page, touch the exact words that matter, and keep a private ledger that reads like your own field notes.
-                </p>
-                <div className="mt-9 flex flex-wrap items-center gap-3">
-                  <ActionPill onClick={() => inputRef.current?.click()} icon="↗">
-                    Camera
-                  </ActionPill>
-                  <span className="rounded-full border border-[var(--surface-border)] bg-[var(--bg-secondary)] px-4 py-3 text-sm text-[var(--text-secondary)]">
-                    OCR.space + dictionaryapi.dev. Image not saved.
-                  </span>
-                </div>
-              </div>
-              <ScannerPlate
-                records={records.length}
-                selectedWords={selectedWords.length}
-                newestRecord={newestRecord}
-              />
-            </div>
-          </PremiumShell>
+          <h1 className="mt-2 font-[family-name:var(--font-display)] text-3xl font-bold uppercase tracking-[0.04em] text-[var(--text-primary)] md:text-5xl">
+            Read
+          </h1>
         </div>
+        <div className="absolute bottom-0 left-0 h-[2px] w-24 bg-[var(--accent-solid)]" />
       </header>
 
       <input
@@ -584,78 +523,153 @@ export function ReadPage() {
         }}
       />
 
-      <section className="read-reveal read-reveal-delay-1 mx-auto grid max-w-[1480px] gap-6 px-4 py-10 md:px-8 md:py-14 lg:grid-cols-[minmax(0,1.18fr)_minmax(380px,0.82fr)]">
-        <div className="space-y-6">
-          <PremiumShell innerClassName="p-5 md:p-6">
-            <div className="flex flex-wrap items-start justify-between gap-5">
-              <div>
-                <Eyebrow>Capture</Eyebrow>
-                <h2 className="mt-4 font-[family-name:var(--font-display)] text-4xl font-bold uppercase tracking-[0.03em] md:text-5xl">
-                  Source tray
-                </h2>
-                <p className="mt-3 max-w-xl text-sm leading-6 text-[var(--text-secondary)]">
-                  Pick a source type first, then capture. The preview is temporary and stays off your record.
-                </p>
-              </div>
-              <div className="grid w-full grid-cols-2 gap-2 sm:w-auto sm:grid-cols-4">
-                {sourceOptions.map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => setSourceType(option.value)}
-                    className={cn(
-                      "group rounded-2xl border px-4 py-3 text-left text-xs uppercase tracking-[0.12em] transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98]",
-                      sourceType === option.value
-                        ? "border-[var(--accent-solid)] bg-[color:color-mix(in_srgb,var(--accent-solid)_15%,var(--bg-panel))] text-[var(--text-primary)] shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]"
-                        : "border-[var(--surface-border)] bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:-translate-y-0.5 hover:text-[var(--text-primary)]",
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        "mb-3 block h-1 w-8 rounded-full transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)]",
-                        sourceType === option.value
-                          ? "bg-[var(--accent-soft)]"
-                          : "bg-[var(--surface-border)] group-hover:w-12",
-                      )}
-                    />
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-            </div>
+      {/* 01 / Capture */}
+      <section className="read-reveal border-b border-[var(--surface-border)] px-4 py-8 sm:px-5 md:px-8">
+        <div className="mb-6 flex items-end justify-between">
+          <div>
+            <p className="font-[family-name:var(--font-display)] text-[0.625rem] font-bold uppercase tracking-[0.28em] text-[var(--text-secondary)]">
+              01 / Capture
+            </p>
+            <h2 className="mt-1 font-[family-name:var(--font-display)] text-3xl font-bold uppercase tracking-[0.03em] text-[var(--text-primary)] md:text-4xl">
+              Add words
+            </h2>
+          </div>
+          <span className="font-mono text-xs tabular-nums text-[var(--text-secondary)]">
+            {statusText}
+          </span>
+        </div>
 
-            <div className="mt-6 overflow-hidden rounded-[1.65rem] border border-[var(--surface-border)] bg-[var(--bg-secondary)] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-              {previewUrl ? (
-                <div className="read-preview-plane flex min-h-[420px] justify-center p-3">
+        {/* Controls: source + search */}
+        <div className="mb-5 space-y-3">
+          {/* Source segmented */}
+          <div className="flex flex-wrap items-center gap-2">
+            <Label className="mr-1">Source</Label>
+            {sourceOptions.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setSourceType(option.value)}
+                className={cn(
+                  "rounded-lg border px-3.5 py-1.5 text-xs font-semibold transition-colors duration-200",
+                  sourceType === option.value
+                    ? "border-[var(--accent-solid)] bg-[var(--accent-solid)]/12 text-[var(--text-primary)]"
+                    : "border-[var(--surface-border)] bg-[var(--bg-panel)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
+                )}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Search row */}
+          <div className="flex items-center gap-2">
+            <div className="flex flex-1 items-center gap-2.5 rounded-xl border border-[var(--surface-border)] bg-[var(--bg-panel)] px-4 transition-colors duration-200 focus-within:border-[var(--accent-solid)]">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" className="shrink-0 text-[var(--text-secondary)]">
+                <circle cx="6.5" cy="6.5" r="5" />
+                <line x1="10.5" y1="10.5" x2="14" y2="14" />
+              </svg>
+              <input
+                type="text"
+                placeholder="Look up a word and save it directly"
+                value={textInput}
+                onChange={(e) => setTextInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") void handleTextSearch(); }}
+                className="flex-1 bg-transparent py-3 text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-secondary)]"
+              />
+            </div>
+            <ActionButton onClick={() => void handleTextSearch()} disabled={searching || !textInput.trim()} className="h-11 px-5">
+              {searching ? "…" : "Search"}
+            </ActionButton>
+            <GhostButton onClick={() => inputRef.current?.click()} title="Scan image" className="h-11 w-11 px-0">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M1 5.5A1.5 1.5 0 0 1 2.5 4h.73l.74-1.5h4.06L8.77 4h.73A1.5 1.5 0 0 1 11 5.5v6A1.5 1.5 0 0 1 9.5 13h-7A1.5 1.5 0 0 1 1 11.5v-6Z" />
+                <circle cx="6" cy="8.5" r="2" />
+              </svg>
+            </GhostButton>
+          </div>
+        </div>
+
+        {/* Two-column: image | queue — only show after camera pressed */}
+        {captureState !== "idle" && (
+          <div className="grid gap-5 xl:grid-cols-[minmax(0,1.5fr)_minmax(320px,0.5fr)]">
+
+            {/* Image capture card */}
+            {previewUrl ? (
+              <div className="overflow-hidden rounded-xl border border-[var(--surface-border)] bg-[var(--bg-panel)]">
+                <div className="flex items-center justify-between border-b border-[var(--surface-border)] bg-[var(--bg-panel-strong)] px-5 py-3.5">
+                  <div className="flex items-center gap-2.5">
+                    <Label>Source image</Label>
+                    <span className="font-mono text-[0.625rem] tabular-nums text-[var(--text-secondary)]">
+                      not stored
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {captureState === "ready" && (
+                      <>
+                        {selectedBoxIds.size > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => setSelectedWords([])}
+                            className="text-[0.625rem] font-medium uppercase tracking-[0.1em] text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]"
+                          >
+                            Deselect
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={selectAllOcrWords}
+                          className="text-[0.625rem] font-medium uppercase tracking-[0.1em] text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]"
+                        >
+                          Select all
+                        </button>
+                      </>
+                    )}
+                    <button
+                      type="button"
+                      onClick={clearCapture}
+                      title="Clear image"
+                      className="text-base leading-none text-[var(--text-secondary)] transition-colors hover:text-red-400"
+                    >
+                      ×
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex justify-center bg-[var(--bg-secondary)] p-4 md:p-6">
                   <div className="relative inline-block max-w-full align-top">
-                    {/* Blob preview comes from local camera/upload and is never persisted. */}
+                    {/* Blob preview from local camera — never persisted */}
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       ref={imageRef}
                       src={previewUrl}
                       alt="Captured reading source"
-                      className="block max-h-[64vh] max-w-full object-contain"
+                      className="block max-h-[60vh] max-w-full rounded-lg object-contain"
                       onLoad={() => {
-                        const image = imageRef.current;
-                        if (!image) return;
-                        const bounds = image.getBoundingClientRect();
+                        const el = imageRef.current;
+                        if (!el) return;
+                        const bounds = el.getBoundingClientRect();
                         setImageMetrics({
-                          naturalWidth: image.naturalWidth,
-                          naturalHeight: image.naturalHeight,
+                          naturalWidth: el.naturalWidth,
+                          naturalHeight: el.naturalHeight,
                           displayWidth: bounds.width,
                           displayHeight: bounds.height,
                         });
                       }}
                     />
-                    {captureState === "ready" &&
-                    imageMetrics.naturalWidth > 0 &&
-                    imageMetrics.naturalHeight > 0
+
+                    {captureState === "reading" && (
+                      <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-[var(--bg-primary)]/70">
+                        <span className="font-mono text-[0.7rem] uppercase tracking-[0.2em] text-[var(--text-secondary)]">
+                          Reading…
+                        </span>
+                      </div>
+                    )}
+
+                    {captureState === "ready" && imageMetrics.naturalWidth > 0 && imageMetrics.naturalHeight > 0
                       ? ocrWords.map((word) => {
                           const selected = selectedBoxIds.has(word.id);
-                          const scaleX =
-                            imageMetrics.displayWidth / imageMetrics.naturalWidth;
-                          const scaleY =
-                            imageMetrics.displayHeight / imageMetrics.naturalHeight;
+                          const scaleX = imageMetrics.displayWidth / imageMetrics.naturalWidth;
+                          const scaleY = imageMetrics.displayHeight / imageMetrics.naturalHeight;
                           return (
                             <button
                               key={word.id}
@@ -663,10 +677,10 @@ export function ReadPage() {
                               aria-label={`Select ${word.text}`}
                               onClick={() => void selectWord(word)}
                               className={cn(
-                                "absolute rounded-[0.25rem] border transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]",
+                                "absolute rounded-[3px] border transition-all duration-150",
                                 selected
-                                  ? "border-amber-400 bg-amber-300/45 shadow-[0_0_0_2px_rgba(245,158,11,0.26)]"
-                                  : "border-[color:color-mix(in_srgb,var(--accent-solid)_55%,transparent)] bg-[color:color-mix(in_srgb,var(--accent-solid)_12%,transparent)] hover:bg-[color:color-mix(in_srgb,var(--accent-solid)_28%,transparent)]",
+                                  ? "border-amber-400 bg-amber-300/30 shadow-[0_0_0_1px_rgba(245,158,11,0.3)]"
+                                  : "border-[var(--accent-solid)]/40 bg-[var(--accent-solid)]/10 hover:bg-[var(--accent-solid)]/25",
                               )}
                               style={{
                                 left: `${word.left * scaleX}px`,
@@ -680,80 +694,88 @@ export function ReadPage() {
                       : null}
                   </div>
                 </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => inputRef.current?.click()}
-                  className="read-empty-capture group flex min-h-[460px] w-full flex-col items-center justify-center gap-5 px-6 text-center transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[var(--bg-panel-strong)]"
-                >
-                  <span className="flex h-24 w-24 items-center justify-center rounded-full border border-[var(--surface-border)] bg-[var(--bg-panel)] text-4xl shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] transition-transform duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:-translate-y-1 group-hover:scale-105">
-                    ◉
-                  </span>
-                  <span className="font-[family-name:var(--font-display)] text-4xl font-bold uppercase tracking-[0.06em]">
-                    Camera
-                  </span>
-                  <span className="max-w-sm text-sm leading-6 text-[var(--text-secondary)]">
-                    Take a picture of a page, note, or newspaper clipping.
-                  </span>
-                </button>
-              )}
-            </div>
-
-            <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
-              <p className="rounded-full border border-[var(--surface-border)] px-3 py-2 text-sm text-[var(--text-secondary)]">
-                {captureState === "reading"
-                  ? "Reading image..."
-                  : captureState === "ready"
-                    ? `${ocrWords.length} words found`
-                    : captureState === "error"
-                      ? error
-                      : "Ready"}
-              </p>
-              <ActionPill
+              </div>
+            ) : (
+              <button
+                type="button"
                 onClick={() => inputRef.current?.click()}
                 disabled={captureState === "reading"}
-                icon="↗"
+                className="group grid min-h-[340px] place-items-center rounded-xl border border-dashed border-[var(--surface-border)] bg-[var(--bg-panel)] p-8 text-center transition-colors duration-200 hover:border-[var(--accent-solid)]/40 hover:bg-[var(--bg-panel-strong)] disabled:opacity-50"
               >
-                New image
-              </ActionPill>
-            </div>
-          </PremiumShell>
-        </div>
+                <div>
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl border border-[var(--surface-border)] bg-[var(--bg-secondary)] text-[var(--text-secondary)] transition-colors group-hover:text-[var(--accent-soft)]">
+                    <svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M1 5.5A1.5 1.5 0 0 1 2.5 4h.73l.74-1.5h4.06L8.77 4h.73A1.5 1.5 0 0 1 11 5.5v6A1.5 1.5 0 0 1 9.5 13h-7A1.5 1.5 0 0 1 1 11.5v-6Z" />
+                      <circle cx="6" cy="8.5" r="2" />
+                    </svg>
+                  </div>
+                  <p className="mt-4 font-[family-name:var(--font-display)] text-xl font-bold uppercase tracking-[0.04em] text-[var(--text-primary)]">
+                    Photograph a page
+                  </p>
+                  <p className="mt-2 text-xs leading-5 text-[var(--text-secondary)] opacity-70">
+                    Tap to open the camera, then highlight the words you want. The image is never saved.
+                  </p>
+                </div>
+              </button>
+            )}
 
-        <SelectedWordRows
-          words={selectedWords}
-          sourceType={sourceType}
-          saving={saving}
-          onChange={updateSelectedWord}
-          onRemove={(boxId) =>
-            setSelectedWords((items) => items.filter((item) => item.boxId !== boxId))
-          }
-          onSave={() => void saveSelectedWords()}
-        />
+            {/* Queue card */}
+            <WordQueue
+              words={selectedWords}
+              sourceType={sourceType}
+              saving={saving}
+              onChange={updateSelectedWord}
+              onRemove={(boxId) => setSelectedWords((items) => items.filter((item) => item.boxId !== boxId))}
+              onSave={() => void saveSelectedWords()}
+              onClear={() => setSelectedWords([])}
+            />
+          </div>
+        )}
       </section>
 
-      <section className="read-reveal read-reveal-delay-2 mx-auto max-w-[1480px] px-4 pb-16 pt-6 md:px-8 md:pb-24">
-        <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
+      {/* 02 / Ledger */}
+      <section className="read-reveal read-reveal-delay-1 px-4 py-8 sm:px-5 md:px-8">
+        <div className="mb-6 flex items-end justify-between">
           <div>
-            <Eyebrow>Vocabulary ledger</Eyebrow>
-            <h2 className="mt-4 font-[family-name:var(--font-display)] text-4xl font-bold uppercase tracking-[0.03em] md:text-5xl">
+            <p className="font-[family-name:var(--font-display)] text-[0.625rem] font-bold uppercase tracking-[0.28em] text-[var(--text-secondary)]">
+              02 / Ledger
+            </p>
+            <h2 className="mt-1 font-[family-name:var(--font-display)] text-3xl font-bold uppercase tracking-[0.03em] text-[var(--text-primary)] md:text-4xl">
               Saved words
             </h2>
-            <p className="mt-2 max-w-xl text-sm leading-6 text-[var(--text-secondary)]">
-              Every saved word stays editable in its own row.
-            </p>
           </div>
-          <div className="rounded-2xl border border-[var(--surface-border)] bg-[var(--bg-panel)] px-4 py-3 text-right shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-            <p className="font-mono text-[0.62rem] uppercase tracking-[0.18em] text-[var(--text-secondary)]">
-              Table rows
-            </p>
-            <p className="mt-1 font-[family-name:var(--font-display)] text-2xl font-bold leading-none">
-              {records.length}
-            </p>
-          </div>
+          <span className="font-mono text-xs tabular-nums text-[var(--text-secondary)]">
+            {filteredRecords.length}{filterQuery ? ` / ${records.length}` : ""} total
+          </span>
         </div>
+
+        {records.length > 0 && (
+          <div className="mb-5 flex items-center gap-2.5 rounded-xl border border-[var(--surface-border)] bg-[var(--bg-panel)] px-4 transition-colors duration-200 focus-within:border-[var(--accent-solid)]">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" className="shrink-0 text-[var(--text-secondary)]">
+              <circle cx="6.5" cy="6.5" r="5" />
+              <line x1="10.5" y1="10.5" x2="14" y2="14" />
+            </svg>
+            <input
+              type="text"
+              placeholder="Filter saved words…"
+              value={filterQuery}
+              onChange={(e) => setFilterQuery(e.target.value)}
+              className="flex-1 bg-transparent py-2.5 text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-secondary)]"
+            />
+            {filterQuery && (
+              <button
+                type="button"
+                onClick={() => setFilterQuery("")}
+                className="shrink-0 text-[0.625rem] font-medium uppercase tracking-[0.1em] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+        )}
+
         <ReadRecordList
-          records={records}
+          records={filteredRecords}
           onUpdate={(id, updates) => void updateRecord(id, updates)}
           onDelete={(id) => void deleteRecord(id)}
         />
