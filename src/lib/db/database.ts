@@ -8,6 +8,7 @@ import type {
   Mission,
   PlayerProfile,
   Quest,
+  ReadRecord,
   StickyNote,
   XpLogEntry,
   Persona,
@@ -25,6 +26,7 @@ class SoloLevelingDB extends Dexie {
   xpLog!: EntityTable<XpLogEntry, "id">;
   stickyNotes!: EntityTable<StickyNote, "id">;
   leads!: EntityTable<Lead, "id">;
+  readRecords!: EntityTable<ReadRecord, "id">;
 
   constructor(name: string) {
     super(name);
@@ -160,6 +162,19 @@ class SoloLevelingDB extends Dexie {
           mission.priorityColor ??= null;
         });
       });
+    this.version(9).stores({
+      profile: "_id",
+      gates: "id, status, rank, date",
+      quests: "id, gateId, status, order",
+      missions: "id, rank, date, order",
+      inventory: "id",
+      hunterRecords: "date",
+      gymStats: "id",
+      xpLog: "id, timestamp",
+      stickyNotes: "id, pinnedAt",
+      leads: "id, createdAt",
+      readRecords: "id, createdAt, word, sourceType",
+    });
   }
 }
 

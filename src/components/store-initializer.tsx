@@ -6,6 +6,7 @@ import { useInventoryStore } from "@/lib/stores/inventory-store";
 import { useMissionsStore } from "@/lib/stores/missions-store";
 import { usePersonaStore } from "@/lib/stores/persona-store";
 import { usePlayerStore } from "@/lib/stores/player-store";
+import { useReadStore } from "@/lib/stores/read-store";
 import { useRecordsStore } from "@/lib/stores/records-store";
 import { useCampaignStore } from "@/lib/stores/campaign-store";
 import { useContinuationStore } from "@/lib/stores/continuation-store";
@@ -17,6 +18,7 @@ export function StoreInitializer() {
   const gatesLoaded = useGatesStore((state) => state.loaded);
   const missionsLoaded = useMissionsStore((state) => state.loaded);
   const inventoryLoaded = useInventoryStore((state) => state.loaded);
+  const readLoaded = useReadStore((state) => state.loaded);
   const recordsLoaded = useRecordsStore((state) => state.loaded);
   const statsLoaded = useStatsStore((state) => state.loaded);
   const quests = useGatesStore((state) => state.quests);
@@ -24,6 +26,7 @@ export function StoreInitializer() {
   const loadGates = useGatesStore((state) => state.load);
   const loadMissions = useMissionsStore((state) => state.load);
   const loadInventory = useInventoryStore((state) => state.load);
+  const loadRead = useReadStore((state) => state.load);
   const loadRecords = useRecordsStore((state) => state.load);
   const loadStats = useStatsStore((state) => state.load);
   const syncLinkedProgress = useMissionsStore((state) => state.syncLinkedProgress);
@@ -45,6 +48,10 @@ export function StoreInitializer() {
       void loadInventory();
     }
 
+    if (!readLoaded) {
+      void loadRead();
+    }
+
     if (!recordsLoaded) {
       void loadRecords();
     }
@@ -59,10 +66,12 @@ export function StoreInitializer() {
     loadInventory,
     loadMissions,
     loadPlayer,
+    loadRead,
     loadRecords,
     loadStats,
     missionsLoaded,
     playerLoaded,
+    readLoaded,
     recordsLoaded,
     statsLoaded,
   ]);
@@ -86,6 +95,7 @@ export function StoreInitializer() {
       loadGates(activePersona),
       loadMissions(activePersona),
       loadInventory(activePersona),
+      loadRead(activePersona),
       loadRecords(activePersona),
       loadStats(activePersona),
     ]);
@@ -95,6 +105,7 @@ export function StoreInitializer() {
     loadInventory,
     loadMissions,
     loadPlayer,
+    loadRead,
     loadRecords,
     loadStats,
   ]);
