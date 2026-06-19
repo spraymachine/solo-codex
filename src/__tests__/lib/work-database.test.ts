@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { getWorkDatabaseName, getWorkDb, resetWorkDbForTests } from "@/lib/db/work-database";
+import { getLegacyWorkDatabaseName, getWorkDatabaseName, getWorkDb, resetWorkDbForTests } from "@/lib/db/work-database";
 import type { WorkContact } from "@/lib/types";
 
 describe("work database", () => {
@@ -7,12 +7,21 @@ describe("work database", () => {
     await resetWorkDbForTests();
   });
 
-  it("uses one shared database name independent of persona", () => {
-    expect(getWorkDatabaseName()).toBe("SoloWorkDB");
+  it("names the database by user and persona", () => {
+    expect(getWorkDatabaseName()).toBe("SoloWorkDB-local-mani");
+    expect(getWorkDatabaseName(undefined, "harti")).toBe("SoloWorkDB-local-harti");
+    expect(getWorkDatabaseName("user-1", "mani")).toBe("SoloWorkDB-user-1-mani");
+    expect(getWorkDatabaseName("user-1", "harti")).toBe("SoloWorkDB-user-1-harti");
   });
 
-  it("stores work contacts in the shared work database", async () => {
-    const db = getWorkDb();
+  it("keeps the pre-persona legacy database name stable", () => {
+    expect(getLegacyWorkDatabaseName()).toBe("SoloWorkDB-local");
+    expect(getLegacyWorkDatabaseName("user-1")).toBe("SoloWorkDB-user-1");
+  });
+
+  it("gives mani and harti separate physical databases", async () => {
+    const maniDb = getWorkDb(undefined, "mani");
+    const hartiDb = getWorkDb(undefined, "harti");
     const contact: WorkContact = {
       id: "contact-1",
       name: "Studio Set Go",
@@ -27,10 +36,9 @@ describe("work database", () => {
       updatedAt: "2026-06-04T00:00:00.000Z",
     };
 
-    await db.contacts.add(contact);
+    await maniDb.contacts.add(contact);
 
-    const contacts = await db.contacts.toArray();
-    expect(contacts).toHaveLength(1);
-    expect(contacts[0].name).toBe("Studio Set Go");
+    expect(await maniDb.contacts.toArray()).toHaveLength(1);
+    expect(await hartiDb.contacts.toArray()).toHaveLength(0);
   });
 });
