@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   getContinuationCurrentDate,
   useContinuationStore,
@@ -6,12 +6,22 @@ import {
 
 describe("continuation store", () => {
   beforeEach(() => {
+    // getDates()/selectDate() recompute totalDays from real wall-clock time
+    // (todayDate()), ignoring the totalDays set below — freeze "today" at
+    // 2026-05-31 so start (2026-05-12) to today spans exactly 20 days,
+    // matching this test's assumptions regardless of the real current date.
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-05-31T12:00:00"));
     useContinuationStore.setState({
       startDate: "2026-05-12",
       totalDays: 20,
       currentDate: "2026-05-12",
       selectedDate: "2026-05-12",
     });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it("builds the current May continuation starting on 2026-05-12", () => {
