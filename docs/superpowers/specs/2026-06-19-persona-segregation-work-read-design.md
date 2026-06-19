@@ -38,14 +38,31 @@ One-time migration on load, same shape as the existing `runLegacyLeadMigration`:
 
 ## 3. Work — Supabase schema
 
+**Live-schema findings (checked via Supabase MCP against project `kwbswiifqqwbeexkdyes` directly, not just the repo's migration files):**
+
+- The repo's migration files are not 1:1 with what's actually applied — several live migrations (e.g. `allow_persona1_persona2`) have no corresponding file in `supabase/migrations/`. Live persona check constraints across every other persona-scoped table (`sticky_notes`, `solo_snapshots`, `solo_todos`, etc.) are `check (persona in ('mani','harti','persona1','persona2'))`, not the 2-value form the repo's older migration files show. New work/read persona columns must match the live 4-value convention.
+- Live RLS policies use the perf-optimized `(select auth.uid()) = user_id` form (wrapped subselect), not the bare `auth.uid() = user_id` text in the repo files. New policies must match.
+- `work_contacts` live is missing `phone_label`/`phone2`/`phone2_label` (which the app already sends on every contact create/update) and still has dead `source`/`next_step` columns. `supabase/migrations/20260605_work_contacts_add_phone2.sql` exists in the repo for this but was **never applied** — meaning contact sync to Supabase has been silently failing (unknown-column error, swallowed by the fire-and-forget sync wrapper) since that file was written. Per decision, this fix is bundled into the same migration as the persona column so contact sync actually starts working again as part of this change.
+
 New migration, e.g. `supabase/migrations/20260619_add_persona_to_work_tables.sql`:
 
 ```sql
-alter table work_courses add column persona text not null default 'mani' check (persona in ('mani','harti'));
-alter table work_chapters add column persona text not null default 'mani' check (persona in ('mani','harti'));
-alter table work_milestones add column persona text not null default 'mani' check (persona in ('mani','harti'));
-alter table work_contacts add column persona text not null default 'mani' check (persona in ('mani','harti'));
-alter table work_projects add column persona text not null default 'mani' check (persona in ('mani','harti'));
+-- Bundled fix: work_contacts schema drift (never-applied 20260605 migration)
+alter table work_contacts
+  add column if not exists phone_label text not null default '',
+  add column if not exists phone2      text not null default '',
+  add column if not exists phone2_label text not null default '';
+
+alter table work_contacts
+  drop column if exists source,
+  drop column if exists next_step;
+
+-- Persona column, matching live 4-value convention
+alter table work_courses add column persona text not null default 'mani' check (persona in ('mani','harti','persona1','persona2'));
+alter table work_chapters add column persona text not null default 'mani' check (persona in ('mani','harti','persona1','persona2'));
+alter table work_milestones add column persona text not null default 'mani' check (persona in ('mani','harti','persona1','persona2'));
+alter table work_contacts add column persona text not null default 'mani' check (persona in ('mani','harti','persona1','persona2'));
+alter table work_projects add column persona text not null default 'mani' check (persona in ('mani','harti','persona1','persona2'));
 
 create index if not exists work_courses_user_persona_idx on work_courses (user_id, persona);
 create index if not exists work_chapters_user_persona_idx on work_chapters (user_id, persona);
@@ -54,7 +71,9 @@ create index if not exists work_contacts_user_persona_idx on work_contacts (user
 create index if not exists work_projects_user_persona_idx on work_projects (user_id, persona);
 ```
 
-`default 'mani'` backfills existing rows automatically — same outcome as the Dexie-side migration. RLS policies are unchanged (still `auth.uid() = user_id`); persona filtering is app-side, consistent with the sticky_notes precedent.
+`default 'mani'` backfills existing rows automatically — same outcome as the Dexie-side migration (real live row counts at design time: 3 courses, 14 chapters, 126 milestones, 7 contacts, 3 projects — all become Mani's). RLS policies are unchanged (still scoped to `user_id`); persona filtering is app-side, consistent with the sticky_notes precedent.
+
+This migration alters a live table with real rows. Applying it (via the connected Supabase MCP `apply_migration` tool — this project has no `supabase/config.toml` / CLI link, schema changes are applied ad hoc through that tool or the dashboard) is a one-way, hard-to-fully-reverse action against production and must be confirmed with the user immediately before running, not bundled silently into an automated task sequence.
 
 ## 4. Work — store + sync code
 
@@ -80,7 +99,7 @@ Currently nonexistent. New migration, e.g. `supabase/migrations/20260619_create_
 create table if not exists public.read_records (
   id uuid primary key,
   user_id uuid not null references auth.users(id) on delete cascade,
-  persona text not null check (persona in ('mani', 'harti')),
+  persona text not null check (persona in ('mani', 'harti', 'persona1', 'persona2')),
   word text not null,
   definition text not null default '',
   part_of_speech text not null default '',
@@ -101,11 +120,13 @@ create policy "Users manage own read records"
   on public.read_records
   for all
   to authenticated
-  using (auth.uid() = user_id)
-  with check (auth.uid() = user_id);
+  using ((select auth.uid()) = user_id)
+  with check ((select auth.uid()) = user_id);
 
 alter publication supabase_realtime add table read_records;
 ```
+
+Persona check matches the live 4-value convention (see §3); RLS uses the live perf-optimized `(select auth.uid())` form, not the bare form the older repo migration files show.
 
 New `src/lib/supabase/read.ts`, mirroring `src/lib/supabase/work.ts`'s shape:
 - `getReadUserId()` (same shape as `getWorkUserId`)
