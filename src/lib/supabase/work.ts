@@ -3,6 +3,7 @@ import { isSupabaseConfigured } from "./config";
 import type {
   CourseChapter,
   CourseMilestone,
+  Persona,
   WorkContact,
   WorkCourse,
   WorkProject,
@@ -97,16 +98,16 @@ function rowToProject(r: any): WorkProject {
 
 // ── Fetch ─────────────────────────────────────────────────────────────────────
 
-export async function fetchAllWork(userId: string) {
+export async function fetchAllWork(userId: string, persona: Persona) {
   const client = sb();
   if (!client) return null;
 
   const [courses, chapters, milestones, contacts, projects] = await Promise.all([
-    client.from("work_courses").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
-    client.from("work_chapters").select("*").eq("user_id", userId).order("order", { ascending: true }),
-    client.from("work_milestones").select("*").eq("user_id", userId).order("order", { ascending: true }),
-    client.from("work_contacts").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
-    client.from("work_projects").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
+    client.from("work_courses").select("*").eq("user_id", userId).eq("persona", persona).order("created_at", { ascending: false }),
+    client.from("work_chapters").select("*").eq("user_id", userId).eq("persona", persona).order("order", { ascending: true }),
+    client.from("work_milestones").select("*").eq("user_id", userId).eq("persona", persona).order("order", { ascending: true }),
+    client.from("work_contacts").select("*").eq("user_id", userId).eq("persona", persona).order("created_at", { ascending: false }),
+    client.from("work_projects").select("*").eq("user_id", userId).eq("persona", persona).order("created_at", { ascending: false }),
   ]);
 
   if (courses.error || chapters.error || milestones.error || contacts.error || projects.error) return null;
@@ -122,12 +123,13 @@ export async function fetchAllWork(userId: string) {
 
 // ── Courses ───────────────────────────────────────────────────────────────────
 
-export async function sbCreateCourse(userId: string, course: WorkCourse) {
+export async function sbCreateCourse(userId: string, persona: Persona, course: WorkCourse) {
   const client = sb();
   if (!client) return;
   await client.from("work_courses").upsert({
     id: course.id,
     user_id: userId,
+    persona,
     title: course.title,
     url: course.url,
     goal: course.goal,
@@ -139,7 +141,7 @@ export async function sbCreateCourse(userId: string, course: WorkCourse) {
   });
 }
 
-export async function sbUpdateCourse(userId: string, courseId: string, updates: Partial<WorkCourse>) {
+export async function sbUpdateCourse(userId: string, persona: Persona, courseId: string, updates: Partial<WorkCourse>) {
   const client = sb();
   if (!client) return;
   await client.from("work_courses").update({
@@ -150,24 +152,25 @@ export async function sbUpdateCourse(userId: string, courseId: string, updates: 
     source: updates.source,
     status: updates.status,
     updated_at: updates.updatedAt ?? nowISO(),
-  }).eq("user_id", userId).eq("id", courseId);
+  }).eq("user_id", userId).eq("persona", persona).eq("id", courseId);
 }
 
-export async function sbDeleteCourse(userId: string, courseId: string) {
+export async function sbDeleteCourse(userId: string, persona: Persona, courseId: string) {
   const client = sb();
   if (!client) return;
-  await client.from("work_courses").delete().eq("user_id", userId).eq("id", courseId);
+  await client.from("work_courses").delete().eq("user_id", userId).eq("persona", persona).eq("id", courseId);
 }
 
 // ── Chapters ──────────────────────────────────────────────────────────────────
 
-export async function sbCreateChapter(userId: string, chapter: CourseChapter) {
+export async function sbCreateChapter(userId: string, persona: Persona, chapter: CourseChapter) {
   const client = sb();
   if (!client) return;
   const now = nowISO();
   await client.from("work_chapters").upsert({
     id: chapter.id,
     user_id: userId,
+    persona,
     course_id: chapter.courseId,
     title: chapter.title,
     deadline: chapter.deadline,
@@ -178,7 +181,7 @@ export async function sbCreateChapter(userId: string, chapter: CourseChapter) {
   });
 }
 
-export async function sbUpdateChapter(userId: string, chapterId: string, updates: Partial<CourseChapter>) {
+export async function sbUpdateChapter(userId: string, persona: Persona, chapterId: string, updates: Partial<CourseChapter>) {
   const client = sb();
   if (!client) return;
   await client.from("work_chapters").update({
@@ -186,24 +189,25 @@ export async function sbUpdateChapter(userId: string, chapterId: string, updates
     deadline: updates.deadline,
     estimate: updates.estimate,
     updated_at: nowISO(),
-  }).eq("user_id", userId).eq("id", chapterId);
+  }).eq("user_id", userId).eq("persona", persona).eq("id", chapterId);
 }
 
-export async function sbDeleteChapter(userId: string, chapterId: string) {
+export async function sbDeleteChapter(userId: string, persona: Persona, chapterId: string) {
   const client = sb();
   if (!client) return;
-  await client.from("work_chapters").delete().eq("user_id", userId).eq("id", chapterId);
+  await client.from("work_chapters").delete().eq("user_id", userId).eq("persona", persona).eq("id", chapterId);
 }
 
 // ── Milestones ────────────────────────────────────────────────────────────────
 
-export async function sbCreateMilestone(userId: string, milestone: CourseMilestone) {
+export async function sbCreateMilestone(userId: string, persona: Persona, milestone: CourseMilestone) {
   const client = sb();
   if (!client) return;
   const now = nowISO();
   await client.from("work_milestones").upsert({
     id: milestone.id,
     user_id: userId,
+    persona,
     chapter_id: milestone.chapterId,
     title: milestone.title,
     deadline: milestone.deadline,
@@ -217,7 +221,7 @@ export async function sbCreateMilestone(userId: string, milestone: CourseMilesto
   });
 }
 
-export async function sbUpdateMilestone(userId: string, milestoneId: string, updates: Partial<CourseMilestone>) {
+export async function sbUpdateMilestone(userId: string, persona: Persona, milestoneId: string, updates: Partial<CourseMilestone>) {
   const client = sb();
   if (!client) return;
   await client.from("work_milestones").update({
@@ -228,23 +232,24 @@ export async function sbUpdateMilestone(userId: string, milestoneId: string, upd
     notes: updates.notes,
     completed: updates.completed,
     updated_at: nowISO(),
-  }).eq("user_id", userId).eq("id", milestoneId);
+  }).eq("user_id", userId).eq("persona", persona).eq("id", milestoneId);
 }
 
-export async function sbDeleteMilestone(userId: string, milestoneId: string) {
+export async function sbDeleteMilestone(userId: string, persona: Persona, milestoneId: string) {
   const client = sb();
   if (!client) return;
-  await client.from("work_milestones").delete().eq("user_id", userId).eq("id", milestoneId);
+  await client.from("work_milestones").delete().eq("user_id", userId).eq("persona", persona).eq("id", milestoneId);
 }
 
 // ── Contacts ──────────────────────────────────────────────────────────────────
 
-export async function sbCreateContact(userId: string, contact: WorkContact) {
+export async function sbCreateContact(userId: string, persona: Persona, contact: WorkContact) {
   const client = sb();
   if (!client) return;
   await client.from("work_contacts").upsert({
     id: contact.id,
     user_id: userId,
+    persona,
     name: contact.name,
     status: contact.status,
     phone: contact.phone,
@@ -259,7 +264,7 @@ export async function sbCreateContact(userId: string, contact: WorkContact) {
   });
 }
 
-export async function sbUpdateContact(userId: string, contactId: string, updates: Partial<WorkContact>) {
+export async function sbUpdateContact(userId: string, persona: Persona, contactId: string, updates: Partial<WorkContact>) {
   const client = sb();
   if (!client) return;
   await client.from("work_contacts").update({
@@ -273,17 +278,18 @@ export async function sbUpdateContact(userId: string, contactId: string, updates
     notes: updates.notes,
     archived_at: updates.archivedAt,
     updated_at: updates.updatedAt ?? nowISO(),
-  }).eq("user_id", userId).eq("id", contactId);
+  }).eq("user_id", userId).eq("persona", persona).eq("id", contactId);
 }
 
 // ── Projects ──────────────────────────────────────────────────────────────────
 
-export async function sbCreateProject(userId: string, project: WorkProject) {
+export async function sbCreateProject(userId: string, persona: Persona, project: WorkProject) {
   const client = sb();
   if (!client) return;
   await client.from("work_projects").upsert({
     id: project.id,
     user_id: userId,
+    persona,
     contact_id: project.contactId,
     title: project.title,
     status: project.status,
@@ -296,7 +302,7 @@ export async function sbCreateProject(userId: string, project: WorkProject) {
   });
 }
 
-export async function sbUpdateProject(userId: string, projectId: string, updates: Partial<WorkProject>) {
+export async function sbUpdateProject(userId: string, persona: Persona, projectId: string, updates: Partial<WorkProject>) {
   const client = sb();
   if (!client) return;
   await client.from("work_projects").update({
@@ -308,5 +314,5 @@ export async function sbUpdateProject(userId: string, projectId: string, updates
     contact_id: updates.contactId,
     archived_at: updates.archivedAt,
     updated_at: updates.updatedAt ?? nowISO(),
-  }).eq("user_id", userId).eq("id", projectId);
+  }).eq("user_id", userId).eq("persona", persona).eq("id", projectId);
 }
