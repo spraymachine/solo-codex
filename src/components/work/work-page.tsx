@@ -2,20 +2,23 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
+import { usePersonaStore } from "@/lib/stores/persona-store";
 import { useWorkStore } from "@/lib/stores/work-store";
 import { CoursesSection } from "./courses-section";
 import { WorkListsSection } from "./work-lists-section";
 
 export function WorkPage() {
+  const activePersona = usePersonaStore((state) => state.activePersona);
   const loaded = useWorkStore((state) => state.loaded);
+  const loadedPersona = useWorkStore((state) => state._persona);
   const load = useWorkStore((state) => state.load);
 
   const unsubscribe = useWorkStore((state) => state.unsubscribe);
 
   useEffect(() => {
-    if (!loaded) void load();
+    if (!loaded || loadedPersona !== activePersona) void load(activePersona);
     return () => { void unsubscribe(); };
-  }, [load, loaded, unsubscribe]);
+  }, [activePersona, load, loaded, loadedPersona, unsubscribe]);
 
   return (
     <div className="min-h-screen text-[var(--text-primary)]">
