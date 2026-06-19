@@ -916,6 +916,7 @@ export default function HomePage() {
   const profile = usePlayerStore((state) => state.profile);
 
   const workLoaded = useWorkStore((state) => state.loaded);
+  const workLoadedPersona = useWorkStore((state) => state._persona);
   const workLoad = useWorkStore((state) => state.load);
   const workCourses = useWorkStore((state) => state.courses);
   const workChapters = useWorkStore((state) => state.chapters);
@@ -923,8 +924,8 @@ export default function HomePage() {
   const workMilestones = useWorkStore((state) => state.milestones);
 
   useEffect(() => {
-    if (!workLoaded) void workLoad();
-  }, [workLoaded, workLoad]);
+    if (!workLoaded || workLoadedPersona !== activePersona) void workLoad(activePersona);
+  }, [activePersona, workLoaded, workLoadedPersona, workLoad]);
 
   const [todoDraft, setTodoDraft] = useState("");
   const [gratitudeDraft, setGratitudeDraft] = useState("");
