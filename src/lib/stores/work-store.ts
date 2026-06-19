@@ -3,7 +3,7 @@
 import { create } from "zustand";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { getDb } from "@/lib/db/database";
-import { getWorkDb } from "@/lib/db/work-database";
+import { getLegacyWorkDb, getWorkDb } from "@/lib/db/work-database";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import type { ParseCoursePlanResult } from "@/lib/work/course-parser";
@@ -11,6 +11,7 @@ import type {
   CourseChapter,
   CourseMilestone,
   CourseStatus,
+  Persona,
   WorkContact,
   WorkContactStatus,
   WorkCourse,
@@ -71,8 +72,9 @@ interface WorkState {
   milestones: CourseMilestone[];
   loaded: boolean;
   _userId: string | null;
+  _persona: Persona | null;
   _realtimeChannel: RealtimeChannel | null;
-  load: () => Promise<void>;
+  load: (persona: Persona) => Promise<void>;
   unsubscribe: () => Promise<void>;
   createContact: (input: ContactInput) => Promise<WorkContact>;
   updateContact: (id: string, updates: Partial<ContactInput>) => Promise<void>;
@@ -145,6 +147,54 @@ async function migrateLegacyLeadsIfEmpty() {
   await migrationPromise;
 }
 
+// One-time local migration: before this change, Work had a single Dexie
+// database shared by both personas. Existing combined data is assigned to
+// Mani (see docs/superpowers/specs/2026-06-19-persona-segregation-work-read-design.md).
+// Harti's persona-keyed database starts empty. This only matters for the
+// unauthenticated/offline fallback path — authenticated users get the
+// equivalent backfill for free from the Supabase `persona` column default.
+let workMigrationPromise: Promise<void> | null = null;
+
+async function runLegacyWorkMigration(userId: string | undefined) {
+  const maniDb = getWorkDb(userId, "mani");
+  const existingCount =
+    (await maniDb.courses.count()) +
+    (await maniDb.contacts.count()) +
+    (await maniDb.projects.count());
+  if (existingCount > 0) return;
+
+  const legacyDb = getLegacyWorkDb(userId);
+  const [courses, chapters, milestones, contacts, projects] = await Promise.all([
+    legacyDb.courses.toArray(),
+    legacyDb.chapters.toArray(),
+    legacyDb.milestones.toArray(),
+    legacyDb.contacts.toArray(),
+    legacyDb.projects.toArray(),
+  ]);
+  if (courses.length + chapters.length + milestones.length + contacts.length + projects.length === 0) {
+    return;
+  }
+
+  await maniDb.transaction(
+    "rw",
+    [maniDb.courses, maniDb.chapters, maniDb.milestones, maniDb.contacts, maniDb.projects],
+    async () => {
+      if (courses.length) await maniDb.courses.bulkAdd(courses);
+      if (chapters.length) await maniDb.chapters.bulkAdd(chapters);
+      if (milestones.length) await maniDb.milestones.bulkAdd(milestones);
+      if (contacts.length) await maniDb.contacts.bulkAdd(contacts);
+      if (projects.length) await maniDb.projects.bulkAdd(projects);
+    },
+  );
+}
+
+async function migrateLegacyWorkDbIfEmpty(userId: string | undefined) {
+  workMigrationPromise ??= runLegacyWorkMigration(userId).finally(() => {
+    workMigrationPromise = null;
+  });
+  await workMigrationPromise;
+}
+
 // Fire-and-forget Supabase sync — never throws, never blocks UI
 async function syncToSupabase(fn: (userId: string) => Promise<void>) {
   try {
@@ -158,11 +208,12 @@ async function syncToSupabase(fn: (userId: string) => Promise<void>) {
 
 async function refreshFromRemote(
   userId: string,
+  persona: Persona,
   set: (partial: Partial<WorkState>) => void,
 ) {
-  const remote = await fetchAllWork(userId);
+  const remote = await fetchAllWork(userId, persona);
   if (!remote) return;
-  const db = getWorkDb(userId);
+  const db = getWorkDb(userId, persona);
   await db.transaction("rw", [db.courses, db.chapters, db.milestones, db.contacts, db.projects], async () => {
     await Promise.all([
       db.courses.bulkPut(remote.courses),
@@ -182,7 +233,7 @@ async function refreshFromRemote(
 }
 
 export const useWorkStore = create<WorkState>((set, get) => {
-  const db = () => getWorkDb(get()._userId ?? undefined);
+  const db = () => getWorkDb(get()._userId ?? undefined, get()._persona ?? "mani");
   return ({
   contacts: [],
   projects: [],
@@ -191,6 +242,7 @@ export const useWorkStore = create<WorkState>((set, get) => {
   milestones: [],
   loaded: false,
   _userId: null,
+  _persona: null,
   _realtimeChannel: null,
 
   async unsubscribe() {
@@ -202,25 +254,31 @@ export const useWorkStore = create<WorkState>((set, get) => {
     }
   },
 
-  async load() {
+  async load(persona) {
+    const personaChanged = get()._persona !== persona;
+    set({ _persona: persona });
+    if (personaChanged) {
+      await get().unsubscribe();
+    }
+
     // Try Supabase first — if authenticated, use as source of truth
     try {
       const userId = await getWorkUserId();
       if (userId) {
         set({ _userId: userId });
-        await refreshFromRemote(userId, set);
+        await refreshFromRemote(userId, persona, set);
         set({ loaded: true });
 
         // Subscribe to realtime updates across all 5 tables
         const client = getSupabaseBrowserClient();
         if (client && isSupabaseConfigured() && !get()._realtimeChannel) {
           const tables = ["work_courses", "work_chapters", "work_milestones", "work_contacts", "work_projects"];
-          let channel = client.channel(`work:${userId}`);
+          let channel = client.channel(`work:${userId}:${persona}`);
           for (const table of tables) {
             channel = channel.on(
               "postgres_changes" as any,
               { event: "*", schema: "public", table, filter: `user_id=eq.${userId}` },
-              () => { void refreshFromRemote(userId, set); },
+              () => { void refreshFromRemote(userId, persona, set); },
             );
           }
           channel.subscribe();
@@ -233,8 +291,11 @@ export const useWorkStore = create<WorkState>((set, get) => {
     }
 
     // Fallback: local Dexie (unauthenticated / offline only)
-    await migrateLegacyLeadsIfEmpty();
-    const localDb = getWorkDb(); // "SoloWorkDB-local"
+    if (persona === "mani") {
+      await migrateLegacyWorkDbIfEmpty(get()._userId ?? undefined);
+      await migrateLegacyLeadsIfEmpty();
+    }
+    const localDb = getWorkDb(get()._userId ?? undefined, persona);
     const [contacts, projects, courses, chapters, milestones] = await Promise.all([
       localDb.contacts.toArray(),
       localDb.projects.toArray(),
@@ -257,7 +318,8 @@ export const useWorkStore = create<WorkState>((set, get) => {
     const contact: WorkContact = { id: generateId(), archivedAt: null, createdAt: now, updatedAt: now, ...input };
     await db().contacts.add(contact);
     set((state) => ({ contacts: [contact, ...state.contacts] }));
-    void syncToSupabase((uid) => sbCreateContact(uid, contact));
+    const persona = get()._persona ?? "mani";
+    void syncToSupabase((uid) => sbCreateContact(uid, persona, contact));
     return contact;
   },
 
@@ -265,7 +327,8 @@ export const useWorkStore = create<WorkState>((set, get) => {
     const next = { ...updates, updatedAt: nowISO() };
     await db().contacts.update(id, next);
     set((state) => ({ contacts: state.contacts.map((c) => (c.id === id ? { ...c, ...next } : c)) }));
-    void syncToSupabase((uid) => sbUpdateContact(uid, id, next));
+    const persona = get()._persona ?? "mani";
+    void syncToSupabase((uid) => sbUpdateContact(uid, persona, id, next));
   },
 
   async archiveContact(id) {
@@ -273,7 +336,8 @@ export const useWorkStore = create<WorkState>((set, get) => {
     const next = { archivedAt, status: "archived" as const, updatedAt: archivedAt };
     await db().contacts.update(id, next);
     set((state) => ({ contacts: state.contacts.map((c) => (c.id === id ? { ...c, ...next } : c)) }));
-    void syncToSupabase((uid) => sbUpdateContact(uid, id, next));
+    const persona = get()._persona ?? "mani";
+    void syncToSupabase((uid) => sbUpdateContact(uid, persona, id, next));
   },
 
   async createProject(input) {
@@ -284,7 +348,8 @@ export const useWorkStore = create<WorkState>((set, get) => {
     const project: WorkProject = { id: generateId(), archivedAt: null, createdAt: now, updatedAt: now, ...input };
     await db().projects.add(project);
     set((state) => ({ projects: [project, ...state.projects] }));
-    void syncToSupabase((uid) => sbCreateProject(uid, project));
+    const persona = get()._persona ?? "mani";
+    void syncToSupabase((uid) => sbCreateProject(uid, persona, project));
     return project;
   },
 
@@ -297,7 +362,8 @@ export const useWorkStore = create<WorkState>((set, get) => {
     const next = { ...updates, updatedAt: nowISO() };
     await db().projects.update(id, next);
     set((state) => ({ projects: state.projects.map((p) => (p.id === id ? { ...p, ...next } : p)) }));
-    void syncToSupabase((uid) => sbUpdateProject(uid, id, next));
+    const persona = get()._persona ?? "mani";
+    void syncToSupabase((uid) => sbUpdateProject(uid, persona, id, next));
   },
 
   async archiveProject(id) {
@@ -305,7 +371,8 @@ export const useWorkStore = create<WorkState>((set, get) => {
     const next = { archivedAt, status: "archived" as const, updatedAt: archivedAt };
     await db().projects.update(id, next);
     set((state) => ({ projects: state.projects.map((p) => (p.id === id ? { ...p, ...next } : p)) }));
-    void syncToSupabase((uid) => sbUpdateProject(uid, id, next));
+    const persona = get()._persona ?? "mani";
+    void syncToSupabase((uid) => sbUpdateProject(uid, persona, id, next));
   },
 
   async saveParsedCourse(parsed) {
@@ -362,10 +429,11 @@ export const useWorkStore = create<WorkState>((set, get) => {
       milestones: [...state.milestones, ...milestones],
     }));
 
+    const persona = get()._persona ?? "mani";
     void syncToSupabase(async (uid) => {
-      await sbCreateCourse(uid, course);
-      await Promise.all(chapters.map((ch) => sbCreateChapter(uid, ch)));
-      await Promise.all(milestones.map((m) => sbCreateMilestone(uid, m)));
+      await sbCreateCourse(uid, persona, course);
+      await Promise.all(chapters.map((ch) => sbCreateChapter(uid, persona, ch)));
+      await Promise.all(milestones.map((m) => sbCreateMilestone(uid, persona, m)));
     });
 
     return course;
@@ -386,7 +454,8 @@ export const useWorkStore = create<WorkState>((set, get) => {
     };
     await db().courses.add(course);
     set((state) => ({ courses: [course, ...state.courses] }));
-    void syncToSupabase((uid) => sbCreateCourse(uid, course));
+    const persona = get()._persona ?? "mani";
+    void syncToSupabase((uid) => sbCreateCourse(uid, persona, course));
     return course;
   },
 
@@ -402,7 +471,8 @@ export const useWorkStore = create<WorkState>((set, get) => {
     };
     await db().chapters.add(chapter);
     set((state) => ({ chapters: [...state.chapters, chapter] }));
-    void syncToSupabase((uid) => sbCreateChapter(uid, chapter));
+    const persona = get()._persona ?? "mani";
+    void syncToSupabase((uid) => sbCreateChapter(uid, persona, chapter));
     return chapter;
   },
 
@@ -421,32 +491,37 @@ export const useWorkStore = create<WorkState>((set, get) => {
     };
     await db().milestones.add(milestone);
     set((state) => ({ milestones: [...state.milestones, milestone] }));
-    void syncToSupabase((uid) => sbCreateMilestone(uid, milestone));
+    const persona = get()._persona ?? "mani";
+    void syncToSupabase((uid) => sbCreateMilestone(uid, persona, milestone));
     return milestone;
   },
 
   async toggleMilestone(id, completed) {
     await db().milestones.update(id, { completed });
     set((state) => ({ milestones: state.milestones.map((m) => (m.id === id ? { ...m, completed } : m)) }));
-    void syncToSupabase((uid) => sbUpdateMilestone(uid, id, { completed }));
+    const persona = get()._persona ?? "mani";
+    void syncToSupabase((uid) => sbUpdateMilestone(uid, persona, id, { completed }));
   },
 
   async updateMilestone(id, updates) {
     await db().milestones.update(id, updates);
     set((state) => ({ milestones: state.milestones.map((m) => (m.id === id ? { ...m, ...updates } : m)) }));
-    void syncToSupabase((uid) => sbUpdateMilestone(uid, id, updates));
+    const persona = get()._persona ?? "mani";
+    void syncToSupabase((uid) => sbUpdateMilestone(uid, persona, id, updates));
   },
 
   async deleteMilestone(id) {
     await db().milestones.delete(id);
     set((state) => ({ milestones: state.milestones.filter((m) => m.id !== id) }));
-    void syncToSupabase((uid) => sbDeleteMilestone(uid, id));
+    const persona = get()._persona ?? "mani";
+    void syncToSupabase((uid) => sbDeleteMilestone(uid, persona, id));
   },
 
   async updateChapter(id, updates) {
     await db().chapters.update(id, updates);
     set((state) => ({ chapters: state.chapters.map((c) => (c.id === id ? { ...c, ...updates } : c)) }));
-    void syncToSupabase((uid) => sbUpdateChapter(uid, id, updates));
+    const persona = get()._persona ?? "mani";
+    void syncToSupabase((uid) => sbUpdateChapter(uid, persona, id, updates));
   },
 
   async deleteChapter(id) {
@@ -459,9 +534,10 @@ export const useWorkStore = create<WorkState>((set, get) => {
       chapters: state.chapters.filter((c) => c.id !== id),
       milestones: state.milestones.filter((m) => m.chapterId !== id),
     }));
+    const persona = get()._persona ?? "mani";
     void syncToSupabase(async (uid) => {
-      await Promise.all(milestoneIds.map((mid) => sbDeleteMilestone(uid, mid)));
-      await sbDeleteChapter(uid, id);
+      await Promise.all(milestoneIds.map((mid) => sbDeleteMilestone(uid, persona, mid)));
+      await sbDeleteChapter(uid, persona, id);
     });
   },
 
@@ -469,7 +545,8 @@ export const useWorkStore = create<WorkState>((set, get) => {
     const updatedAt = nowISO();
     await db().courses.update(id, { ...updates, updatedAt });
     set((state) => ({ courses: state.courses.map((c) => (c.id === id ? { ...c, ...updates, updatedAt } : c)) }));
-    void syncToSupabase((uid) => sbUpdateCourse(uid, id, { ...updates, updatedAt }));
+    const persona = get()._persona ?? "mani";
+    void syncToSupabase((uid) => sbUpdateCourse(uid, persona, id, { ...updates, updatedAt }));
   },
 
   async deleteCourse(id) {
@@ -488,8 +565,8 @@ export const useWorkStore = create<WorkState>((set, get) => {
       chapters: state.chapters.filter((c) => !chapterIds.includes(c.id)),
       milestones: state.milestones.filter((m) => !milestoneIds.includes(m.id)),
     }));
-    // Supabase cascades chapters + milestones on course delete (FK on delete cascade)
-    void syncToSupabase((uid) => sbDeleteCourse(uid, id));
+    const persona = get()._persona ?? "mani";
+    void syncToSupabase((uid) => sbDeleteCourse(uid, persona, id));
   },
 });
 });
