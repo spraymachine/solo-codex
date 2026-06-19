@@ -1,21 +1,25 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { getDb } from "@/lib/db/database";
-import { resetWorkDbForTests } from "@/lib/db/work-database";
+import { getLegacyWorkDb, resetWorkDbForTests } from "@/lib/db/work-database";
 import { useWorkStore } from "@/lib/stores/work-store";
+
+function resetWorkStoreState() {
+  useWorkStore.setState({
+    contacts: [],
+    projects: [],
+    courses: [],
+    chapters: [],
+    milestones: [],
+    loaded: false,
+  });
+}
 
 describe("work store", () => {
   beforeEach(async () => {
     await resetWorkDbForTests();
     await getDb("mani").leads.clear();
     await getDb("harti").leads.clear();
-    useWorkStore.setState({
-      contacts: [],
-      projects: [],
-      courses: [],
-      chapters: [],
-      milestones: [],
-      loaded: false,
-    });
+    resetWorkStoreState();
   });
 
   afterEach(async () => {
@@ -152,13 +156,13 @@ describe("work store", () => {
       createdAt: "2026-06-04T00:00:00.000Z",
     });
 
-    await useWorkStore.getState().load();
+    await useWorkStore.getState().load("mani");
 
     expect(useWorkStore.getState().contacts).toHaveLength(1);
     expect(useWorkStore.getState().contacts[0].name).toBe("Apex Fitness");
     expect(useWorkStore.getState().contacts[0].email).toBe("apex@example.com");
 
-    await useWorkStore.getState().load();
+    await useWorkStore.getState().load("mani");
     expect(useWorkStore.getState().contacts).toHaveLength(1);
   });
 
@@ -188,7 +192,7 @@ describe("work store", () => {
       createdAt: "2026-06-06T00:00:00.000Z",
     });
 
-    await useWorkStore.getState().load();
+    await useWorkStore.getState().load("mani");
 
     expect(useWorkStore.getState().contacts.map((contact) => contact.name)).toEqual([
       "Studio Set Go",
@@ -206,8 +210,61 @@ describe("work store", () => {
       createdAt: "2026-06-04T00:00:00.000Z",
     });
 
-    await Promise.all([useWorkStore.getState().load(), useWorkStore.getState().load()]);
+    await Promise.all([useWorkStore.getState().load("mani"), useWorkStore.getState().load("mani")]);
 
     expect(useWorkStore.getState().contacts).toHaveLength(1);
+  });
+
+  it("migrates existing combined work data to Mani only, leaving Harti empty", async () => {
+    const legacyDb = getLegacyWorkDb();
+    await legacyDb.contacts.add({
+      id: "legacy-contact-1",
+      name: "Old Shared Client",
+      status: "client",
+      phone: "",
+      phoneLabel: "",
+      phone2: "",
+      phone2Label: "",
+      email: "old@example.com",
+      notes: "",
+      archivedAt: null,
+      createdAt: "2026-06-01T00:00:00.000Z",
+      updatedAt: "2026-06-01T00:00:00.000Z",
+    });
+
+    await useWorkStore.getState().load("mani");
+    expect(useWorkStore.getState().contacts.map((c) => c.name)).toEqual(["Old Shared Client"]);
+
+    resetWorkStoreState();
+    await useWorkStore.getState().load("harti");
+    expect(useWorkStore.getState().contacts).toEqual([]);
+  });
+
+  it("keeps Mani and Harti work data isolated", async () => {
+    await useWorkStore.getState().load("mani");
+    const maniContact = await useWorkStore.getState().createContact({
+      name: "Mani's Client",
+      status: "client",
+      phone: "", email: "", notes: "",
+      phoneLabel: "", phone2: "", phone2Label: "",
+    });
+    expect(useWorkStore.getState().contacts).toHaveLength(1);
+
+    resetWorkStoreState();
+    await useWorkStore.getState().load("harti");
+    expect(useWorkStore.getState().contacts).toHaveLength(0);
+
+    const hartiContact = await useWorkStore.getState().createContact({
+      name: "Harti's Client",
+      status: "lead",
+      phone: "", email: "", notes: "",
+      phoneLabel: "", phone2: "", phone2Label: "",
+    });
+    expect(useWorkStore.getState().contacts).toHaveLength(1);
+    expect(hartiContact.id).not.toBe(maniContact.id);
+
+    resetWorkStoreState();
+    await useWorkStore.getState().load("mani");
+    expect(useWorkStore.getState().contacts.map((c) => c.id)).toEqual([maniContact.id]);
   });
 });
