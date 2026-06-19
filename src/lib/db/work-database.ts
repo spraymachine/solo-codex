@@ -2,6 +2,7 @@ import Dexie, { type EntityTable } from "dexie";
 import type {
   CourseChapter,
   CourseMilestone,
+  Persona,
   WorkContact,
   WorkCourse,
   WorkProject,
@@ -28,16 +29,29 @@ class SoloWorkDB extends Dexie {
 
 const workDbCache = new Map<string, SoloWorkDB>();
 
-export function getWorkDatabaseName(userId?: string) {
-  return userId ? `SoloWorkDB-${userId}` : "SoloWorkDB-local";
-}
-
-export function getWorkDb(userId?: string) {
-  const name = getWorkDatabaseName(userId);
+function openWorkDb(name: string) {
   if (!workDbCache.has(name)) {
     workDbCache.set(name, new SoloWorkDB(name));
   }
   return workDbCache.get(name)!;
+}
+
+export function getWorkDatabaseName(userId?: string, persona: Persona = "mani") {
+  return `SoloWorkDB-${userId ?? "local"}-${persona}`;
+}
+
+export function getWorkDb(userId?: string, persona: Persona = "mani") {
+  return openWorkDb(getWorkDatabaseName(userId, persona));
+}
+
+// Pre-persona-segregation database name. Used only by the one-time
+// migration in work-store.ts that copies existing combined data to Mani.
+export function getLegacyWorkDatabaseName(userId?: string) {
+  return userId ? `SoloWorkDB-${userId}` : "SoloWorkDB-local";
+}
+
+export function getLegacyWorkDb(userId?: string) {
+  return openWorkDb(getLegacyWorkDatabaseName(userId));
 }
 
 export async function resetWorkDbForTests() {
@@ -46,8 +60,4 @@ export async function resetWorkDbForTests() {
     db.close();
     workDbCache.delete(name);
   }
-  // Also nuke any lingering unnamed instance
-  const db = new SoloWorkDB(getWorkDatabaseName());
-  await db.delete();
-  db.close();
 }
