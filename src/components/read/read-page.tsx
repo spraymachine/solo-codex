@@ -569,18 +569,17 @@ export function ReadPage() {
 
           {/* Search row */}
           <div className="flex items-center gap-2">
-            <div className="flex flex-1 items-center gap-2.5 rounded-xl border border-[var(--surface-border)] bg-[var(--bg-panel)] px-4 transition-colors duration-200 focus-within:border-[var(--accent-solid)]">
+            <div className="flex flex-1 items-center gap-2.5 bg-[var(--bg-panel)] px-4 transition-colors duration-200 md:max-w-[33%]">
               <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" className="shrink-0 text-[var(--text-secondary)]">
                 <circle cx="6.5" cy="6.5" r="5" />
                 <line x1="10.5" y1="10.5" x2="14" y2="14" />
               </svg>
               <input
                 type="text"
-                placeholder="Look up a word and save it directly"
                 value={textInput}
                 onChange={(e) => setTextInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") void handleTextSearch(); }}
-                className="flex-1 bg-transparent py-3 text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-secondary)]"
+                className="flex-1 border-0 bg-transparent! py-3 text-sm text-[var(--text-primary)] shadow-none! outline-none focus:bg-transparent! focus:shadow-none! placeholder:text-[var(--text-secondary)]"
               />
             </div>
             <ActionButton onClick={() => void handleTextSearch()} disabled={searching || !textInput.trim()} className="h-11 px-5">
@@ -746,7 +745,7 @@ export function ReadPage() {
             <p className="font-[family-name:var(--font-display)] text-[0.625rem] font-bold uppercase tracking-[0.28em] text-[var(--text-secondary)]">
               02 / Ledger
             </p>
-            <h2 className="mt-1 font-[family-name:var(--font-display)] text-3xl font-bold uppercase tracking-[0.03em] text-[var(--text-primary)] md:text-4xl">
+            <h2 className="mt-1 font-[family-name:var(--font-display)] text-2xl font-bold uppercase tracking-[0.03em] text-[var(--text-primary)] sm:text-3xl md:text-4xl">
               Saved words
             </h2>
           </div>
@@ -756,17 +755,16 @@ export function ReadPage() {
         </div>
 
         {records.length > 0 && (
-          <div className="mb-5 flex items-center gap-2.5 rounded-xl border border-[var(--surface-border)] bg-[var(--bg-panel)] px-4 transition-colors duration-200 focus-within:border-[var(--accent-solid)]">
+          <div className="mb-5 flex items-center gap-2.5 bg-[var(--bg-panel)] px-4 transition-colors duration-200 md:max-w-[33%]">
             <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" className="shrink-0 text-[var(--text-secondary)]">
               <circle cx="6.5" cy="6.5" r="5" />
               <line x1="10.5" y1="10.5" x2="14" y2="14" />
             </svg>
             <input
               type="text"
-              placeholder="Filter saved words…"
               value={filterQuery}
               onChange={(e) => setFilterQuery(e.target.value)}
-              className="flex-1 bg-transparent py-2.5 text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-secondary)]"
+              className="flex-1 border-0 bg-transparent! py-2.5 text-sm text-[var(--text-primary)] shadow-none! outline-none focus:bg-transparent! focus:shadow-none! placeholder:text-[var(--text-secondary)]"
             />
             {filterQuery && (
               <button

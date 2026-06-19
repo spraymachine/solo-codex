@@ -27,7 +27,7 @@ function groupRecords(records: ReadRecord[]) {
 
 function RecordCard({ record, onDelete }: { record: ReadRecord; onDelete: (id: string) => void }) {
   return (
-    <div className="relative flex flex-col overflow-hidden rounded-xl border border-[var(--surface-border)] bg-[var(--bg-panel)] p-4">
+    <div className="relative flex flex-col overflow-hidden rounded-xl border border-[var(--surface-border)] bg-[var(--bg-panel)] p-3 sm:p-4">
       <button
         type="button"
         onClick={() => onDelete(record.id)}
@@ -37,23 +37,25 @@ function RecordCard({ record, onDelete }: { record: ReadRecord; onDelete: (id: s
         ×
       </button>
 
-      <Link
-        href={`/word?id=${record.id}`}
-        className="mb-1 block text-4xl font-bold leading-none text-[var(--accent-soft)] transition-colors hover:text-[var(--accent-solid)]"
-      >
-        {record.word}
-      </Link>
+      <div className="mb-4 flex flex-wrap items-baseline gap-x-2 sm:mb-1">
+        <Link
+          href={`/word?id=${record.id}`}
+          className="block text-2xl font-bold leading-none text-[var(--accent-soft)] transition-colors hover:text-[var(--accent-solid)] sm:text-3xl md:text-4xl"
+        >
+          {record.word}
+        </Link>
 
-      {record.partOfSpeech && (
-        <p className="mb-2 text-xs italic text-[var(--text-secondary)]">{record.partOfSpeech}</p>
-      )}
+        {record.partOfSpeech && (
+          <span className="text-xs italic text-[var(--text-secondary)]">{record.partOfSpeech}</span>
+        )}
+      </div>
 
-      <p className={`mb-1 text-[15px] italic leading-snug text-[var(--accent-soft)] ${record.myDefinition ? "" : "invisible"}`}>
+      <p className={`mb-1 text-sm italic leading-snug text-[var(--accent-soft)] sm:text-[15px] ${record.myDefinition ? "" : "hidden sm:block sm:invisible"}`}>
         {record.myDefinition || " "}
       </p>
 
       {record.definition && (
-        <p className="text-[15px] leading-snug text-[var(--text-primary)]">{record.definition}</p>
+        <p className="text-sm leading-snug text-[var(--text-primary)] sm:text-[15px]">{record.definition}</p>
       )}
 
       {record.synonyms.length > 0 && (
@@ -102,7 +104,7 @@ export function ReadRecordList({ records, onDelete }: ReadRecordListProps) {
               {items.length}
             </span>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {items.map((record) => (
               <RecordCard key={record.id} record={record} onDelete={onDelete} />
             ))}
