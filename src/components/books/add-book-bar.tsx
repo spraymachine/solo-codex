@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useBooksStore } from "@/lib/stores/books-store";
+import { searchGoogleBooks } from "@/lib/books/search";
 import type { BookSearchResult } from "@/lib/books/types";
 import type { BookShelf } from "@/lib/types";
 
@@ -10,17 +11,20 @@ export function AddBookBar() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<BookSearchResult[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [collapsed, setCollapsed] = useState(false);
 
   async function search() {
     const q = query.trim();
     if (!q) return;
     setLoading(true);
+    setError(null);
+    setCollapsed(false);
     try {
-      const res = await fetch(`/api/books/search?q=${encodeURIComponent(q)}`);
-      const data = (await res.json()) as { results: BookSearchResult[] };
-      setResults(data.results ?? []);
+      setResults(await searchGoogleBooks(q));
     } catch {
       setResults([]);
+      setError("Couldn't reach Google Books. Try again.");
     } finally {
       setLoading(false);
     }
@@ -58,8 +62,23 @@ export function AddBookBar() {
         </button>
       </div>
 
+      {error && <p className="mt-2 text-xs text-red-500">{error}</p>}
+
       {results.length > 0 && (
-        <div className="mt-3 space-y-2">
+        <div className="mt-3">
+          <button
+            type="button"
+            onClick={() => setCollapsed((c) => !c)}
+            className="flex w-full items-center justify-between text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+          >
+            <span>{results.length} result{results.length === 1 ? "" : "s"}</span>
+            <span>{collapsed ? "Show" : "Hide"}</span>
+          </button>
+        </div>
+      )}
+
+      {results.length > 0 && !collapsed && (
+        <div className="mt-2 space-y-2">
           {results.map((r) => (
             <div key={r.volumeId} className="flex items-center gap-3 rounded-lg border border-[var(--surface-border)] bg-[var(--bg-panel)] p-2">
               {r.coverUrl ? (

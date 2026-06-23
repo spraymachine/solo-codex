@@ -37,14 +37,9 @@ interface SelectedWord {
   loading: boolean;
 }
 
-const sourceOptions: Array<{ value: ReadSourceType; label: string }> = [
-  { value: "book", label: "Book" },
-  { value: "note", label: "Note" },
-  { value: "newspaper", label: "Newspaper" },
-  { value: "other", label: "Other" },
-];
+const baseSources: ReadSourceType[] = ["book", "note", "newspaper", "other"];
 
-/* ---------- Dashboard-schema primitives ---------- */
+/* ---------- primitives ---------- */
 
 function Label({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
@@ -114,7 +109,7 @@ function GhostButton({
   );
 }
 
-/* ---------- Image helpers (unchanged) ---------- */
+/* ---------- image helpers ---------- */
 
 function loadImage(file: File) {
   return new Promise<HTMLImageElement>((resolve, reject) => {
@@ -166,7 +161,7 @@ async function readImageWithOcrSpace(file: File) {
   return parseOcrSpaceWords(await response.json());
 }
 
-/* ---------- Word queue ---------- */
+/* ---------- word queue ---------- */
 
 function WordQueue({
   words,
@@ -190,17 +185,12 @@ function WordQueue({
 
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-xl border border-[var(--surface-border)] bg-[var(--bg-panel)]">
-      {/* Header */}
       <div className="flex items-center justify-between border-b border-[var(--surface-border)] bg-[var(--bg-panel-strong)] px-5 py-3.5">
         <div className="flex items-center gap-2.5">
           <Label>Queue</Label>
-          <span className="font-mono text-xs tabular-nums text-[var(--text-secondary)]">
-            {words.length}
-          </span>
+          <span className="font-mono text-xs tabular-nums text-[var(--text-secondary)]">{words.length}</span>
           {undefinedCount > 0 && (
-            <span className="font-mono text-[0.625rem] tabular-nums text-amber-500">
-              {undefinedCount} undefined
-            </span>
+            <span className="font-mono text-[0.625rem] tabular-nums text-amber-500">{undefinedCount} undefined</span>
           )}
         </div>
         {words.length > 0 && (
@@ -214,7 +204,6 @@ function WordQueue({
         )}
       </div>
 
-      {/* Body */}
       {words.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center px-6 py-12 text-center">
           <p className="font-[family-name:var(--font-display)] text-sm font-bold uppercase tracking-[0.1em] text-[var(--text-secondary)]">
@@ -258,20 +247,15 @@ function WordQueue({
                   rows={2}
                   className={cn(
                     "mt-2 w-full resize-none rounded-lg border bg-[var(--bg-secondary)] px-3 py-2 text-xs leading-5 text-[var(--text-primary)] outline-none transition-colors duration-200 focus:border-[var(--accent-solid)] placeholder:text-[var(--text-secondary)] disabled:opacity-50",
-                    !word.loading && !word.definition.trim()
-                      ? "border-amber-500/40"
-                      : "border-[var(--surface-border)]",
+                    !word.loading && !word.definition.trim() ? "border-amber-500/40" : "border-[var(--surface-border)]",
                   )}
                 />
               </div>
             ))}
           </div>
 
-          {/* Footer */}
           <div className="flex items-center justify-between gap-3 border-t border-[var(--surface-border)] bg-[var(--bg-panel-strong)] px-5 py-3">
-            <span className="hidden font-mono text-[0.625rem] text-[var(--text-secondary)] sm:inline">
-              ⌘↵ to save
-            </span>
+            <span className="hidden font-mono text-[0.625rem] text-[var(--text-secondary)] sm:inline">⌘↵ to save</span>
             <ActionButton onClick={onSave} disabled={saving || anyLoading} className="ml-auto">
               {saving ? "Saving…" : `Save to ${sourceType}`}
             </ActionButton>
@@ -282,7 +266,112 @@ function WordQueue({
   );
 }
 
-/* ---------- Page ---------- */
+/* ---------- study mode overlay ---------- */
+
+function StudyMode({
+  records,
+  onClose,
+}: {
+  records: Array<{ id: string; word: string; definition: string; partOfSpeech: string; myDefinition: string }>;
+  onClose: () => void;
+}) {
+  const deck = useMemo(() => {
+    const copy = [...records];
+    for (let i = copy.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [copy[i], copy[j]] = [copy[j], copy[i]];
+    }
+    return copy;
+  }, [records]);
+
+  const [index, setIndex] = useState(0);
+  const [flipped, setFlipped] = useState(false);
+  const [known, setKnown] = useState(0);
+
+  const card = deck[index];
+  const done = index >= deck.length;
+
+  function advance(gotIt: boolean) {
+    if (gotIt) setKnown((k) => k + 1);
+    setFlipped(false);
+    setIndex((i) => i + 1);
+  }
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+      else if (e.key === " ") { e.preventDefault(); setFlipped((f) => !f); }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col bg-[var(--bg-primary)]/95 backdrop-blur-sm">
+      <div className="flex items-center justify-between border-b border-[var(--surface-border)] px-5 py-4 md:px-8">
+        <Label>Study mode</Label>
+        <span className="font-mono text-xs tabular-nums text-[var(--text-secondary)]">
+          {done ? `${known}/${deck.length} known` : `${index + 1} / ${deck.length}`}
+        </span>
+        <button
+          type="button"
+          onClick={onClose}
+          className="text-sm font-medium uppercase tracking-[0.1em] text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]"
+        >
+          Close ✕
+        </button>
+      </div>
+
+      <div className="flex flex-1 items-center justify-center px-5 py-8">
+        {done ? (
+          <div className="text-center">
+            <p className="font-[family-name:var(--font-display)] text-5xl font-bold text-[var(--accent-soft)]">
+              {known}/{deck.length}
+            </p>
+            <p className="mt-3 text-sm text-[var(--text-secondary)]">Session complete.</p>
+            <ActionButton onClick={onClose} className="mt-6">Done</ActionButton>
+          </div>
+        ) : (
+          <div className="flex w-full max-w-xl flex-col items-center">
+            <button
+              type="button"
+              onClick={() => setFlipped((f) => !f)}
+              className="grid min-h-[320px] w-full place-items-center rounded-2xl border border-[var(--surface-border)] bg-[var(--bg-panel)] p-8 text-center transition-colors hover:border-[var(--accent-solid)]/40"
+            >
+              {!flipped ? (
+                <span className="font-[family-name:var(--font-display)] text-4xl font-bold text-[var(--accent-soft)] md:text-5xl">
+                  {card.word}
+                </span>
+              ) : (
+                <div>
+                  {card.partOfSpeech && (
+                    <p className="mb-3 text-sm italic text-[var(--text-secondary)]">({card.partOfSpeech})</p>
+                  )}
+                  {card.myDefinition && (
+                    <p className="mb-2 text-base italic leading-snug text-[var(--accent-soft)]">{card.myDefinition}</p>
+                  )}
+                  <p className="text-lg leading-snug text-[var(--text-primary)]">
+                    {card.definition || "No definition saved."}
+                  </p>
+                </div>
+              )}
+            </button>
+            <p className="mt-3 font-mono text-[0.625rem] uppercase tracking-[0.2em] text-[var(--text-secondary)] opacity-60">
+              Tap card or press space to flip
+            </p>
+
+            <div className="mt-6 flex w-full gap-3">
+              <GhostButton onClick={() => advance(false)} className="h-12 flex-1">✗ Again</GhostButton>
+              <ActionButton onClick={() => advance(true)} className="h-12 flex-1">✓ Got it</ActionButton>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ---------- page ---------- */
 
 export function ReadPage() {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -297,9 +386,7 @@ export function ReadPage() {
   const [captureState, setCaptureState] = useState<CaptureState>("idle");
   const [error, setError] = useState("");
   const [previewUrl, setPreviewUrl] = useState("");
-  const [imageMetrics, setImageMetrics] = useState({
-    naturalWidth: 0, naturalHeight: 0, displayWidth: 0, displayHeight: 0,
-  });
+  const [imageMetrics, setImageMetrics] = useState({ naturalWidth: 0, naturalHeight: 0, displayWidth: 0, displayHeight: 0 });
   const [ocrWords, setOcrWords] = useState<OcrWordBox[]>([]);
   const [selectedWords, setSelectedWords] = useState<SelectedWord[]>([]);
   const [saving, setSaving] = useState(false);
@@ -307,22 +394,29 @@ export function ReadPage() {
   const [searching, setSearching] = useState(false);
   const [flash, setFlash] = useState<string | null>(null);
   const [filterQuery, setFilterQuery] = useState("");
+  const [activeTag, setActiveTag] = useState<string>("all");
+  const [studyOpen, setStudyOpen] = useState(false);
 
-  const selectedBoxIds = useMemo(
-    () => new Set(selectedWords.map((w) => w.boxId)),
-    [selectedWords],
-  );
+  const selectedBoxIds = useMemo(() => new Set(selectedWords.map((w) => w.boxId)), [selectedWords]);
+
+  const tags = useMemo(() => {
+    const set = new Set<string>();
+    for (const r of records) set.add(r.sourceType);
+    return Array.from(set);
+  }, [records]);
 
   const filteredRecords = useMemo(() => {
     const q = filterQuery.trim().toLowerCase();
-    if (!q) return records;
-    return records.filter(
-      (r) =>
+    return records.filter((r) => {
+      if (activeTag !== "all" && r.sourceType !== activeTag) return false;
+      if (!q) return true;
+      return (
         r.word.toLowerCase().includes(q) ||
         r.definition.toLowerCase().includes(q) ||
-        r.partOfSpeech.toLowerCase().includes(q),
-    );
-  }, [records, filterQuery]);
+        r.partOfSpeech.toLowerCase().includes(q)
+      );
+    });
+  }, [records, filterQuery, activeTag]);
 
   function showFlash(msg: string) {
     setFlash(msg);
@@ -330,15 +424,11 @@ export function ReadPage() {
   }
 
   useEffect(() => { void loadRecords(activePersona); }, [activePersona, loadRecords]);
-
-  useEffect(() => {
-    return () => { if (previewUrl) URL.revokeObjectURL(previewUrl); };
-  }, [previewUrl]);
+  useEffect(() => () => { if (previewUrl) URL.revokeObjectURL(previewUrl); }, [previewUrl]);
 
   useEffect(() => {
     const image = imageRef.current;
     if (!image) return;
-
     function updateImageMetrics() {
       const el = imageRef.current;
       if (!el) return;
@@ -359,7 +449,6 @@ export function ReadPage() {
         return next;
       });
     }
-
     updateImageMetrics();
     const observer = new ResizeObserver(updateImageMetrics);
     observer.observe(image);
@@ -455,14 +544,12 @@ export function ReadPage() {
   async function handleTextSearch() {
     const word = textInput.trim();
     if (!word || searching) return;
-
     const existing = records.find((r) => r.word.toLowerCase() === word.toLowerCase());
     if (existing) {
       showFlash(`"${existing.word}" already in ledger`);
       setTextInput("");
       return;
     }
-
     setSearching(true);
     setTextInput("");
     const result = await fetchDictionaryDefinition(word);
@@ -480,42 +567,15 @@ export function ReadPage() {
     setSearching(false);
   }
 
-  const statusText =
-    captureState === "reading" ? "Reading…"
-    : captureState === "ready" ? `${ocrWords.length} words · ${selectedBoxIds.size} selected`
-    : captureState === "error" ? error
-    : "Ready";
+  const isCustomTag = !["book", "note", "newspaper"].includes(sourceType);
 
   return (
     <div className="min-h-screen text-[var(--text-primary)]">
-
-      {/* Flash */}
       {flash && (
-        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-lg border border-[var(--surface-border)] bg-[var(--bg-panel-strong)] px-4 py-2.5 text-xs font-medium text-[var(--text-primary)] shadow-[0_8px_32px_rgba(0,0,0,0.32)]">
+        <div className="fixed bottom-6 left-1/2 z-[60] -translate-x-1/2 rounded-lg border border-[var(--surface-border)] bg-[var(--bg-panel-strong)] px-4 py-2.5 text-xs font-medium text-[var(--text-primary)] shadow-[0_8px_32px_rgba(0,0,0,0.32)]">
           {flash}
         </div>
       )}
-
-      {/* Header */}
-      <header className="section-dots relative overflow-hidden border-b border-[var(--surface-border)] bg-[var(--bg-panel)]">
-        <div className="relative z-10 px-5 py-5 md:px-8 md:py-6">
-          <div className="flex items-center justify-between">
-            <Link
-              href="/"
-              className="inline-flex items-center gap-1.5 font-[family-name:var(--font-display)] text-xs font-bold uppercase tracking-[0.12em] text-[var(--text-secondary)] transition-colors hover:text-[var(--accent-soft)]"
-            >
-              ← Dashboard
-            </Link>
-            <span className="font-mono text-[0.625rem] uppercase tracking-[0.2em] text-[var(--accent-soft)]">
-              {personaMeta[activePersona].label} · private
-            </span>
-          </div>
-          <h1 className="mt-2 font-[family-name:var(--font-display)] text-3xl font-bold uppercase tracking-[0.04em] text-[var(--text-primary)] md:text-5xl">
-            Read
-          </h1>
-        </div>
-        <div className="absolute bottom-0 left-0 h-[2px] w-24 bg-[var(--accent-solid)]" />
-      </header>
 
       <input
         ref={inputRef}
@@ -529,63 +589,65 @@ export function ReadPage() {
         }}
       />
 
-      {/* 01 / Capture */}
-      <section className="read-reveal border-b border-[var(--surface-border)] px-4 py-8 sm:px-5 md:px-8">
-        <div className="mb-6 flex items-end justify-between">
-          <div>
-            <p className="font-[family-name:var(--font-display)] text-[0.625rem] font-bold uppercase tracking-[0.28em] text-[var(--text-secondary)]">
-              01 / Capture
-            </p>
-            <h2 className="mt-1 font-[family-name:var(--font-display)] text-3xl font-bold uppercase tracking-[0.03em] text-[var(--text-primary)] md:text-4xl">
-              Add words
-            </h2>
+      {/* Sticky capture bar */}
+      <div className="sticky top-0 z-40 border-b border-[var(--surface-border)] bg-[var(--bg-panel)]/95 backdrop-blur-md">
+        <div className="px-4 py-3 sm:px-5 md:px-8">
+          <div className="mb-3 flex items-center justify-between">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1.5 font-[family-name:var(--font-display)] text-xs font-bold uppercase tracking-[0.12em] text-[var(--text-secondary)] transition-colors hover:text-[var(--accent-soft)]"
+            >
+              ← Dashboard
+            </Link>
+            <span className="font-[family-name:var(--font-display)] text-sm font-bold uppercase tracking-[0.06em] text-[var(--text-primary)]">
+              Read
+            </span>
+            <span className="font-mono text-[0.625rem] uppercase tracking-[0.2em] text-[var(--accent-soft)]">
+              {personaMeta[activePersona].label} · private
+            </span>
           </div>
-          <span className="font-mono text-xs tabular-nums text-[var(--text-secondary)]">
-            {statusText}
-          </span>
-        </div>
 
-        {/* Controls: source + search */}
-        <div className="mb-5 space-y-3">
-          {/* Source segmented */}
           <div className="flex flex-wrap items-center gap-2">
-            <Label className="mr-1">Source</Label>
-            {sourceOptions.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => setSourceType(option.value)}
-                className={cn(
-                  "rounded-lg border px-3.5 py-1.5 text-xs font-semibold transition-colors duration-200",
-                  sourceType === option.value
-                    ? "border-[var(--accent-solid)] bg-[var(--accent-solid)]/12 text-[var(--text-primary)]"
-                    : "border-[var(--surface-border)] bg-[var(--bg-panel)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
-                )}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Search row */}
-          <div className="flex items-center gap-2">
-            <div className="flex flex-1 items-center gap-2.5 bg-[var(--bg-panel)] px-4 transition-colors duration-200 md:max-w-[33%]">
+            {/* lookup */}
+            <div className="flex min-w-[200px] flex-1 items-center gap-2.5 rounded-lg bg-[var(--bg-secondary)] px-3">
               <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" className="shrink-0 text-[var(--text-secondary)]">
                 <circle cx="6.5" cy="6.5" r="5" />
                 <line x1="10.5" y1="10.5" x2="14" y2="14" />
               </svg>
               <input
                 type="text"
+                placeholder="Add a word…"
                 value={textInput}
                 onChange={(e) => setTextInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") void handleTextSearch(); }}
-                className="flex-1 border-0 bg-transparent! py-3 text-sm text-[var(--text-primary)] shadow-none! outline-none focus:bg-transparent! focus:shadow-none! placeholder:text-[var(--text-secondary)]"
+                className="flex-1 border-0 bg-transparent! py-2.5 text-sm text-[var(--text-primary)] shadow-none! outline-none focus:bg-transparent! focus:shadow-none! placeholder:text-[var(--text-secondary)]"
               />
             </div>
-            <ActionButton onClick={() => void handleTextSearch()} disabled={searching || !textInput.trim()} className="h-11 px-5">
-              {searching ? "…" : "Search"}
+
+            {/* source select */}
+            <select
+              value={isCustomTag ? "other" : sourceType}
+              onChange={(e) => setSourceType(e.target.value)}
+              className="rounded-lg border border-[var(--surface-border)] bg-[var(--bg-panel)] px-2.5 py-2 text-xs font-semibold text-[var(--text-primary)] outline-none"
+            >
+              {baseSources.map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+            {isCustomTag && (
+              <input
+                type="text"
+                value={sourceType === "other" ? "" : sourceType}
+                onChange={(e) => setSourceType(e.target.value || "other")}
+                placeholder="Custom tag…"
+                className="w-28 rounded-lg border border-[var(--surface-border)] bg-[var(--bg-panel)] px-2.5 py-2 text-xs text-[var(--text-primary)] outline-none placeholder:text-[var(--text-secondary)]"
+              />
+            )}
+
+            <ActionButton onClick={() => void handleTextSearch()} disabled={searching || !textInput.trim()} className="h-10 px-4">
+              {searching ? "…" : "Save"}
             </ActionButton>
-            <GhostButton onClick={() => inputRef.current?.click()} title="Scan image" className="h-11 w-11 px-0">
+            <GhostButton onClick={() => inputRef.current?.click()} title="Scan image" className="h-10 w-10 px-0">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M1 5.5A1.5 1.5 0 0 1 2.5 4h.73l.74-1.5h4.06L8.77 4h.73A1.5 1.5 0 0 1 11 5.5v6A1.5 1.5 0 0 1 9.5 13h-7A1.5 1.5 0 0 1 1 11.5v-6Z" />
                 <circle cx="6" cy="8.5" r="2" />
@@ -593,20 +655,18 @@ export function ReadPage() {
             </GhostButton>
           </div>
         </div>
+      </div>
 
-        {/* Two-column: image | queue — only show after camera pressed */}
-        {captureState !== "idle" && (
+      {/* Capture panel (only when scanning) */}
+      {captureState !== "idle" && (
+        <section className="border-b border-[var(--surface-border)] px-4 py-6 sm:px-5 md:px-8">
           <div className="grid gap-5 xl:grid-cols-[minmax(0,1.5fr)_minmax(320px,0.5fr)]">
-
-            {/* Image capture card */}
             {previewUrl ? (
               <div className="overflow-hidden rounded-xl border border-[var(--surface-border)] bg-[var(--bg-panel)]">
                 <div className="flex items-center justify-between border-b border-[var(--surface-border)] bg-[var(--bg-panel-strong)] px-5 py-3.5">
                   <div className="flex items-center gap-2.5">
                     <Label>Source image</Label>
-                    <span className="font-mono text-[0.625rem] tabular-nums text-[var(--text-secondary)]">
-                      not stored
-                    </span>
+                    <span className="font-mono text-[0.625rem] tabular-nums text-[var(--text-secondary)]">not stored</span>
                   </div>
                   <div className="flex items-center gap-2">
                     {captureState === "ready" && (
@@ -642,7 +702,6 @@ export function ReadPage() {
 
                 <div className="flex justify-center bg-[var(--bg-secondary)] p-4 md:p-6">
                   <div className="relative inline-block max-w-full align-top">
-                    {/* Blob preview from local camera — never persisted */}
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       ref={imageRef}
@@ -661,15 +720,11 @@ export function ReadPage() {
                         });
                       }}
                     />
-
                     {captureState === "reading" && (
                       <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-[var(--bg-primary)]/70">
-                        <span className="font-mono text-[0.7rem] uppercase tracking-[0.2em] text-[var(--text-secondary)]">
-                          Reading…
-                        </span>
+                        <span className="font-mono text-[0.7rem] uppercase tracking-[0.2em] text-[var(--text-secondary)]">Reading…</span>
                       </div>
                     )}
-
                     {captureState === "ready" && imageMetrics.naturalWidth > 0 && imageMetrics.naturalHeight > 0
                       ? ocrWords.map((word) => {
                           const selected = selectedBoxIds.has(word.id);
@@ -701,30 +756,13 @@ export function ReadPage() {
                 </div>
               </div>
             ) : (
-              <button
-                type="button"
-                onClick={() => inputRef.current?.click()}
-                disabled={captureState === "reading"}
-                className="group grid min-h-[340px] place-items-center rounded-xl border border-dashed border-[var(--surface-border)] bg-[var(--bg-panel)] p-8 text-center transition-colors duration-200 hover:border-[var(--accent-solid)]/40 hover:bg-[var(--bg-panel-strong)] disabled:opacity-50"
-              >
-                <div>
-                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl border border-[var(--surface-border)] bg-[var(--bg-secondary)] text-[var(--text-secondary)] transition-colors group-hover:text-[var(--accent-soft)]">
-                    <svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M1 5.5A1.5 1.5 0 0 1 2.5 4h.73l.74-1.5h4.06L8.77 4h.73A1.5 1.5 0 0 1 11 5.5v6A1.5 1.5 0 0 1 9.5 13h-7A1.5 1.5 0 0 1 1 11.5v-6Z" />
-                      <circle cx="6" cy="8.5" r="2" />
-                    </svg>
-                  </div>
-                  <p className="mt-4 font-[family-name:var(--font-display)] text-xl font-bold uppercase tracking-[0.04em] text-[var(--text-primary)]">
-                    Photograph a page
-                  </p>
-                  <p className="mt-2 text-xs leading-5 text-[var(--text-secondary)] opacity-70">
-                    Tap to open the camera, then highlight the words you want. The image is never saved.
-                  </p>
-                </div>
-              </button>
+              <div className="grid min-h-[200px] place-items-center rounded-xl border border-dashed border-[var(--surface-border)] bg-[var(--bg-panel)] p-8 text-center">
+                <span className="font-mono text-[0.7rem] uppercase tracking-[0.2em] text-[var(--text-secondary)]">
+                  {captureState === "error" ? error : "Reading…"}
+                </span>
+              </div>
             )}
 
-            {/* Queue card */}
             <WordQueue
               words={selectedWords}
               sourceType={sourceType}
@@ -735,54 +773,79 @@ export function ReadPage() {
               onClear={() => setSelectedWords([])}
             />
           </div>
-        )}
-      </section>
+        </section>
+      )}
 
-      {/* 02 / Ledger */}
-      <section className="read-reveal read-reveal-delay-1 px-4 py-8 sm:px-5 md:px-8">
-        <div className="mb-6 flex items-end justify-between">
-          <div>
-            <p className="font-[family-name:var(--font-display)] text-[0.625rem] font-bold uppercase tracking-[0.28em] text-[var(--text-secondary)]">
-              02 / Ledger
-            </p>
-            <h2 className="mt-1 font-[family-name:var(--font-display)] text-2xl font-bold uppercase tracking-[0.03em] text-[var(--text-primary)] sm:text-3xl md:text-4xl">
-              Saved words
-            </h2>
+      {/* Ledger */}
+      <section className="px-4 py-6 sm:px-5 md:px-8">
+        {/* Filter chips + study */}
+        <div className="mb-5 flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveTag("all")}
+            className={cn(
+              "rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors",
+              activeTag === "all"
+                ? "border-[var(--accent-solid)] bg-[var(--accent-solid)]/12 text-[var(--text-primary)]"
+                : "border-[var(--surface-border)] bg-[var(--bg-panel)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
+            )}
+          >
+            All <span className="font-mono opacity-60">{records.length}</span>
+          </button>
+          {tags.map((tag) => {
+            const count = records.filter((r) => r.sourceType === tag).length;
+            return (
+              <button
+                key={tag}
+                type="button"
+                onClick={() => setActiveTag(tag)}
+                className={cn(
+                  "rounded-full border px-3 py-1.5 text-xs font-semibold capitalize transition-colors",
+                  activeTag === tag
+                    ? "border-[var(--accent-solid)] bg-[var(--accent-solid)]/12 text-[var(--text-primary)]"
+                    : "border-[var(--surface-border)] bg-[var(--bg-panel)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
+                )}
+              >
+                {tag} <span className="font-mono opacity-60">{count}</span>
+              </button>
+            );
+          })}
+
+          <div className="ml-auto flex items-center gap-2">
+            <div className="flex items-center gap-2 rounded-full bg-[var(--bg-secondary)] px-3">
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" className="shrink-0 text-[var(--text-secondary)]">
+                <circle cx="6.5" cy="6.5" r="5" />
+                <line x1="10.5" y1="10.5" x2="14" y2="14" />
+              </svg>
+              <input
+                type="text"
+                placeholder="Filter…"
+                value={filterQuery}
+                onChange={(e) => setFilterQuery(e.target.value)}
+                className="w-28 border-0 bg-transparent! py-2 text-sm text-[var(--text-primary)] shadow-none! outline-none focus:bg-transparent! focus:shadow-none! placeholder:text-[var(--text-secondary)]"
+              />
+            </div>
+            <ActionButton
+              onClick={() => setStudyOpen(true)}
+              disabled={filteredRecords.length === 0}
+              className="h-10 px-4"
+            >
+              Study ▶
+            </ActionButton>
           </div>
-          <span className="font-mono text-xs tabular-nums text-[var(--text-secondary)]">
-            {filteredRecords.length}{filterQuery ? ` / ${records.length}` : ""} total
-          </span>
         </div>
 
-        {records.length > 0 && (
-          <div className="mb-5 flex items-center gap-2.5 bg-[var(--bg-panel)] px-4 transition-colors duration-200 md:max-w-[33%]">
-            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" className="shrink-0 text-[var(--text-secondary)]">
-              <circle cx="6.5" cy="6.5" r="5" />
-              <line x1="10.5" y1="10.5" x2="14" y2="14" />
-            </svg>
-            <input
-              type="text"
-              value={filterQuery}
-              onChange={(e) => setFilterQuery(e.target.value)}
-              className="flex-1 border-0 bg-transparent! py-2.5 text-sm text-[var(--text-primary)] shadow-none! outline-none focus:bg-transparent! focus:shadow-none! placeholder:text-[var(--text-secondary)]"
-            />
-            {filterQuery && (
-              <button
-                type="button"
-                onClick={() => setFilterQuery("")}
-                className="shrink-0 text-[0.625rem] font-medium uppercase tracking-[0.1em] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-              >
-                Clear
-              </button>
-            )}
-          </div>
-        )}
-
-        <ReadRecordList
-          records={filteredRecords}
-          onDelete={(id) => void deleteRecord(id)}
-        />
+        <ReadRecordList records={filteredRecords} onDelete={(id) => void deleteRecord(id)} />
       </section>
+
+      {studyOpen && (
+        <StudyMode
+          records={filteredRecords.map((r) => ({
+            id: r.id, word: r.word, definition: r.definition, partOfSpeech: r.partOfSpeech, myDefinition: r.myDefinition,
+          }))}
+          onClose={() => setStudyOpen(false)}
+        />
+      )}
     </div>
   );
 }

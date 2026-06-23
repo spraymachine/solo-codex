@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseGoogleBooks } from "@/app/api/books/search/parse";
+import { parseGoogleBooks } from "@/lib/books/parse";
 
 describe("parseGoogleBooks", () => {
   it("maps volumes to trimmed results", () => {

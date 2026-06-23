@@ -46,7 +46,7 @@ function RecordCard({ record, onDelete }: { record: ReadRecord; onDelete: (id: s
         </Link>
 
         {record.partOfSpeech && (
-          <span className="text-xs italic text-[var(--text-secondary)]">{record.partOfSpeech}</span>
+          <span className="text-sm italic text-[var(--text-secondary)]">({record.partOfSpeech})</span>
         )}
       </div>
 
@@ -72,7 +72,7 @@ function RecordCard({ record, onDelete }: { record: ReadRecord; onDelete: (id: s
       )}
 
       <p className="mt-auto pt-3 font-mono text-[0.55rem] tabular-nums text-[var(--text-secondary)] opacity-60">
-        {record.sourceType} · {formatTime(record.createdAt)}
+        {new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "2-digit", year: "2-digit" }).format(new Date(record.createdAt))} · {formatTime(record.createdAt)} · {record.sourceType}
       </p>
     </div>
   );
