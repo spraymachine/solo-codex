@@ -153,6 +153,25 @@ export interface ReadRecord {
   updatedAt: string;
 }
 
+export type BookShelf = "want" | "reading" | "read";
+
+export interface Book {
+  id: string;
+  googleVolumeId: string | null;
+  title: string;
+  authors: string[];
+  coverUrl: string | null;
+  totalPages: number | null;
+  shelf: BookShelf;
+  currentPage: number;
+  rating: number | null;
+  notes: string;
+  startedAt: string | null;
+  finishedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export type CourseStatus = "planned" | "active" | "paused" | "completed";
 export type WorkContactStatus = "lead" | "prospect" | "client" | "lost" | "archived";
 export type WorkProjectStatus = "planned" | "active" | "paused" | "completed" | "archived";
