@@ -1,6 +1,10 @@
 "use client";
 
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useAuth } from "@/components/auth/auth-gate";
+import { getAllowedPersonas } from "@/lib/persona-access";
+import { personaMeta, usePersonaStore } from "@/lib/stores/persona-store";
 import { useThemeStore } from "@/lib/stores/theme-store";
 
 function SignOutIcon() {
@@ -37,31 +41,90 @@ function MoonIcon() {
   );
 }
 
+const NAV = [
+  { href: "/", label: "Dashboard", glyph: "⬡" },
+  { href: "/books", label: "Books", glyph: "▥" },
+  { href: "/words", label: "Words", glyph: "▣" },
+  { href: "/work", label: "Work", glyph: "▦" },
+];
+
 export function SiteHeader() {
   const { user, signOut } = useAuth();
-  const theme = useThemeStore((state) => state.theme);
-  const toggleTheme = useThemeStore((state) => state.toggleTheme);
+  const pathname = usePathname() ?? "";
+  const theme = useThemeStore((s) => s.theme);
+  const toggleTheme = useThemeStore((s) => s.toggleTheme);
+  const activePersona = usePersonaStore((s) => s.activePersona);
+  const setActivePersona = usePersonaStore((s) => s.setActivePersona);
+  const allowed = getAllowedPersonas(user?.email);
 
   return (
-    <header className="pointer-events-none fixed right-4 top-4 z-40 flex items-center gap-2 md:right-6 md:top-5">
-      <button
-        type="button"
-        onClick={toggleTheme}
-        title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-        className="pointer-events-auto flex h-8 w-8 items-center justify-center rounded-full border border-[var(--surface-border)] bg-[var(--bg-panel)] text-[var(--text-secondary)] shadow-sm transition-all duration-300 hover:border-[var(--accent-solid)] hover:text-[var(--text-primary)]"
-      >
-        {theme === "dark" ? <SunIcon /> : <MoonIcon />}
-      </button>
-      {user ? (
+    <header className="sticky top-0 z-40 mb-6 flex items-center justify-between gap-3 border-b border-[var(--surface-border)] bg-[var(--bg-secondary)]/85 px-4 py-2.5 backdrop-blur-xl md:px-6">
+      {/* Left: persona avatars */}
+      <div className="flex items-center gap-2">
+        {allowed.map((persona) => {
+          const meta = personaMeta[persona];
+          const active = persona === activePersona;
+          return (
+            <button
+              key={persona}
+              type="button"
+              aria-label={`Switch to ${meta.label}`}
+              onClick={() => setActivePersona(persona)}
+              className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold transition-all duration-300"
+              style={{
+                color: meta.accent,
+                background: active ? `color-mix(in srgb, ${meta.accent} 18%, transparent)` : "transparent",
+                boxShadow: active ? `0 0 0 2px var(--bg-secondary), 0 0 0 3px ${meta.accent}` : "none",
+              }}
+            >
+              {meta.label.charAt(0)}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Center: nav */}
+      <nav className="flex items-center gap-1">
+        {NAV.map((item) => {
+          const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              aria-label={item.label}
+              title={item.label}
+              className={`flex flex-col items-center gap-0.5 rounded-lg px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] transition-colors duration-200 ${
+                active ? "bg-[var(--bg-panel-strong)] text-[var(--text-primary)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+              }`}
+            >
+              <span aria-hidden className="text-base leading-none">{item.glyph}</span>
+              <span className="hidden sm:inline">{item.label}</span>
+            </Link>
+          );
+        })}
+      </nav>
+
+      {/* Right: theme + logout */}
+      <div className="flex items-center gap-2">
         <button
           type="button"
-          onClick={() => void signOut()}
-          title="Sign out"
-          className="pointer-events-auto flex h-8 w-8 items-center justify-center rounded-full border border-[var(--surface-border)] bg-[var(--bg-panel)] text-[var(--text-secondary)] shadow-sm transition-all duration-300 hover:border-[var(--accent-solid)] hover:text-[var(--text-primary)]"
+          onClick={toggleTheme}
+          title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+          className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--surface-border)] bg-[var(--bg-panel)] text-[var(--text-secondary)] transition-all duration-300 hover:border-[var(--accent-solid)] hover:text-[var(--text-primary)]"
         >
-          <SignOutIcon />
+          {theme === "dark" ? <SunIcon /> : <MoonIcon />}
         </button>
-      ) : null}
+        {user ? (
+          <button
+            type="button"
+            onClick={() => void signOut()}
+            title="Sign out"
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--surface-border)] bg-[var(--bg-panel)] text-[var(--text-secondary)] transition-all duration-300 hover:border-[var(--accent-solid)] hover:text-[var(--text-primary)]"
+          >
+            <SignOutIcon />
+          </button>
+        ) : null}
+      </div>
     </header>
   );
 }

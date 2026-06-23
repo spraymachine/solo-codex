@@ -57,7 +57,7 @@ export default function RootLayout({
           <SystemEffects />
           <div className="relative min-h-[100dvh]">
             <SiteHeader />
-            <main className="px-4 pb-16 pt-8 md:px-6 md:pt-12">
+            <main className="px-4 pb-16 pt-0 md:px-6">
               <div className="mx-auto max-w-[1480px]">{children}</div>
             </main>
             <DungeonTimerOverlay />
