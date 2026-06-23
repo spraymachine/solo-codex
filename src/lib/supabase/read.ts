@@ -26,6 +26,7 @@ export function rowToReadRecord(r: any): ReadRecord {
     allDefinitions: r.all_definitions ?? [],
     allSynonyms: r.all_synonyms ?? [],
     sourceType: r.source_type,
+    bookId: r.book_id ?? null,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
   };
@@ -59,6 +60,7 @@ export async function sbCreateReadRecord(userId: string, persona: Persona, recor
     all_definitions: record.allDefinitions,
     all_synonyms: record.allSynonyms,
     source_type: record.sourceType,
+    book_id: record.bookId ?? null,
     created_at: record.createdAt,
     updated_at: record.updatedAt,
   });
@@ -72,7 +74,7 @@ export async function sbUpdateReadRecord(
 ) {
   const client = sb();
   if (!client) return;
-  await client.from("read_records").update({
+  const patch: Record<string, unknown> = {
     word: updates.word,
     definition: updates.definition,
     part_of_speech: updates.partOfSpeech,
@@ -80,7 +82,9 @@ export async function sbUpdateReadRecord(
     synonyms: updates.synonyms,
     source_type: updates.sourceType,
     updated_at: updates.updatedAt,
-  }).eq("user_id", userId).eq("persona", persona).eq("id", id);
+  };
+  if ("bookId" in updates) patch.book_id = updates.bookId ?? null;
+  await client.from("read_records").update(patch).eq("user_id", userId).eq("persona", persona).eq("id", id);
 }
 
 export async function sbDeleteReadRecord(userId: string, persona: Persona, id: string) {

@@ -136,7 +136,7 @@ export interface Lead {
   createdAt: string;
 }
 
-export type ReadSourceType = "book" | "note" | "newspaper" | "other";
+export type ReadSourceType = "book" | "note" | "newspaper" | "other" | (string & {});
 
 export interface ReadRecord {
   id: string;
@@ -148,6 +148,7 @@ export interface ReadRecord {
   allDefinitions: Array<{ partOfSpeech: string; definition: string; example?: string }>;
   allSynonyms: string[];
   sourceType: ReadSourceType;
+  bookId?: string | null;
   createdAt: string;
   updatedAt: string;
 }

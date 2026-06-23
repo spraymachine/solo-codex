@@ -22,6 +22,7 @@ interface ReadRecordInput {
   allDefinitions: Array<{ partOfSpeech: string; definition: string; example?: string }>;
   allSynonyms: string[];
   sourceType: ReadSourceType;
+  bookId?: string | null;
 }
 
 interface ReadState {
@@ -31,7 +32,7 @@ interface ReadState {
   createRecords: (items: ReadRecordInput[]) => Promise<void>;
   updateRecord: (
     id: string,
-    updates: Partial<Pick<ReadRecord, "word" | "definition" | "partOfSpeech" | "sourceType" | "myDefinition" | "synonyms">>,
+    updates: Partial<Pick<ReadRecord, "word" | "definition" | "partOfSpeech" | "sourceType" | "myDefinition" | "synonyms" | "bookId">>,
   ) => Promise<void>;
   deleteRecord: (id: string) => Promise<void>;
 }
@@ -99,6 +100,7 @@ export const useReadStore = create<ReadState>((set) => ({
             allDefinitions: item.allDefinitions,
             allSynonyms: item.allSynonyms,
             sourceType: item.sourceType,
+            bookId: item.bookId ?? null,
           }),
         ),
     );

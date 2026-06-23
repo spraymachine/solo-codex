@@ -141,4 +141,27 @@ describe("read store", () => {
     expect(updated?.myDefinition).toBe("super clear");
     expect(updated?.synonyms).toEqual(["clear", "coherent"]);
   });
+
+  it("stores and updates bookId on a record", async () => {
+    await useReadStore.getState().createRecords([
+      {
+        word: "umbra",
+        definition: "The fully shaded inner region of a shadow.",
+        partOfSpeech: "noun",
+        myDefinition: "",
+        synonyms: [],
+        allDefinitions: [],
+        allSynonyms: [],
+        sourceType: "book",
+        bookId: "book-123",
+      },
+    ]);
+
+    const created = useReadStore.getState().records[0];
+    expect(created.bookId).toBe("book-123");
+
+    await useReadStore.getState().updateRecord(created.id, { bookId: "book-456" });
+    const updated = useReadStore.getState().records.find((r) => r.id === created.id);
+    expect(updated?.bookId).toBe("book-456");
+  });
 });

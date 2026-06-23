@@ -368,6 +368,7 @@ export const storage = {
     allDefinitions: Array<{ partOfSpeech: string; definition: string; example?: string }>;
     allSynonyms: string[];
     sourceType: ReadSourceType;
+    bookId?: string | null;
   }): Promise<ReadRecord> {
     const db = getDb();
     const timestamp = nowISO();
@@ -381,6 +382,7 @@ export const storage = {
       allDefinitions: input.allDefinitions,
       allSynonyms: input.allSynonyms,
       sourceType: input.sourceType,
+      bookId: input.bookId ?? null,
       createdAt: timestamp,
       updatedAt: timestamp,
     };
@@ -391,7 +393,7 @@ export const storage = {
 
   async updateReadRecord(
     id: string,
-    updates: Partial<Pick<ReadRecord, "word" | "definition" | "partOfSpeech" | "sourceType" | "myDefinition" | "synonyms">>,
+    updates: Partial<Pick<ReadRecord, "word" | "definition" | "partOfSpeech" | "sourceType" | "myDefinition" | "synonyms" | "bookId">>,
   ): Promise<void> {
     const db = getDb();
     if (updates.synonyms) updates.synonyms = updates.synonyms.slice(0, 2);
