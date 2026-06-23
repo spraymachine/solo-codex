@@ -3,7 +3,6 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, Reorder, useDragControls } from "framer-motion";
-import Link from "next/link";
 import { useAuth } from "@/components/auth/auth-gate";
 import { Modal } from "@/components/ui/modal";
 import {
@@ -15,15 +14,16 @@ import { formatShortDayDate, shiftDate, todayDate } from "@/lib/utils";
 import { getAllowedPersonas } from "@/lib/persona-access";
 import { useContinuationStore } from "@/lib/stores/continuation-store";
 import { useGatesStore } from "@/lib/stores/gates-store";
-import { personaMeta, usePersonaStore } from "@/lib/stores/persona-store";
+import { usePersonaStore } from "@/lib/stores/persona-store";
 import { usePlayerStore } from "@/lib/stores/player-store";
 import { useRecordsStore } from "@/lib/stores/records-store";
-import { useReadStore } from "@/lib/stores/read-store";
+import { useBooksStore } from "@/lib/stores/books-store";
+import { QuickCapture } from "@/components/dashboard/quick-capture";
 import { useMissionsStore } from "@/lib/stores/missions-store";
 import { StickyWall } from "@/components/sticky/sticky-wall";
 import { useWorkStore } from "@/lib/stores/work-store";
 import { CourseArcCard } from "@/components/work/course-arc-card";
-import type { Gate, Mission, Persona, Reflection, SubQuest } from "@/lib/types";
+import type { Gate, Mission, Reflection, SubQuest } from "@/lib/types";
 
 const WEEKDAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const GOAL_RANK_ORDER: Record<Gate["rank"], number> = {
@@ -33,32 +33,6 @@ const GOAL_RANK_ORDER: Record<Gate["rank"], number> = {
   C: 3,
   D: 4,
   E: 5,
-};
-
-const PERSONA_CARD_STYLE: Record<
-  Persona,
-  { activeBorder: string; activeShadow: string; heroBackground: string }
-> = {
-  mani: {
-    activeBorder: "border-[#3b82f6]",
-    activeShadow: "shadow-[0_0_0_1px_rgba(59,130,246,0.35),0_18px_44px_rgba(59,130,246,0.1)]",
-    heroBackground: "bg-[linear-gradient(135deg,rgba(59,130,246,0.12),transparent_60%)]",
-  },
-  harti: {
-    activeBorder: "border-[#22c55e]",
-    activeShadow: "shadow-[0_0_0_1px_rgba(34,197,94,0.35),0_18px_44px_rgba(34,197,94,0.1)]",
-    heroBackground: "bg-[linear-gradient(135deg,rgba(34,197,94,0.12),transparent_60%)]",
-  },
-  persona1: {
-    activeBorder: "border-[#f97316]",
-    activeShadow: "shadow-[0_0_0_1px_rgba(249,115,22,0.35),0_18px_44px_rgba(249,115,22,0.1)]",
-    heroBackground: "bg-[linear-gradient(135deg,rgba(249,115,22,0.12),transparent_60%)]",
-  },
-  persona2: {
-    activeBorder: "border-[#a855f7]",
-    activeShadow: "shadow-[0_0_0_1px_rgba(168,85,247,0.35),0_18px_44px_rgba(168,85,247,0.1)]",
-    heroBackground: "bg-[linear-gradient(135deg,rgba(168,85,247,0.12),transparent_60%)]",
-  },
 };
 
 function SectionShell({
@@ -911,7 +885,6 @@ export default function HomePage() {
   const records = useRecordsStore((state) => state.records);
   const saveReflection = useRecordsStore((state) => state.saveReflection);
   const addGratitude = useRecordsStore((state) => state.addGratitude);
-  const readRecords = useReadStore((state) => state.records);
 
   const profile = usePlayerStore((state) => state.profile);
 
@@ -920,12 +893,14 @@ export default function HomePage() {
   const workLoad = useWorkStore((state) => state.load);
   const workCourses = useWorkStore((state) => state.courses);
   const workChapters = useWorkStore((state) => state.chapters);
-  const workProjects = useWorkStore((state) => state.projects);
   const workMilestones = useWorkStore((state) => state.milestones);
 
   useEffect(() => {
     if (!workLoaded || workLoadedPersona !== activePersona) void workLoad(activePersona);
   }, [activePersona, workLoaded, workLoadedPersona, workLoad]);
+
+  const booksLoad = useBooksStore((state) => state.load);
+  useEffect(() => { void booksLoad(activePersona); }, [activePersona, booksLoad]);
 
   const [todoDraft, setTodoDraft] = useState("");
   const [gratitudeDraft, setGratitudeDraft] = useState("");
@@ -1106,13 +1081,6 @@ export default function HomePage() {
     await saveReflection(nextReflection, selectedDate);
   }
 
-  const activeCourses = workCourses.filter((c) => c.status === "active");
-  const activeProjects = workProjects.filter((p) => !p.archivedAt && p.status === "active");
-  const totalMilestones = workMilestones.length;
-  const doneMilestones = workMilestones.filter((m) => m.completed).length;
-  const milestonePercent =
-    totalMilestones > 0 ? Math.round((doneMilestones / totalMilestones) * 100) : 0;
-
   const now = new Date();
 
   useEffect(() => {
@@ -1158,115 +1126,16 @@ export default function HomePage() {
 
   return (
     <div className="dashboard-shell mx-auto max-w-[1220px] space-y-8 pb-8 md:space-y-10">
-      <section
-        id="overview"
-        className={`dashboard-anchor section-dots overflow-hidden rounded-2xl border transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] ${PERSONA_CARD_STYLE[activePersona].heroBackground} border-[var(--surface-border)]`}
-        style={{
-          background: `radial-gradient(ellipse at top left, color-mix(in srgb, var(--accent-solid) 14%, var(--bg-panel)) 0%, var(--bg-panel) 55%)`,
-        }}
-      >
-        <div className="grid gap-2 p-3 md:grid-cols-2 md:p-4">
-          {allowedPersonas.map((persona) => {
-            const meta = personaMeta[persona];
-            const isActive = activePersona === persona;
-            const accentClasses = isActive
-              ? `${PERSONA_CARD_STYLE[persona].activeBorder} border-2 bg-[var(--bg-panel-strong)]`
-              : "border border-[var(--surface-border)] bg-[var(--bg-secondary)]";
-            const glowClasses = isActive
-              ? PERSONA_CARD_STYLE[persona].activeShadow
-              : "";
-
-            return (
-              <button
-                type="button"
-                key={persona}
-                onClick={(event) => {
-                  setActivePersona(persona);
-                  if (event.detail >= 2) {
-                    selectCurrentDate();
-                  }
-                }}
-                onDoubleClick={() => selectCurrentDate()}
-                className={`rounded-xl px-5 py-5 text-left transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.99] md:px-6 md:py-6 ${accentClasses} ${glowClasses}`}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <p className="font-[family-name:var(--font-display)] text-[0.625rem] font-bold uppercase tracking-[0.16em] text-[var(--text-secondary)]">
-                    {meta.label}
-                  </p>
-                  <span
-                    className="mt-0.5 h-1.5 w-1.5 rounded-full"
-                    style={{ backgroundColor: meta.accent }}
-                  />
-                </div>
-                <p className="mt-4 font-[family-name:var(--font-display)] text-6xl font-bold tracking-[0.01em] text-[var(--text-primary)] leading-none md:text-7xl">
-                  {getPersonaWhy(persona)}
-                </p>
-                <p className="mt-3 font-mono text-xs tabular-nums text-[var(--text-secondary)]">
-                  {personaDateLabel}
-                </p>
-              </button>
-            );
-          })}
+      <section id="overview" className="dashboard-anchor space-y-4">
+        <div className="flex items-baseline justify-between">
+          <div>
+            <p className="font-[family-name:var(--font-display)] text-3xl font-bold leading-none text-[var(--text-primary)] md:text-4xl">
+              {getPersonaWhy(activePersona)}
+            </p>
+            <p className="mt-1 font-mono text-xs tabular-nums text-[var(--text-secondary)]">{personaDateLabel}</p>
+          </div>
         </div>
-
-        <div className="grid gap-3 px-3 pb-3 md:grid-cols-2 md:px-4 md:pb-4">
-          <Link
-            href="/work"
-            className="flex items-center justify-between rounded-xl border border-[var(--surface-border)] bg-[var(--bg-secondary)] px-5 py-4 transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[var(--bg-panel-strong)] active:scale-[0.99] md:px-6 md:py-5"
-          >
-            <div className="min-w-0">
-              <p className="font-[family-name:var(--font-display)] text-[0.625rem] font-bold uppercase tracking-[0.16em] text-[var(--text-secondary)]">
-                Work
-              </p>
-              {workLoaded ? (
-                <div className="mt-2 flex flex-wrap items-baseline gap-x-5 gap-y-1">
-                  <span className="font-[family-name:var(--font-display)] text-2xl font-bold leading-none text-[var(--text-primary)]">
-                    {activeCourses.length}
-                    <span className="ml-1.5 text-xs font-normal text-[var(--text-secondary)]">
-                      active {activeCourses.length === 1 ? "course" : "courses"}
-                    </span>
-                  </span>
-                  <span className="font-[family-name:var(--font-display)] text-2xl font-bold leading-none text-[var(--text-primary)]">
-                    {activeProjects.length}
-                    <span className="ml-1.5 text-xs font-normal text-[var(--text-secondary)]">
-                      active {activeProjects.length === 1 ? "project" : "projects"}
-                    </span>
-                  </span>
-                  {totalMilestones > 0 && (
-                    <span className="font-mono text-xs tabular-nums text-[var(--text-secondary)]">
-                      {milestonePercent}% milestones done
-                    </span>
-                  )}
-                </div>
-              ) : (
-                <p className="mt-2 font-mono text-xs text-[var(--text-secondary)]">Loading…</p>
-              )}
-            </div>
-            <span className="ml-4 shrink-0 text-[var(--text-secondary)]">→</span>
-          </Link>
-          <Link
-            href="/read"
-            className="flex items-center justify-between rounded-xl border border-[var(--surface-border)] bg-[var(--bg-secondary)] px-5 py-4 transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[var(--bg-panel-strong)] active:scale-[0.99] md:px-6 md:py-5"
-          >
-            <div className="min-w-0">
-              <p className="font-[family-name:var(--font-display)] text-[0.625rem] font-bold uppercase tracking-[0.16em] text-[var(--text-secondary)]">
-                Read
-              </p>
-              <div className="mt-2 flex flex-wrap items-baseline gap-x-5 gap-y-1">
-                <span className="font-[family-name:var(--font-display)] text-2xl font-bold leading-none text-[var(--text-primary)]">
-                  {readRecords.length}
-                  <span className="ml-1.5 text-xs font-normal text-[var(--text-secondary)]">
-                    saved {readRecords.length === 1 ? "word" : "words"}
-                  </span>
-                </span>
-                <span className="font-mono text-xs tabular-nums text-[var(--text-secondary)]">
-                  camera OCR
-                </span>
-              </div>
-            </div>
-            <span className="ml-4 shrink-0 text-[var(--text-secondary)]">→</span>
-          </Link>
-        </div>
+        <QuickCapture />
       </section>
 
       <StickyWall activePersona={activePersona} />
