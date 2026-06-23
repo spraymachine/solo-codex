@@ -58,10 +58,10 @@ describe("WordPage", () => {
     expect(screen.getByText("momentary")).toBeInTheDocument();
   });
 
-  it("redirects to /read when record not found", async () => {
+  it("redirects to /words when record not found", async () => {
     render(<WordPage id="nonexistent" />);
 
-    await waitFor(() => expect(replaceMock).toHaveBeenCalledWith("/read"), { timeout: 2000 });
+    await waitFor(() => expect(replaceMock).toHaveBeenCalledWith("/words"), { timeout: 2000 });
   });
 
   it("pre-populates myDefinition and selected synonyms from record", async () => {
@@ -123,6 +123,6 @@ describe("WordPage", () => {
     await waitFor(() => expect(screen.getByText("Save changes")).toBeInTheDocument());
     fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
 
-    await waitFor(() => expect(pushMock).toHaveBeenCalledWith("/read"));
+    await waitFor(() => expect(pushMock).toHaveBeenCalledWith("/words"));
   });
 });

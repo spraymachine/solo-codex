@@ -47,7 +47,7 @@ export function WordPage({ id }: { id: string }) {
   }, [record]);
 
   useEffect(() => {
-    if (ready && !record) router.replace("/read");
+    if (ready && !record) router.replace("/words");
   }, [ready, record, router]);
 
   const atLimit = selectedSynonyms.length >= MAX_SYNONYMS;
@@ -80,7 +80,7 @@ export function WordPage({ id }: { id: string }) {
         definition: selectedDefinition,
         synonyms: selectedSynonyms,
       });
-      router.push("/read");
+      router.push("/words");
     } finally {
       setSaving(false);
     }
@@ -107,7 +107,7 @@ export function WordPage({ id }: { id: string }) {
       {/* Header */}
       <div className="flex items-center gap-3 border-b border-[var(--surface-border)] bg-[var(--bg-panel)] px-5 py-4">
         <Link
-          href="/read"
+          href="/words"
           className="shrink-0 rounded-full border border-[var(--surface-border)] px-3 py-1 text-xs text-[var(--text-secondary)] transition-colors hover:border-[var(--accent-solid)] hover:text-[var(--text-primary)]"
         >
           ← Read
