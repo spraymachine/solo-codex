@@ -1,5 +1,6 @@
 import Dexie, { type EntityTable } from "dexie";
 import type {
+  Book,
   Gate,
   GymStat,
   HunterRecord,
@@ -27,6 +28,7 @@ class SoloLevelingDB extends Dexie {
   stickyNotes!: EntityTable<StickyNote, "id">;
   leads!: EntityTable<Lead, "id">;
   readRecords!: EntityTable<ReadRecord, "id">;
+  books!: EntityTable<Book, "id">;
 
   constructor(name: string) {
     super(name);
@@ -217,6 +219,21 @@ class SoloLevelingDB extends Dexie {
           r.bookId ??= null;
         });
       });
+
+    this.version(12).stores({
+      profile: "_id",
+      gates: "id, status, rank, date",
+      quests: "id, gateId, status, order",
+      missions: "id, rank, date, order",
+      inventory: "id",
+      hunterRecords: "date",
+      gymStats: "id",
+      xpLog: "id, timestamp",
+      stickyNotes: "id, pinnedAt",
+      leads: "id, createdAt",
+      readRecords: "id, createdAt, word, sourceType",
+      books: "id, createdAt, shelf",
+    });
   }
 }
 

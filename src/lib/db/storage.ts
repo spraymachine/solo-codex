@@ -1,6 +1,8 @@
 import { getDb } from "./database";
 import type {
   AppSnapshot,
+  Book,
+  BookShelf,
   Gate,
   GymStat,
   HunterRecord,
@@ -408,6 +410,54 @@ export const storage = {
     await db.readRecords.delete(id);
   },
 
+  async getBooks(options?: StorageOptions): Promise<Book[]> {
+    const db = getDb(options?.persona);
+    return db.books.orderBy("createdAt").reverse().toArray();
+  },
+
+  async createBook(input: {
+    googleVolumeId: string | null;
+    title: string;
+    authors: string[];
+    coverUrl: string | null;
+    totalPages: number | null;
+    shelf: BookShelf;
+  }): Promise<Book> {
+    const db = getDb();
+    const timestamp = nowISO();
+    const book: Book = {
+      id: generateId(),
+      googleVolumeId: input.googleVolumeId,
+      title: input.title.trim(),
+      authors: input.authors,
+      coverUrl: input.coverUrl,
+      totalPages: input.totalPages,
+      shelf: input.shelf,
+      currentPage: 0,
+      rating: null,
+      notes: "",
+      startedAt: input.shelf === "reading" ? timestamp : null,
+      finishedAt: input.shelf === "read" ? timestamp : null,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+    await db.books.add(book);
+    return book;
+  },
+
+  async updateBook(
+    id: string,
+    updates: Partial<Pick<Book, "shelf" | "currentPage" | "rating" | "notes" | "startedAt" | "finishedAt">>,
+  ): Promise<void> {
+    const db = getDb();
+    await db.books.update(id, { ...updates, updatedAt: nowISO() });
+  },
+
+  async deleteBook(id: string): Promise<void> {
+    const db = getDb();
+    await db.books.delete(id);
+  },
+
   async markPenaltyApplied(date: string): Promise<HunterRecord> {
     const db = getDb();
     const existing = await db.hunterRecords.get(date);
@@ -484,6 +534,7 @@ export const storage = {
       db.missions.clear(),
       db.inventory.clear(),
       db.readRecords.clear(),
+      db.books.clear(),
       db.hunterRecords.clear(),
       db.gymStats.clear(),
       db.xpLog.clear(),
