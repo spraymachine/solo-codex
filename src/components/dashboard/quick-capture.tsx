@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useBooksStore } from "@/lib/stores/books-store";
 import { useReadStore } from "@/lib/stores/read-store";
-import { fetchDictionaryDefinition } from "@/lib/read/dictionary";
+import { fetchDictionaryDefinition, type ReadDefinition } from "@/lib/read/dictionary";
 
 const NO_BOOK = "__none__";
 
@@ -21,24 +21,32 @@ export function QuickCapture() {
     const clean = word.trim();
     if (!clean || loading) return;
     setLoading(true);
-    const result = await fetchDictionaryDefinition(clean);
-    const tagged = bookId !== NO_BOOK ? bookId : null;
-    await createRecords([
-      {
-        word: result.word || clean,
-        definition: result.definition,
-        partOfSpeech: result.partOfSpeech,
-        myDefinition: "",
-        synonyms: result.allSynonyms.slice(0, 2),
-        allDefinitions: result.allDefinitions,
-        allSynonyms: result.allSynonyms,
-        sourceType: tagged ? "book" : "other",
-        bookId: tagged,
-      },
-    ]);
-    setPreview({ word: result.word || clean, partOfSpeech: result.partOfSpeech, definition: result.definition });
-    setWord("");
-    setLoading(false);
+    try {
+      let result: ReadDefinition;
+      try {
+        result = await fetchDictionaryDefinition(clean);
+      } catch {
+        result = { word: clean, definition: "", partOfSpeech: "", allDefinitions: [], allSynonyms: [] };
+      }
+      const tagged = bookId !== NO_BOOK ? bookId : null;
+      await createRecords([
+        {
+          word: result.word || clean,
+          definition: result.definition,
+          partOfSpeech: result.partOfSpeech,
+          myDefinition: "",
+          synonyms: result.allSynonyms.slice(0, 2),
+          allDefinitions: result.allDefinitions,
+          allSynonyms: result.allSynonyms,
+          sourceType: tagged ? "book" : "other",
+          bookId: tagged,
+        },
+      ]);
+      setPreview({ word: result.word || clean, partOfSpeech: result.partOfSpeech, definition: result.definition });
+      setWord("");
+    } finally {
+      setLoading(false);
+    }
   }
 
   function clearPreview() {
