@@ -30,3 +30,10 @@ export interface ChessArchiveMonth {
 }
 
 export type ChessGameOutcome = "win" | "loss" | "draw";
+
+export interface ChessPly {
+  san: string;
+  fen: string;
+  moveNumber: number;
+  color: "w" | "b";
+}
