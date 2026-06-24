@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { deriveResult } from "@/lib/chess/parse";
 import type { ChessGame } from "@/lib/chess/types";
+import { ChessGameDetail } from "./chess-game-detail";
 
 function opponent(game: ChessGame, username: string): string {
   const isWhite = game.white.username.toLowerCase() === username.toLowerCase();
@@ -15,6 +17,8 @@ function openingName(pgn: string): string | null {
 }
 
 export function ChessGameList({ games, username }: { games: ChessGame[]; username: string }) {
+  const [expandedUrl, setExpandedUrl] = useState<string | null>(null);
+
   if (games.length === 0) {
     return <p className="text-sm text-[var(--text-secondary)]">No games this month.</p>;
   }
@@ -24,18 +28,30 @@ export function ChessGameList({ games, username }: { games: ChessGame[]; usernam
       {games.map((game) => {
         const result = deriveResult(game, username);
         const opening = openingName(game.pgn);
+        const expanded = expandedUrl === game.url;
         return (
-          <li key={game.url} className="flex items-center justify-between gap-3 py-2 text-sm">
-            <span className="text-[var(--text-primary)]">{opponent(game, username)}</span>
-            <span className="text-[var(--text-secondary)]">{game.timeClass}</span>
-            {opening && <span className="hidden text-[var(--text-secondary)] sm:inline">{opening}</span>}
-            <span
-              className={
-                result === "win" ? "text-[var(--accent-solid)]" : result === "loss" ? "text-red-400" : "text-[var(--text-secondary)]"
-              }
+          <li key={game.url}>
+            <button
+              type="button"
+              onClick={() => setExpandedUrl(expanded ? null : game.url)}
+              className="flex w-full items-center justify-between gap-3 py-2 text-left text-sm"
             >
-              {result}
-            </span>
+              <span className="text-[var(--text-primary)]">{opponent(game, username)}</span>
+              <span className="text-[var(--text-secondary)]">{game.timeClass}</span>
+              {opening && <span className="hidden text-[var(--text-secondary)] sm:inline">{opening}</span>}
+              <span
+                className={
+                  result === "win"
+                    ? "text-[var(--accent-solid)]"
+                    : result === "loss"
+                      ? "text-red-400"
+                      : "text-[var(--text-secondary)]"
+                }
+              >
+                {result}
+              </span>
+            </button>
+            {expanded && <ChessGameDetail game={game} />}
           </li>
         );
       })}

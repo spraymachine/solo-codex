@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { ChessGameList } from "@/components/chess/chess-game-list";
 import type { ChessGame } from "@/lib/chess/types";
 
@@ -23,5 +23,16 @@ describe("ChessGameList", () => {
   it("renders an empty state when there are no games", () => {
     render(<ChessGameList games={[]} username="memicysl" />);
     expect(screen.getByText(/no games this month/i)).toBeInTheDocument();
+  });
+
+  it("expands a game's detail view when its row is clicked, and collapses on a second click", () => {
+    render(<ChessGameList games={[GAME]} username="memicysl" />);
+    expect(screen.queryByRole("button", { name: /analyze/i })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /kitzyyan/i }));
+    expect(screen.getByRole("button", { name: /analyze/i })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /kitzyyan/i }));
+    expect(screen.queryByRole("button", { name: /analyze/i })).not.toBeInTheDocument();
   });
 });
