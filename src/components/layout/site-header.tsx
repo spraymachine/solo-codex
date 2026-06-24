@@ -46,6 +46,7 @@ const NAV = [
   { href: "/books", label: "Books", glyph: "▥" },
   { href: "/words", label: "Words", glyph: "▣" },
   { href: "/work", label: "Work", glyph: "▦" },
+  { href: "/chess", label: "Chess", glyph: "♞" },
 ];
 
 export function SiteHeader() {
