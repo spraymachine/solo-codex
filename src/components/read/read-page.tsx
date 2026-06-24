@@ -150,8 +150,12 @@ async function compressForOcr(file: File) {
 }
 
 async function readImageWithOcrSpace(file: File) {
+  const apiKey = getOcrSpaceApiKey();
+  if (!apiKey) {
+    throw new Error("OCR.space API key not configured. Set NEXT_PUBLIC_OCR_SPACE_API_KEY in .env.local");
+  }
   const formData = new FormData();
-  formData.append("apikey", getOcrSpaceApiKey());
+  formData.append("apikey", apiKey);
   formData.append("file", file);
   formData.append("language", "eng");
   formData.append("isOverlayRequired", "true");

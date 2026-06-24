@@ -109,6 +109,6 @@ export function parseOcrSpaceWords(response: OcrSpaceResponse): OcrWordBox[] {
   return words;
 }
 
-export function getOcrSpaceApiKey() {
-  return process.env.NEXT_PUBLIC_OCR_SPACE_API_KEY?.trim() || "helloworld";
+export function getOcrSpaceApiKey(): string | null {
+  return process.env.NEXT_PUBLIC_OCR_SPACE_API_KEY?.trim() ?? null;
 }
