@@ -1,12 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import { useAuth } from "@/components/auth/auth-gate";
 import { useBooksStore } from "@/lib/stores/books-store";
 import { searchGoogleBooks } from "@/lib/books/search";
+import { RateLimitError } from "@/lib/rate-limiter";
 import type { BookSearchResult } from "@/lib/books/types";
 import type { BookShelf } from "@/lib/types";
 
 export function AddBookBar() {
+  const { user } = useAuth();
   const createBook = useBooksStore((s) => s.createBook);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<BookSearchResult[]>([]);
@@ -21,10 +24,14 @@ export function AddBookBar() {
     setError(null);
     setCollapsed(false);
     try {
-      setResults(await searchGoogleBooks(q));
-    } catch {
+      setResults(await searchGoogleBooks(q, user?.id));
+    } catch (err) {
       setResults([]);
-      setError("Couldn't reach Google Books. Try again.");
+      if (err instanceof RateLimitError) {
+        setError(err.message);
+      } else {
+        setError("Couldn't reach Google Books. Try again.");
+      }
     } finally {
       setLoading(false);
     }

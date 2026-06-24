@@ -10,7 +10,9 @@ import {
   useState,
 } from "react";
 import Link from "next/link";
+import { useAuth } from "@/components/auth/auth-gate";
 import { fetchDictionaryDefinition } from "@/lib/read/dictionary";
+import { RateLimitError } from "@/lib/rate-limiter";
 import {
   cleanReadWord,
   getOcrSpaceApiKey,
@@ -376,6 +378,7 @@ function StudyMode({
 export function ReadPage() {
   const inputRef = useRef<HTMLInputElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
+  const { user } = useAuth();
   const activePersona = usePersonaStore((state) => state.activePersona);
   const records = useReadStore((state) => state.records);
   const loadRecords = useReadStore((state) => state.load);
@@ -522,14 +525,21 @@ export function ReadPage() {
       ...items,
       { boxId: box.id, word: cleanWord, definition: "", partOfSpeech: "", myDefinition: "", synonyms: [], allDefinitions: [], allSynonyms: [], loading: true },
     ]);
-    const result = await fetchDictionaryDefinition(cleanWord);
-    setSelectedWords((items) =>
-      items.map((item) =>
-        item.boxId === box.id
-          ? { ...item, word: result.word || cleanWord, definition: result.definition, partOfSpeech: result.partOfSpeech, allDefinitions: result.allDefinitions, allSynonyms: result.allSynonyms, loading: false }
-          : item,
-      ),
-    );
+    try {
+      const result = await fetchDictionaryDefinition(cleanWord, user?.id);
+      setSelectedWords((items) =>
+        items.map((item) =>
+          item.boxId === box.id
+            ? { ...item, word: result.word || cleanWord, definition: result.definition, partOfSpeech: result.partOfSpeech, allDefinitions: result.allDefinitions, allSynonyms: result.allSynonyms, loading: false }
+            : item,
+        ),
+      );
+    } catch (err) {
+      if (err instanceof RateLimitError) {
+        setError(err.message);
+        setSelectedWords((items) => items.filter((item) => item.boxId !== box.id));
+      }
+    }
   }
 
   function selectAllOcrWords() {
@@ -552,18 +562,24 @@ export function ReadPage() {
     }
     setSearching(true);
     setTextInput("");
-    const result = await fetchDictionaryDefinition(word);
-    await createRecords([{
-      word: result.word || word,
-      definition: result.definition,
-      partOfSpeech: result.partOfSpeech,
-      myDefinition: "",
-      synonyms: [],
-      allDefinitions: result.allDefinitions,
-      allSynonyms: result.allSynonyms,
-      sourceType,
-    }]);
-    showFlash(result.definition ? `"${result.word || word}" saved` : `"${result.word || word}" saved — no definition`);
+    try {
+      const result = await fetchDictionaryDefinition(word, user?.id);
+      await createRecords([{
+        word: result.word || word,
+        definition: result.definition,
+        partOfSpeech: result.partOfSpeech,
+        myDefinition: "",
+        synonyms: [],
+        allDefinitions: result.allDefinitions,
+        allSynonyms: result.allSynonyms,
+        sourceType,
+      }]);
+      showFlash(result.definition ? `"${result.word || word}" saved` : `"${result.word || word}" saved — no definition`);
+    } catch (err) {
+      if (err instanceof RateLimitError) {
+        setError(err.message);
+      }
+    }
     setSearching(false);
   }
 

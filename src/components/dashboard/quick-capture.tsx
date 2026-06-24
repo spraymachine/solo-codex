@@ -3,7 +3,9 @@
 import { useState } from "react";
 import { useBooksStore } from "@/lib/stores/books-store";
 import { useReadStore } from "@/lib/stores/read-store";
+import { useAuth } from "@/components/auth/auth-gate";
 import { fetchDictionaryDefinition, type ReadDefinition } from "@/lib/read/dictionary";
+import { RateLimitError } from "@/lib/rate-limiter";
 
 const NO_BOOK = "__none__";
 
@@ -11,21 +13,28 @@ export function QuickCapture() {
   const books = useBooksStore((s) => s.books);
   const readingBooks = books.filter((b) => b.shelf === "reading");
   const createRecords = useReadStore((s) => s.createRecords);
+  const { user } = useAuth();
 
   const [bookId, setBookId] = useState<string>(NO_BOOK); // sticky across entries
   const [word, setWord] = useState("");
   const [preview, setPreview] = useState<{ word: string; partOfSpeech: string; definition: string } | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string>("");
 
   async function capture() {
     const clean = word.trim();
     if (!clean || loading) return;
     setLoading(true);
+    setError("");
     try {
       let result: ReadDefinition;
       try {
-        result = await fetchDictionaryDefinition(clean);
-      } catch {
+        result = await fetchDictionaryDefinition(clean, user?.id);
+      } catch (err) {
+        if (err instanceof RateLimitError) {
+          setError(err.message);
+          return;
+        }
         result = { word: clean, definition: "", partOfSpeech: "", allDefinitions: [], allSynonyms: [] };
       }
       const tagged = bookId !== NO_BOOK ? bookId : null;
@@ -83,6 +92,12 @@ export function QuickCapture() {
         placeholder="Quick word capture — type and press Enter"
         className="w-full rounded-lg border border-[var(--surface-border)] bg-[var(--bg-panel)] px-3 py-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent-solid)]"
       />
+
+      {error && (
+        <div className="mt-3 rounded-lg border border-red-500 bg-red-50 p-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
 
       {preview && (
         <div className="mt-3 rounded-lg border border-[var(--surface-border)] bg-[var(--bg-panel)] p-3">

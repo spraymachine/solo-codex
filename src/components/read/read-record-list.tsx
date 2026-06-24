@@ -104,7 +104,7 @@ export function ReadRecordList({ records, onDelete }: ReadRecordListProps) {
               {items.length}
             </span>
           </div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
             {items.map((record) => (
               <RecordCard key={record.id} record={record} onDelete={onDelete} />
             ))}

@@ -12,6 +12,8 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.103.3",
+    "@upstash/ratelimit": "^2.0.8",
+    "@upstash/redis": "^1.38.0",
     "dexie": "^4.4.2",
     "dexie-react-hooks": "^4.4.0",
     "framer-motion": "^12.38.0",

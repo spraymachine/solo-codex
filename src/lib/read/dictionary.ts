@@ -116,9 +116,18 @@ export function parseWiktionaryDefinition(payload: unknown, resolvedWord: string
   return null;
 }
 
-export async function fetchDictionaryDefinition(word: string): Promise<ReadDefinition> {
+export async function fetchDictionaryDefinition(word: string, userId?: string): Promise<ReadDefinition> {
   const normalizedWord = normalizeLookupWord(word);
   if (!normalizedWord) return { word, definition: "", partOfSpeech: "", allDefinitions: [], allSynonyms: [] };
+
+  // Rate limit check (skip if userId not provided)
+  if (userId) {
+    const { checkRateLimit, RateLimitError } = await import("@/lib/rate-limiter");
+    const { allowed, resetMs } = checkRateLimit("dictionary", userId);
+    if (!allowed) {
+      throw new RateLimitError("dictionary", resetMs);
+    }
+  }
 
   const primary = await fetch(
     `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(normalizedWord)}`,
