@@ -49,7 +49,7 @@ async function syncReadToSupabase(fn: (userId: string) => Promise<void>) {
   }
 }
 
-export const useReadStore = create<ReadState>((set) => ({
+export const useReadStore = create<ReadState>((set, get) => ({
   records: [],
   loaded: false,
 
@@ -64,13 +64,21 @@ export const useReadStore = create<ReadState>((set) => ({
         if (userId) {
           const cloudRecords = await fetchReadRecords(userId, persona);
           if (cloudRecords) {
+            // Keep any local-only records not yet pushed to Supabase (fire-and-forget
+            // sync may still be in flight) so a fresh fetch can't wipe a just-created word.
+            const cloudIds = new Set(cloudRecords.map((r) => r.id));
+            const pendingLocal = get().records.filter((r) => !cloudIds.has(r.id));
+            const merged = [...pendingLocal, ...cloudRecords].sort((a, b) =>
+              b.createdAt.localeCompare(a.createdAt),
+            );
+
             const db = getDb(persona);
             await db.transaction("rw", db.readRecords, async () => {
               await db.readRecords.clear();
-              if (cloudRecords.length > 0) await db.readRecords.bulkAdd(cloudRecords);
+              if (merged.length > 0) await db.readRecords.bulkAdd(merged);
             });
             if (usePersonaStore.getState().activePersona !== persona) return;
-            set({ records: cloudRecords, loaded: true });
+            set({ records: merged, loaded: true });
             return;
           }
         }
