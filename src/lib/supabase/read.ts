@@ -84,6 +84,8 @@ export async function sbUpdateReadRecord(
     updated_at: updates.updatedAt,
   };
   if ("bookId" in updates) patch.book_id = updates.bookId ?? null;
+  if ("allDefinitions" in updates) patch.all_definitions = updates.allDefinitions;
+  if ("allSynonyms" in updates) patch.all_synonyms = updates.allSynonyms;
   await client.from("read_records").update(patch).eq("user_id", userId).eq("persona", persona).eq("id", id);
 }
 

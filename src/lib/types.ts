@@ -145,7 +145,7 @@ export interface ReadRecord {
   partOfSpeech: string;
   myDefinition: string;
   synonyms: string[];
-  allDefinitions: Array<{ partOfSpeech: string; definition: string; example?: string }>;
+  allDefinitions: Array<{ partOfSpeech: string; definition: string; example?: string; source?: string }>;
   allSynonyms: string[];
   sourceType: ReadSourceType;
   bookId?: string | null;

@@ -19,7 +19,7 @@ interface ReadRecordInput {
   partOfSpeech: string;
   myDefinition: string;
   synonyms: string[];
-  allDefinitions: Array<{ partOfSpeech: string; definition: string; example?: string }>;
+  allDefinitions: Array<{ partOfSpeech: string; definition: string; example?: string; source?: string }>;
   allSynonyms: string[];
   sourceType: ReadSourceType;
   bookId?: string | null;
@@ -29,10 +29,10 @@ interface ReadState {
   records: ReadRecord[];
   loaded: boolean;
   load: (persona?: Persona) => Promise<void>;
-  createRecords: (items: ReadRecordInput[]) => Promise<void>;
+  createRecords: (items: ReadRecordInput[]) => Promise<ReadRecord[]>;
   updateRecord: (
     id: string,
-    updates: Partial<Pick<ReadRecord, "word" | "definition" | "partOfSpeech" | "sourceType" | "myDefinition" | "synonyms" | "bookId">>,
+    updates: Partial<Pick<ReadRecord, "word" | "definition" | "partOfSpeech" | "sourceType" | "myDefinition" | "synonyms" | "bookId" | "allDefinitions" | "allSynonyms">>,
   ) => Promise<void>;
   deleteRecord: (id: string) => Promise<void>;
 }
@@ -105,7 +105,7 @@ export const useReadStore = create<ReadState>((set) => ({
         ),
     );
 
-    if (created.length === 0) return;
+    if (created.length === 0) return created;
 
     set((state) => ({
       records: [...created, ...state.records].sort((a, b) =>
@@ -117,6 +117,8 @@ export const useReadStore = create<ReadState>((set) => ({
     void syncReadToSupabase(async (uid) => {
       await Promise.all(created.map((record) => sbCreateReadRecord(uid, persona, record)));
     });
+
+    return created;
   },
 
   async updateRecord(id, updates) {

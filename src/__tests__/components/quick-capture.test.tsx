@@ -10,6 +10,9 @@ vi.mock("@/lib/read/dictionary", () => ({
   fetchDictionaryDefinition: vi.fn(async (word: string) => ({
     word, definition: "a test definition", partOfSpeech: "noun", allDefinitions: [], allSynonyms: [],
   })),
+  fetchFromWordnik: vi.fn(async () => null),
+  fetchFromDictionaryApi: vi.fn(async () => null),
+  fetchFromWiktionary: vi.fn(async () => null),
 }));
 
 describe("QuickCapture", () => {

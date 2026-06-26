@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { usePersonaStore } from "@/lib/stores/persona-store";
 import { useReadStore } from "@/lib/stores/read-store";
+import { fetchFromDictionaryApi, fetchFromWiktionary, fetchFromWordnik } from "@/lib/read/dictionary";
 import type { ReadRecord } from "@/lib/types";
 
 const MAX_SYNONYMS = 2;
@@ -14,6 +15,12 @@ const SOURCE_ICON: Record<string, string> = {
   scan: "📷",
   search: "🔍",
 };
+
+const DEFINITION_SOURCES = [
+  { label: "Wordnik", fetcher: fetchFromWordnik },
+  { label: "DictionaryAPI", fetcher: fetchFromDictionaryApi },
+  { label: "Wiktionary", fetcher: fetchFromWiktionary },
+] as const;
 
 export function WordPage({ id }: { id: string }) {
   const router = useRouter();
@@ -29,6 +36,7 @@ export function WordPage({ id }: { id: string }) {
   const [selectedSynonyms, setSelectedSynonyms] = useState<string[]>([]);
   const [customInput, setCustomInput] = useState("");
   const customInputRef = useRef<HTMLInputElement>(null);
+  const [fetchingSource, setFetchingSource] = useState<string | null>(null);
 
   const record: ReadRecord | undefined = useMemo(
     () => records.find((r) => r.id === id),
@@ -70,6 +78,24 @@ export function WordPage({ id }: { id: string }) {
     setCustomInput("");
     customInputRef.current?.focus();
   }
+
+  const handleFetchSource = useCallback(
+    async (sourceLabel: string, fetcher: (word: string) => Promise<{ allDefinitions: ReadRecord["allDefinitions"]; allSynonyms: string[] } | null>) => {
+      if (!record || fetchingSource) return;
+      setFetchingSource(sourceLabel);
+      try {
+        const result = await fetcher(record.word);
+        if (!result || result.allDefinitions.length === 0) return;
+        const keptDefinitions = record.allDefinitions.filter((d) => d.source !== sourceLabel);
+        const allDefinitions = [...keptDefinitions, ...result.allDefinitions];
+        const allSynonyms = Array.from(new Set([...record.allSynonyms, ...result.allSynonyms]));
+        await updateRecord(record.id, { allDefinitions, allSynonyms });
+      } finally {
+        setFetchingSource(null);
+      }
+    },
+    [record, fetchingSource, updateRecord],
+  );
 
   const handleSave = useCallback(async () => {
     if (!record) return;
@@ -142,6 +168,21 @@ export function WordPage({ id }: { id: string }) {
         <p className="mb-3 text-[0.65rem] font-semibold uppercase tracking-widest text-[var(--accent-soft)]">
           Definition — Pick One
         </p>
+
+        <div className="mb-3 flex gap-2">
+          {DEFINITION_SOURCES.map(({ label, fetcher }) => (
+            <button
+              key={label}
+              type="button"
+              disabled={fetchingSource !== null}
+              onClick={() => void handleFetchSource(label, fetcher)}
+              className="rounded-full border border-[var(--surface-border)] px-3 py-1 text-xs text-[var(--text-secondary)] transition-colors hover:border-[var(--accent-solid)] hover:text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {fetchingSource === label ? "Fetching…" : `Try ${label}`}
+            </button>
+          ))}
+        </div>
+
         {record.allDefinitions.length === 0 ? (
           <div className="rounded-lg border border-[var(--surface-border)] bg-[var(--bg-panel)] px-4 py-3">
             <p className="text-sm">{record.definition || "No definition saved."}</p>
@@ -169,6 +210,7 @@ export function WordPage({ id }: { id: string }) {
                     <div className="min-w-0 flex-1">
                       <p className="mb-1 text-[0.6rem] italic tracking-wider text-[var(--text-secondary)]">
                         {def.partOfSpeech?.toUpperCase()} · MEANING {i + 1}
+                        {def.source && <span className="ml-1 not-italic">· {def.source}</span>}
                       </p>
                       <p className="text-sm leading-5">{def.definition}</p>
                       {def.example && (

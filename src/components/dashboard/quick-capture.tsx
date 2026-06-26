@@ -4,22 +4,40 @@ import { useState } from "react";
 import { useBooksStore } from "@/lib/stores/books-store";
 import { useReadStore } from "@/lib/stores/read-store";
 import { useAuth } from "@/components/auth/auth-gate";
-import { fetchDictionaryDefinition, type ReadDefinition } from "@/lib/read/dictionary";
+import {
+  fetchDictionaryDefinition,
+  fetchFromDictionaryApi,
+  fetchFromWiktionary,
+  fetchFromWordnik,
+  type ReadDefinition,
+} from "@/lib/read/dictionary";
 import { RateLimitError } from "@/lib/rate-limiter";
 
 const NO_BOOK = "__none__";
+
+const DEFINITION_SOURCES = [
+  { label: "Wordnik", fetcher: fetchFromWordnik },
+  { label: "DictionaryAPI", fetcher: fetchFromDictionaryApi },
+  { label: "Wiktionary", fetcher: fetchFromWiktionary },
+] as const;
 
 export function QuickCapture() {
   const books = useBooksStore((s) => s.books);
   const readingBooks = books.filter((b) => b.shelf === "reading");
   const createRecords = useReadStore((s) => s.createRecords);
+  const updateRecord = useReadStore((s) => s.updateRecord);
+  const records = useReadStore((s) => s.records);
   const { user } = useAuth();
 
   const [bookId, setBookId] = useState<string>(NO_BOOK); // sticky across entries
   const [word, setWord] = useState("");
-  const [preview, setPreview] = useState<{ word: string; partOfSpeech: string; definition: string } | null>(null);
+  const [preview, setPreview] = useState<{ id: string; word: string; partOfSpeech: string; definition: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>("");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [fetchingSource, setFetchingSource] = useState<string | null>(null);
+
+  const dialogRecord = dialogOpen && preview ? records.find((r) => r.id === preview.id) : undefined;
 
   async function capture() {
     const clean = word.trim();
@@ -38,7 +56,7 @@ export function QuickCapture() {
         result = { word: clean, definition: "", partOfSpeech: "", allDefinitions: [], allSynonyms: [] };
       }
       const tagged = bookId !== NO_BOOK ? bookId : null;
-      await createRecords([
+      const [created] = await createRecords([
         {
           word: result.word || clean,
           definition: result.definition,
@@ -51,7 +69,7 @@ export function QuickCapture() {
           bookId: tagged,
         },
       ]);
-      setPreview({ word: result.word || clean, partOfSpeech: result.partOfSpeech, definition: result.definition });
+      setPreview(created ? { id: created.id, word: created.word, partOfSpeech: created.partOfSpeech, definition: created.definition } : null);
       setWord("");
     } finally {
       setLoading(false);
@@ -60,6 +78,28 @@ export function QuickCapture() {
 
   function clearPreview() {
     if (preview) setPreview(null);
+  }
+
+  async function handleFetchSource(sourceLabel: string, fetcher: (word: string) => Promise<ReadDefinition | null>) {
+    if (!dialogRecord || fetchingSource) return;
+    setFetchingSource(sourceLabel);
+    try {
+      const result = await fetcher(dialogRecord.word);
+      if (!result || result.allDefinitions.length === 0) return;
+      const keptDefinitions = dialogRecord.allDefinitions.filter((d) => d.source !== sourceLabel);
+      const allDefinitions = [...keptDefinitions, ...result.allDefinitions];
+      const allSynonyms = Array.from(new Set([...dialogRecord.allSynonyms, ...result.allSynonyms]));
+      await updateRecord(dialogRecord.id, { allDefinitions, allSynonyms });
+    } finally {
+      setFetchingSource(null);
+    }
+  }
+
+  async function pickDefinition(definition: string, partOfSpeech: string) {
+    if (!dialogRecord) return;
+    await updateRecord(dialogRecord.id, { definition, partOfSpeech });
+    setPreview({ id: dialogRecord.id, word: dialogRecord.word, partOfSpeech, definition });
+    setDialogOpen(false);
   }
 
   return (
@@ -101,9 +141,84 @@ export function QuickCapture() {
 
       {preview && (
         <div className="mt-3 rounded-lg border border-[var(--surface-border)] bg-[var(--bg-panel)] p-3">
-          <p className="text-base font-bold text-[var(--text-primary)]">{preview.word}</p>
+          <button
+            type="button"
+            onClick={() => setDialogOpen(true)}
+            className="text-left text-base font-bold text-[var(--text-primary)] underline-offset-2 hover:underline"
+          >
+            {preview.word}
+          </button>
           {preview.partOfSpeech ? <p className="text-xs italic text-[var(--text-secondary)]">{preview.partOfSpeech}</p> : null}
           <p className="mt-1 text-sm text-[var(--text-primary)]">{preview.definition || "No definition found — saved anyway."}</p>
+        </div>
+      )}
+
+      {dialogOpen && dialogRecord && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => setDialogOpen(false)}
+        >
+          <div
+            className="max-h-[80vh] w-full max-w-md overflow-y-auto rounded-xl border border-[var(--surface-border)] bg-[var(--bg-panel)] p-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-lg font-bold text-[var(--text-primary)]">{dialogRecord.word}</h2>
+              <button
+                type="button"
+                onClick={() => setDialogOpen(false)}
+                className="rounded-full border border-[var(--surface-border)] px-2 py-0.5 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="mb-3 flex gap-2">
+              {DEFINITION_SOURCES.map(({ label, fetcher }) => (
+                <button
+                  key={label}
+                  type="button"
+                  disabled={fetchingSource !== null}
+                  onClick={() => void handleFetchSource(label, fetcher)}
+                  className="rounded-full border border-[var(--surface-border)] px-3 py-1 text-xs text-[var(--text-secondary)] transition-colors hover:border-[var(--accent-solid)] hover:text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {fetchingSource === label ? "Fetching…" : `Try ${label}`}
+                </button>
+              ))}
+            </div>
+
+            <div className="space-y-2">
+              {dialogRecord.allDefinitions.length === 0 ? (
+                <p className="text-sm text-[var(--text-secondary)]">No definitions yet — try a source above.</p>
+              ) : (
+                dialogRecord.allDefinitions.map((def, i) => {
+                  const isSelected = dialogRecord.definition === def.definition;
+                  return (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => void pickDefinition(def.definition, def.partOfSpeech)}
+                      className={[
+                        "w-full rounded-lg border px-3 py-2 text-left transition-colors",
+                        isSelected
+                          ? "border-[var(--accent-solid)] bg-[var(--bg-panel-strong)]"
+                          : "border-[var(--surface-border)] hover:border-[var(--accent-solid)]/40",
+                      ].join(" ")}
+                    >
+                      <p className="mb-1 text-[0.6rem] italic tracking-wider text-[var(--text-secondary)]">
+                        {def.partOfSpeech?.toUpperCase()} · MEANING {i + 1}
+                        {def.source && <span className="ml-1 not-italic">· {def.source}</span>}
+                      </p>
+                      <p className="text-sm leading-5 text-[var(--text-primary)]">{def.definition}</p>
+                      {def.example && (
+                        <p className="mt-1 text-xs italic text-[var(--text-secondary)]">"{def.example}"</p>
+                      )}
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>

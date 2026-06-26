@@ -64,7 +64,7 @@ describe("Read parsers", () => {
     expect(result.word).toBe("harvest");
     expect(result.definition).toBe("The process of gathering a crop.");
     expect(result.partOfSpeech).toBe("noun");
-    expect(result.allDefinitions).toEqual([{ partOfSpeech: "noun", definition: "The process of gathering a crop." }]);
+    expect(result.allDefinitions).toEqual([{ partOfSpeech: "noun", definition: "The process of gathering a crop.", source: "DictionaryAPI" }]);
     expect(result.allSynonyms).toEqual([]);
   });
 
@@ -110,9 +110,9 @@ describe("Read parsers", () => {
     expect(result.definition).toBe("Lasting for a very short time.");
     expect(result.partOfSpeech).toBe("adjective");
     expect(result.allDefinitions).toEqual([
-      { partOfSpeech: "adjective", definition: "Lasting for a very short time.", example: "fashions are ephemeral" },
-      { partOfSpeech: "adjective", definition: "Denoting a plant with a very short life cycle." },
-      { partOfSpeech: "noun", definition: "An ephemeral plant." },
+      { partOfSpeech: "adjective", definition: "Lasting for a very short time.", example: "fashions are ephemeral", source: "DictionaryAPI" },
+      { partOfSpeech: "adjective", definition: "Denoting a plant with a very short life cycle.", source: "DictionaryAPI" },
+      { partOfSpeech: "noun", definition: "An ephemeral plant.", source: "DictionaryAPI" },
     ]);
     expect(result.allSynonyms).toEqual(["fleeting", "transient", "momentary"]);
   });
