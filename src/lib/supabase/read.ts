@@ -27,6 +27,7 @@ export function rowToReadRecord(r: any): ReadRecord {
     allSynonyms: r.all_synonyms ?? [],
     sourceType: r.source_type,
     bookId: r.book_id ?? null,
+    favorite: r.favorite ?? false,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
   };
@@ -61,6 +62,7 @@ export async function sbCreateReadRecord(userId: string, persona: Persona, recor
     all_synonyms: record.allSynonyms,
     source_type: record.sourceType,
     book_id: record.bookId ?? null,
+    favorite: record.favorite,
     created_at: record.createdAt,
     updated_at: record.updatedAt,
   });
@@ -86,6 +88,7 @@ export async function sbUpdateReadRecord(
   if ("bookId" in updates) patch.book_id = updates.bookId ?? null;
   if ("allDefinitions" in updates) patch.all_definitions = updates.allDefinitions;
   if ("allSynonyms" in updates) patch.all_synonyms = updates.allSynonyms;
+  if ("favorite" in updates) patch.favorite = updates.favorite;
   await client.from("read_records").update(patch).eq("user_id", userId).eq("persona", persona).eq("id", id);
 }
 

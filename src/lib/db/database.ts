@@ -234,6 +234,27 @@ class SoloLevelingDB extends Dexie {
       readRecords: "id, createdAt, word, sourceType",
       books: "id, createdAt, shelf",
     });
+
+    this.version(13)
+      .stores({
+        profile: "_id",
+        gates: "id, status, rank, date",
+        quests: "id, gateId, status, order",
+        missions: "id, rank, date, order",
+        inventory: "id",
+        hunterRecords: "date",
+        gymStats: "id",
+        xpLog: "id, timestamp",
+        stickyNotes: "id, pinnedAt",
+        leads: "id, createdAt",
+        readRecords: "id, createdAt, word, sourceType",
+        books: "id, createdAt, shelf",
+      })
+      .upgrade(async (tx) => {
+        await tx.table("readRecords").toCollection().modify((r: Partial<ReadRecord>) => {
+          r.favorite ??= false;
+        });
+      });
   }
 }
 

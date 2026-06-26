@@ -381,6 +381,7 @@ function StudyMode({
 
 export function ReadPage() {
   const inputRef = useRef<HTMLInputElement>(null);
+  const filterInputRef = useRef<HTMLInputElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const { user } = useAuth();
   const activePersona = usePersonaStore((state) => state.activePersona);
@@ -388,6 +389,7 @@ export function ReadPage() {
   const loadRecords = useReadStore((state) => state.load);
   const createRecords = useReadStore((state) => state.createRecords);
   const deleteRecord = useReadStore((state) => state.deleteRecord);
+  const updateRecord = useReadStore((state) => state.updateRecord);
 
   const [sourceType, setSourceType] = useState<ReadSourceType>("book");
   const [captureState, setCaptureState] = useState<CaptureState>("idle");
@@ -486,6 +488,19 @@ export function ReadPage() {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [saveSelectedWords, selectedWords.length]);
+
+  // Typing anywhere on the page (when no other field has focus) routes into the filter box.
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.metaKey || e.ctrlKey || e.altKey || e.key.length !== 1) return;
+      const active = document.activeElement as HTMLElement | null;
+      const tag = active?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || active?.isContentEditable) return;
+      filterInputRef.current?.focus();
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
 
   function clearCapture() {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
@@ -838,6 +853,7 @@ export function ReadPage() {
                 <line x1="10.5" y1="10.5" x2="14" y2="14" />
               </svg>
               <input
+                ref={filterInputRef}
                 type="text"
                 placeholder="Filter…"
                 value={filterQuery}
@@ -855,7 +871,11 @@ export function ReadPage() {
           </div>
         </div>
 
-        <ReadRecordList records={filteredRecords} onDelete={(id) => void deleteRecord(id)} />
+        <ReadRecordList
+          records={filteredRecords}
+          onDelete={(id) => void deleteRecord(id)}
+          onToggleFavorite={(id, favorite) => void updateRecord(id, { favorite })}
+        />
       </section>
 
       {studyOpen && (

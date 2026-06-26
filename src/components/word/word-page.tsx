@@ -79,6 +79,30 @@ export function WordPage({ id }: { id: string }) {
     customInputRef.current?.focus();
   }
 
+  const handleDeleteDefinition = useCallback(
+    async (index: number) => {
+      if (!record) return;
+      const removed = record.allDefinitions[index];
+      const allDefinitions = record.allDefinitions.filter((_, i) => i !== index);
+      await updateRecord(record.id, { allDefinitions });
+      if (removed && selectedDefinition === removed.definition) {
+        setSelectedDefinition(allDefinitions[0]?.definition ?? "");
+      }
+    },
+    [record, selectedDefinition, updateRecord],
+  );
+
+  const handleClearRest = useCallback(
+    async (index: number) => {
+      if (!record) return;
+      const kept = record.allDefinitions[index];
+      if (!kept) return;
+      await updateRecord(record.id, { allDefinitions: [kept] });
+      setSelectedDefinition(kept.definition);
+    },
+    [record, updateRecord],
+  );
+
   const handleFetchSource = useCallback(
     async (sourceLabel: string, fetcher: (word: string) => Promise<{ allDefinitions: ReadRecord["allDefinitions"]; allSynonyms: string[] } | null>) => {
       if (!record || fetchingSource) return;
@@ -195,12 +219,14 @@ export function WordPage({ id }: { id: string }) {
             {record.allDefinitions.map((def, i) => {
               const isSelected = selectedDefinition === def.definition;
               return (
-                <button
+                <div
                   key={i}
-                  type="button"
+                  role="button"
+                  tabIndex={0}
                   onClick={() => setSelectedDefinition(def.definition)}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setSelectedDefinition(def.definition); }}
                   className={[
-                    "w-full rounded-lg border px-4 py-3 text-left transition-colors",
+                    "w-full cursor-pointer rounded-lg border px-4 py-3 text-left transition-colors",
                     isSelected
                       ? "border-[var(--accent-solid)] bg-[var(--bg-panel)]"
                       : "border-[var(--surface-border)] bg-[var(--bg-panel)] hover:border-[var(--accent-solid)]/40",
@@ -219,6 +245,25 @@ export function WordPage({ id }: { id: string }) {
                         </p>
                       )}
                     </div>
+                    <div className="mt-0.5 flex shrink-0 flex-col items-end gap-1">
+                      <button
+                        type="button"
+                        aria-label="Delete this definition"
+                        onClick={(e) => { e.stopPropagation(); void handleDeleteDefinition(i); }}
+                        className="rounded-full border border-[var(--surface-border)] px-1.5 py-0.5 text-xs text-[var(--text-secondary)] transition-colors hover:border-red-500 hover:text-red-500"
+                      >
+                        ✕
+                      </button>
+                      {record.allDefinitions.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); void handleClearRest(i); }}
+                          className="whitespace-nowrap rounded-full border border-[var(--surface-border)] px-1.5 py-0.5 text-[0.6rem] text-[var(--text-secondary)] transition-colors hover:border-[var(--accent-solid)] hover:text-[var(--accent-solid)]"
+                        >
+                          Clear rest
+                        </button>
+                      )}
+                    </div>
                     <span
                       className={[
                         "mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-colors",
@@ -232,7 +277,7 @@ export function WordPage({ id }: { id: string }) {
                       )}
                     </span>
                   </div>
-                </button>
+                </div>
               );
             })}
           </div>
@@ -264,10 +309,10 @@ export function WordPage({ id }: { id: string }) {
                 disabled={locked}
                 onClick={() => toggleSynonym(syn)}
                 className={[
-                  "rounded-full border px-3 py-1 text-sm transition-colors",
+                  "rounded-full border px-3 py-1 text-[1.4rem] transition-colors",
                   on
-                    ? "border-[var(--accent-solid)] font-semibold text-[var(--accent-soft)]"
-                    : "border-[var(--surface-border)] text-[var(--text-secondary)]",
+                    ? "border-[var(--accent-solid)] font-semibold text-[var(--accent-solid)]"
+                    : "border-[var(--surface-border)] text-[var(--accent-solid)]/70",
                   locked ? "cursor-not-allowed opacity-30" : "hover:border-[var(--accent-solid)]/50",
                 ].join(" ")}
               >
@@ -282,7 +327,7 @@ export function WordPage({ id }: { id: string }) {
                 key={syn}
                 type="button"
                 onClick={() => toggleSynonym(syn)}
-                className="rounded-full border border-dashed border-[var(--accent-solid)] px-3 py-1 text-sm font-semibold text-[var(--accent-soft)]"
+                className="rounded-full border border-dashed border-[var(--accent-solid)] px-3 py-1 text-[1.4rem] font-semibold text-[var(--accent-solid)]"
               >
                 {syn} ×
               </button>

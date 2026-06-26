@@ -45,6 +45,13 @@ export function QuickCapture() {
     setLoading(true);
     setError("");
     try {
+      const existing = records.find((r) => r.word.toLowerCase() === clean.toLowerCase());
+      if (existing) {
+        setPreview({ id: existing.id, word: existing.word, partOfSpeech: existing.partOfSpeech, definition: existing.definition });
+        setWord("");
+        return;
+      }
+
       let result: ReadDefinition;
       try {
         result = await fetchDictionaryDefinition(clean, user?.id);
@@ -100,6 +107,25 @@ export function QuickCapture() {
     await updateRecord(dialogRecord.id, { definition, partOfSpeech });
     setPreview({ id: dialogRecord.id, word: dialogRecord.word, partOfSpeech, definition });
     setDialogOpen(false);
+  }
+
+  async function deleteDefinition(index: number) {
+    if (!dialogRecord) return;
+    const removed = dialogRecord.allDefinitions[index];
+    const allDefinitions = dialogRecord.allDefinitions.filter((_, i) => i !== index);
+    await updateRecord(dialogRecord.id, { allDefinitions });
+    if (removed && dialogRecord.definition === removed.definition) {
+      const fallback = allDefinitions[0];
+      await updateRecord(dialogRecord.id, { definition: fallback?.definition ?? "", partOfSpeech: fallback?.partOfSpeech ?? "" });
+    }
+  }
+
+  async function clearRestDefinitions(index: number) {
+    if (!dialogRecord) return;
+    const kept = dialogRecord.allDefinitions[index];
+    if (!kept) return;
+    await updateRecord(dialogRecord.id, { allDefinitions: [kept], definition: kept.definition, partOfSpeech: kept.partOfSpeech });
+    setPreview({ id: dialogRecord.id, word: dialogRecord.word, partOfSpeech: kept.partOfSpeech, definition: kept.definition });
   }
 
   return (
@@ -194,26 +220,49 @@ export function QuickCapture() {
                 dialogRecord.allDefinitions.map((def, i) => {
                   const isSelected = dialogRecord.definition === def.definition;
                   return (
-                    <button
+                    <div
                       key={i}
-                      type="button"
+                      role="button"
+                      tabIndex={0}
                       onClick={() => void pickDefinition(def.definition, def.partOfSpeech)}
+                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") void pickDefinition(def.definition, def.partOfSpeech); }}
                       className={[
-                        "w-full rounded-lg border px-3 py-2 text-left transition-colors",
+                        "w-full cursor-pointer rounded-lg border px-3 py-2 text-left transition-colors",
                         isSelected
                           ? "border-[var(--accent-solid)] bg-[var(--bg-panel-strong)]"
                           : "border-[var(--surface-border)] hover:border-[var(--accent-solid)]/40",
                       ].join(" ")}
                     >
-                      <p className="mb-1 text-[0.6rem] italic tracking-wider text-[var(--text-secondary)]">
-                        {def.partOfSpeech?.toUpperCase()} · MEANING {i + 1}
-                        {def.source && <span className="ml-1 not-italic">· {def.source}</span>}
-                      </p>
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="mb-1 text-[0.6rem] italic tracking-wider text-[var(--text-secondary)]">
+                          {def.partOfSpeech?.toUpperCase()} · MEANING {i + 1}
+                          {def.source && <span className="ml-1 not-italic">· {def.source}</span>}
+                        </p>
+                        <div className="flex shrink-0 items-center gap-1">
+                          {dialogRecord.allDefinitions.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); void clearRestDefinitions(i); }}
+                              className="whitespace-nowrap rounded-full border border-[var(--surface-border)] px-1.5 py-0.5 text-[0.6rem] text-[var(--text-secondary)] transition-colors hover:border-[var(--accent-solid)] hover:text-[var(--accent-solid)]"
+                            >
+                              Clear rest
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            aria-label="Delete this definition"
+                            onClick={(e) => { e.stopPropagation(); void deleteDefinition(i); }}
+                            className="rounded-full border border-[var(--surface-border)] px-1.5 py-0.5 text-xs text-[var(--text-secondary)] transition-colors hover:border-red-500 hover:text-red-500"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      </div>
                       <p className="text-sm leading-5 text-[var(--text-primary)]">{def.definition}</p>
                       {def.example && (
                         <p className="mt-1 text-xs italic text-[var(--text-secondary)]">"{def.example}"</p>
                       )}
-                    </button>
+                    </div>
                   );
                 })
               )}

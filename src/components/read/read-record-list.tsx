@@ -6,6 +6,7 @@ import type { ReadRecord } from "@/lib/types";
 interface ReadRecordListProps {
   records: ReadRecord[];
   onDelete: (id: string) => void;
+  onToggleFavorite: (id: string, favorite: boolean) => void;
 }
 
 function formatTime(value: string) {
@@ -25,9 +26,33 @@ function groupRecords(records: ReadRecord[]) {
   return Array.from(groups.entries());
 }
 
-function RecordCard({ record, onDelete }: { record: ReadRecord; onDelete: (id: string) => void }) {
+function RecordCard({
+  record,
+  onDelete,
+  onToggleFavorite,
+}: {
+  record: ReadRecord;
+  onDelete: (id: string) => void;
+  onToggleFavorite: (id: string, favorite: boolean) => void;
+}) {
   return (
-    <div className="relative flex flex-col overflow-hidden rounded-xl border border-[var(--surface-border)] bg-[var(--bg-panel)] p-3 sm:p-4">
+    <div
+      className={[
+        "relative flex flex-col overflow-hidden rounded-xl border bg-[var(--bg-panel)] p-3 sm:p-4",
+        record.favorite ? "border-[var(--accent-solid)] shadow-[0_0_0_1px_var(--accent-solid)]" : "border-[var(--surface-border)]",
+      ].join(" ")}
+    >
+      <button
+        type="button"
+        onClick={() => onToggleFavorite(record.id, !record.favorite)}
+        aria-label={record.favorite ? `Unstar ${record.word}` : `Star ${record.word}`}
+        className={[
+          "absolute right-9 top-3 text-base leading-none transition-colors",
+          record.favorite ? "text-[var(--accent-solid)]" : "text-[var(--text-secondary)] hover:text-[var(--accent-solid)]",
+        ].join(" ")}
+      >
+        {record.favorite ? "★" : "☆"}
+      </button>
       <button
         type="button"
         onClick={() => onDelete(record.id)}
@@ -63,7 +88,7 @@ function RecordCard({ record, onDelete }: { record: ReadRecord; onDelete: (id: s
           {record.synonyms.map((syn) => (
             <span
               key={syn}
-              className="rounded-full border border-[var(--surface-border)] px-2 py-0.5 text-[0.6rem] text-[var(--text-secondary)]"
+              className="rounded-full border border-[var(--surface-border)] px-2 py-0.5 text-[0.96rem] font-semibold text-[var(--accent-solid)]"
             >
               {syn}
             </span>
@@ -78,7 +103,7 @@ function RecordCard({ record, onDelete }: { record: ReadRecord; onDelete: (id: s
   );
 }
 
-export function ReadRecordList({ records, onDelete }: ReadRecordListProps) {
+export function ReadRecordList({ records, onDelete, onToggleFavorite }: ReadRecordListProps) {
   if (records.length === 0) {
     return (
       <div className="grid min-h-[180px] place-items-center rounded-xl border border-dashed border-[var(--surface-border)] bg-[var(--bg-panel)] p-6 text-center">
@@ -106,7 +131,7 @@ export function ReadRecordList({ records, onDelete }: ReadRecordListProps) {
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
             {items.map((record) => (
-              <RecordCard key={record.id} record={record} onDelete={onDelete} />
+              <RecordCard key={record.id} record={record} onDelete={onDelete} onToggleFavorite={onToggleFavorite} />
             ))}
           </div>
         </div>

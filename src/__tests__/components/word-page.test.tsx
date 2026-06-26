@@ -25,6 +25,7 @@ const BASE_RECORD = {
   ],
   allSynonyms: ["fleeting", "transient", "momentary"],
   sourceType: "book" as const,
+  favorite: false,
   createdAt: "2026-06-13T10:00:00.000Z",
   updatedAt: "2026-06-13T10:00:00.000Z",
 };

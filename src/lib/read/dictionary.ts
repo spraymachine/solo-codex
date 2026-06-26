@@ -131,6 +131,20 @@ interface WordnikDefinition {
   exampleUses?: unknown;
 }
 
+function cleanWordnikText(raw: string): string {
+  return raw
+    .replace(/<xref[^>]*>/gi, "")
+    .replace(/<\/xref>/gi, "")
+    .replace(/<[^>]+>/g, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
+// Wordnik returns pure pointer definitions like "See xref." with no real content — skip those.
+function isPureCrossReference(text: string): boolean {
+  return /^(see|compare|cf\.?)\s+\S+\.?$/i.test(text);
+}
+
 export function parseWordnikDefinition(payload: unknown, resolvedWord: string): ReadDefinition | null {
   if (!Array.isArray(payload)) return null;
 
@@ -139,15 +153,18 @@ export function parseWordnikDefinition(payload: unknown, resolvedWord: string): 
   let firstPos = "";
 
   for (const entry of payload as WordnikDefinition[]) {
-    const text = typeof entry.text === "string" ? entry.text.trim() : "";
-    if (!text) continue;
+    const rawText = typeof entry.text === "string" ? entry.text.trim() : "";
+    if (!rawText) continue;
+    const text = cleanWordnikText(rawText);
+    if (!text || isPureCrossReference(text)) continue;
 
     const pos = typeof entry.partOfSpeech === "string" ? entry.partOfSpeech.trim() : "";
     const exampleUses = Array.isArray(entry.exampleUses) ? entry.exampleUses : [];
-    const exampleText =
+    const rawExample =
       exampleUses.length > 0 && typeof (exampleUses[0] as { text?: unknown })?.text === "string"
-        ? ((exampleUses[0] as { text: string }).text.trim() || undefined)
-        : undefined;
+        ? (exampleUses[0] as { text: string }).text.trim()
+        : "";
+    const exampleText = rawExample ? cleanWordnikText(rawExample) || undefined : undefined;
 
     allDefinitions.push({
       partOfSpeech: pos,

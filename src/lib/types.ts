@@ -149,6 +149,7 @@ export interface ReadRecord {
   allSynonyms: string[];
   sourceType: ReadSourceType;
   bookId?: string | null;
+  favorite: boolean;
   createdAt: string;
   updatedAt: string;
 }

@@ -31,6 +31,7 @@ describe("ReadPage", () => {
       allDefinitions: [],
       allSynonyms: [],
       sourceType: "book",
+      favorite: false,
       createdAt: "2026-06-13T10:00:00.000Z",
       updatedAt: "2026-06-13T10:00:00.000Z",
     });
@@ -54,6 +55,7 @@ describe("ReadPage", () => {
       allDefinitions: [],
       allSynonyms: [],
       sourceType: "book",
+      favorite: false,
       createdAt: "2026-06-13T10:00:00.000Z",
       updatedAt: "2026-06-13T10:00:00.000Z",
     });

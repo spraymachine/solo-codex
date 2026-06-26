@@ -32,7 +32,7 @@ interface ReadState {
   createRecords: (items: ReadRecordInput[]) => Promise<ReadRecord[]>;
   updateRecord: (
     id: string,
-    updates: Partial<Pick<ReadRecord, "word" | "definition" | "partOfSpeech" | "sourceType" | "myDefinition" | "synonyms" | "bookId" | "allDefinitions" | "allSynonyms">>,
+    updates: Partial<Pick<ReadRecord, "word" | "definition" | "partOfSpeech" | "sourceType" | "myDefinition" | "synonyms" | "bookId" | "allDefinitions" | "allSynonyms" | "favorite">>,
   ) => Promise<void>;
   deleteRecord: (id: string) => Promise<void>;
 }
