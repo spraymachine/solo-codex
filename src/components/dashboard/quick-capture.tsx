@@ -14,6 +14,7 @@ import {
 import { RateLimitError } from "@/lib/rate-limiter";
 
 const NO_BOOK = "__none__";
+const LAST_TAG_KEY = "quick-capture-last-tag";
 
 const DEFINITION_SOURCES = [
   { label: "Wordnik", fetcher: fetchFromWordnik },
@@ -29,7 +30,15 @@ export function QuickCapture() {
   const records = useReadStore((s) => s.records);
   const { user } = useAuth();
 
-  const [bookId, setBookId] = useState<string>(NO_BOOK); // sticky across entries
+  const [bookId, setBookId] = useState<string>(() => {
+    if (typeof window === "undefined") return NO_BOOK;
+    return window.localStorage.getItem(LAST_TAG_KEY) ?? NO_BOOK;
+  }); // sticky across entries and page navigations
+
+  function selectBookId(id: string) {
+    setBookId(id);
+    window.localStorage.setItem(LAST_TAG_KEY, id);
+  }
   const [word, setWord] = useState("");
   const [preview, setPreview] = useState<{ id: string; word: string; partOfSpeech: string; definition: string } | null>(null);
   const [loading, setLoading] = useState(false);
@@ -133,7 +142,7 @@ export function QuickCapture() {
       <div className="mb-2 flex flex-wrap gap-2">
         <button
           type="button"
-          onClick={() => setBookId(NO_BOOK)}
+          onClick={() => selectBookId(NO_BOOK)}
           className={`rounded-full border px-3 py-1 text-xs font-semibold ${bookId === NO_BOOK ? "border-[var(--accent-solid)] bg-[var(--bg-panel-strong)] text-[var(--text-primary)]" : "border-[var(--surface-border)] text-[var(--text-secondary)]"}`}
         >
           No book
@@ -142,7 +151,7 @@ export function QuickCapture() {
           <button
             key={b.id}
             type="button"
-            onClick={() => setBookId(b.id)}
+            onClick={() => selectBookId(b.id)}
             className={`rounded-full border px-3 py-1 text-xs font-semibold ${bookId === b.id ? "border-[var(--accent-solid)] bg-[var(--bg-panel-strong)] text-[var(--text-primary)]" : "border-[var(--surface-border)] text-[var(--text-secondary)]"}`}
           >
             {b.title}

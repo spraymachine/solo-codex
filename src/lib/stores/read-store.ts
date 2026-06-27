@@ -44,8 +44,9 @@ async function syncReadToSupabase(fn: (userId: string) => Promise<void>) {
     const userId = await getReadUserId();
     if (!userId) return;
     await fn(userId);
-  } catch {
-    // swallow — local state is source of truth
+  } catch (err) {
+    // local state stays source of truth, but surface the failure so it's diagnosable
+    console.error("read record sync failed", err);
   }
 }
 
