@@ -6,6 +6,7 @@ import { useAuth } from "@/components/auth/auth-gate";
 import { getAllowedPersonas } from "@/lib/persona-access";
 import { personaMeta, usePersonaStore } from "@/lib/stores/persona-store";
 import { useThemeStore } from "@/lib/stores/theme-store";
+import { useContinuationStore } from "@/lib/stores/continuation-store";
 
 function SignOutIcon() {
   return (
@@ -46,7 +47,7 @@ const NAV = [
   { href: "/books", label: "Books", glyph: "▥" },
   { href: "/words", label: "Words", glyph: "▣" },
   { href: "/work", label: "Work", glyph: "▦" },
-  { href: "/chess", label: "Chess", glyph: "♞" },
+  { href: "/gym", label: "Gym", glyph: "▤" },
 ];
 
 export function SiteHeader() {
@@ -56,6 +57,7 @@ export function SiteHeader() {
   const toggleTheme = useThemeStore((s) => s.toggleTheme);
   const activePersona = usePersonaStore((s) => s.activePersona);
   const setActivePersona = usePersonaStore((s) => s.setActivePersona);
+  const selectCurrentDate = useContinuationStore((s) => s.selectCurrentDate);
   const allowed = getAllowedPersonas(user?.email);
 
   return (
@@ -71,6 +73,7 @@ export function SiteHeader() {
               type="button"
               aria-label={`Switch to ${meta.label}`}
               onClick={() => setActivePersona(persona)}
+              onDoubleClick={() => selectCurrentDate()}
               className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold transition-all duration-300"
               style={{
                 color: meta.accent,

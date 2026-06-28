@@ -14,6 +14,7 @@ import { useCampaignStore } from "@/lib/stores/campaign-store";
 import { useContinuationStore } from "@/lib/stores/continuation-store";
 import { useStatsStore } from "@/lib/stores/stats-store";
 import { useSystemStore } from "@/lib/stores/system-store";
+import { useGymStore } from "@/lib/stores/gym-store";
 export function StoreInitializer() {
   const activePersona = usePersonaStore((state) => state.activePersona);
   const playerLoaded = usePlayerStore((state) => state.loaded);
@@ -24,6 +25,7 @@ export function StoreInitializer() {
   const booksLoaded = useBooksStore((state) => state.loaded);
   const recordsLoaded = useRecordsStore((state) => state.loaded);
   const statsLoaded = useStatsStore((state) => state.loaded);
+  const gymLoaded = useGymStore((state) => state.loaded);
   const quests = useGatesStore((state) => state.quests);
   const loadPlayer = usePlayerStore((state) => state.load);
   const loadGates = useGatesStore((state) => state.load);
@@ -34,6 +36,7 @@ export function StoreInitializer() {
   const loadRecords = useRecordsStore((state) => state.load);
   const loadStats = useStatsStore((state) => state.load);
   const loadWork = useWorkStore((state) => state.load);
+  const loadGym = useGymStore((state) => state.load);
   const syncLinkedProgress = useMissionsStore((state) => state.syncLinkedProgress);
 
   useEffect(() => {
@@ -68,6 +71,10 @@ export function StoreInitializer() {
     if (!statsLoaded) {
       void loadStats();
     }
+
+    if (!gymLoaded) {
+      void loadGym();
+    }
   }, [
     gatesLoaded,
     inventoryLoaded,
@@ -79,12 +86,14 @@ export function StoreInitializer() {
     loadBooks,
     loadRecords,
     loadStats,
+    loadGym,
     missionsLoaded,
     playerLoaded,
     readLoaded,
     booksLoaded,
     recordsLoaded,
     statsLoaded,
+    gymLoaded,
   ]);
 
   useEffect(() => {
@@ -111,6 +120,7 @@ export function StoreInitializer() {
       loadRecords(activePersona),
       loadStats(activePersona),
       loadWork(activePersona),
+      loadGym(activePersona),
     ]);
   }, [
     activePersona,
@@ -123,6 +133,7 @@ export function StoreInitializer() {
     loadRecords,
     loadStats,
     loadWork,
+    loadGym,
   ]);
 
   useEffect(() => {
