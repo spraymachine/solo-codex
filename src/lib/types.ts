@@ -248,3 +248,72 @@ export interface AppSnapshot {
   gymStats: GymStat[];
   xpLog: XpLogEntry[];
 }
+
+export const MUSCLE_GROUPS = [
+  "Chest",
+  "Back",
+  "Quads",
+  "Hamstrings",
+  "Shoulders",
+  "Biceps",
+  "Triceps",
+  "Core",
+  "Glutes",
+  "Calves",
+] as const;
+
+export type MuscleGroup = (typeof MUSCLE_GROUPS)[number];
+
+export interface WorkoutSet {
+  setNumber: number;
+  weightKg: number | null;
+  reps: number;
+  loggedAt: string;
+}
+
+export interface WorkoutSessionExercise {
+  id: string;
+  name: string;
+  muscles: MuscleGroup[];
+  isBodyweight: boolean;
+  order: number;
+  sets: WorkoutSet[];
+}
+
+export interface WorkoutSession {
+  id: string;
+  date: string;
+  splitDayId: string | null;
+  name: string;
+  muscles: MuscleGroup[];
+  rating: number | null;
+  exercises: WorkoutSessionExercise[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WorkoutTemplateExercise {
+  id: string;
+  name: string;
+  muscles: MuscleGroup[];
+  isBodyweight: boolean;
+  libraryId: string | null;
+  order: number;
+}
+
+export interface WorkoutSplitDay {
+  id: string;
+  name: string;
+  muscles: MuscleGroup[];
+  exercises: WorkoutTemplateExercise[];
+  order: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WorkoutExercise {
+  id: string;
+  name: string;
+  muscles: MuscleGroup[];
+  isBodyweight: boolean;
+}
