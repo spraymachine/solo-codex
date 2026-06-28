@@ -13,6 +13,9 @@ import type {
   StickyNote,
   XpLogEntry,
   Persona,
+  WorkoutSplitDay,
+  WorkoutSession,
+  WorkoutExercise,
 } from "@/lib/types";
 import { usePersonaStore } from "@/lib/stores/persona-store";
 
@@ -29,6 +32,9 @@ class SoloLevelingDB extends Dexie {
   leads!: EntityTable<Lead, "id">;
   readRecords!: EntityTable<ReadRecord, "id">;
   books!: EntityTable<Book, "id">;
+  workoutSplitDays!: EntityTable<WorkoutSplitDay, "id">;
+  workoutSessions!: EntityTable<WorkoutSession, "id">;
+  workoutExercises!: EntityTable<WorkoutExercise, "id">;
 
   constructor(name: string) {
     super(name);
@@ -255,6 +261,24 @@ class SoloLevelingDB extends Dexie {
           r.favorite ??= false;
         });
       });
+
+    this.version(14).stores({
+      profile: "_id",
+      gates: "id, status, rank, date",
+      quests: "id, gateId, status, order",
+      missions: "id, rank, date, order",
+      inventory: "id",
+      hunterRecords: "date",
+      gymStats: "id",
+      xpLog: "id, timestamp",
+      stickyNotes: "id, pinnedAt",
+      leads: "id, createdAt",
+      readRecords: "id, createdAt, word, sourceType",
+      books: "id, createdAt, shelf",
+      workoutSplitDays: "id, order, createdAt",
+      workoutSessions: "id, date, createdAt",
+      workoutExercises: "id, name",
+    });
   }
 }
 
