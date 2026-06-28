@@ -17,6 +17,12 @@ import type {
   Reflection,
   Rank,
   XpLogEntry,
+  WorkoutSplitDay,
+  WorkoutSession,
+  WorkoutSessionExercise,
+  WorkoutTemplateExercise,
+  WorkoutExercise,
+  MuscleGroup,
 } from "@/lib/types";
 import { generateId, nowISO, todayDate } from "@/lib/utils";
 
@@ -526,6 +532,113 @@ export const storage = {
     await db.gymStats.delete(id);
   },
 
+  async getSplitDays(options?: StorageOptions): Promise<WorkoutSplitDay[]> {
+    const db = getDb(options?.persona);
+    return db.workoutSplitDays.orderBy("order").toArray();
+  },
+
+  async createSplitDay(input: {
+    name: string;
+    muscles: MuscleGroup[];
+    exercises: WorkoutTemplateExercise[];
+  }): Promise<WorkoutSplitDay> {
+    const db = getDb();
+    const count = await db.workoutSplitDays.count();
+    const timestamp = nowISO();
+    const day: WorkoutSplitDay = {
+      id: generateId(),
+      name: input.name.trim(),
+      muscles: input.muscles,
+      exercises: input.exercises,
+      order: count,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+    await db.workoutSplitDays.add(day);
+    return day;
+  },
+
+  async updateSplitDay(
+    id: string,
+    updates: Partial<Pick<WorkoutSplitDay, "name" | "muscles" | "exercises" | "order">>,
+  ): Promise<void> {
+    const db = getDb();
+    await db.workoutSplitDays.update(id, { ...updates, updatedAt: nowISO() });
+  },
+
+  async deleteSplitDay(id: string): Promise<void> {
+    const db = getDb();
+    await db.workoutSplitDays.delete(id);
+  },
+
+  async getSessions(options?: StorageOptions): Promise<WorkoutSession[]> {
+    const db = getDb(options?.persona);
+    return db.workoutSessions.orderBy("createdAt").reverse().toArray();
+  },
+
+  async createSession(input: {
+    date: string;
+    splitDayId: string | null;
+    name: string;
+    muscles: MuscleGroup[];
+    exercises: WorkoutSessionExercise[];
+  }): Promise<WorkoutSession> {
+    const db = getDb();
+    const timestamp = nowISO();
+    const session: WorkoutSession = {
+      id: generateId(),
+      date: input.date,
+      splitDayId: input.splitDayId,
+      name: input.name,
+      muscles: input.muscles,
+      rating: null,
+      exercises: input.exercises,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+    await db.workoutSessions.add(session);
+    return session;
+  },
+
+  async updateSession(
+    id: string,
+    updates: Partial<Pick<WorkoutSession, "rating" | "exercises">>,
+  ): Promise<void> {
+    const db = getDb();
+    await db.workoutSessions.update(id, { ...updates, updatedAt: nowISO() });
+  },
+
+  async deleteSession(id: string): Promise<void> {
+    const db = getDb();
+    await db.workoutSessions.delete(id);
+  },
+
+  async getCustomExercises(options?: StorageOptions): Promise<WorkoutExercise[]> {
+    const db = getDb(options?.persona);
+    return db.workoutExercises.toArray();
+  },
+
+  async upsertCustomExercise(input: {
+    name: string;
+    muscles: MuscleGroup[];
+    isBodyweight: boolean;
+  }): Promise<WorkoutExercise> {
+    const db = getDb();
+    const name = input.name.trim();
+    const existing = await db.workoutExercises
+      .filter((e) => e.name.toLowerCase() === name.toLowerCase())
+      .first();
+    if (existing) return existing;
+    const exercise: WorkoutExercise = {
+      id: generateId(),
+      name,
+      muscles: input.muscles,
+      isBodyweight: input.isBodyweight,
+    };
+    await db.workoutExercises.add(exercise);
+    return exercise;
+  },
+
   async clear(): Promise<void> {
     const db = getDb();
     await Promise.all([
@@ -539,6 +652,9 @@ export const storage = {
       db.hunterRecords.clear(),
       db.gymStats.clear(),
       db.xpLog.clear(),
+      db.workoutSplitDays.clear(),
+      db.workoutSessions.clear(),
+      db.workoutExercises.clear(),
     ]);
   },
 
