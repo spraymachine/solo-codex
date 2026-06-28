@@ -4,6 +4,7 @@ import { create } from "zustand";
 import { getDb } from "@/lib/db/database";
 import { storage } from "@/lib/db/storage";
 import { usePersonaStore } from "@/lib/stores/persona-store";
+import { parseSetInput } from "@/lib/gym/parse";
 import {
   fetchSplitDays,
   fetchSessions,
@@ -11,6 +12,8 @@ import {
   getGymUserId,
   sbUpsertSplitDay,
   sbDeleteSplitDay,
+  sbUpsertSession,
+  sbDeleteSession,
   sbUpsertCustomExercise,
 } from "@/lib/supabase/gym";
 import type {
@@ -18,9 +21,11 @@ import type {
   Persona,
   WorkoutExercise,
   WorkoutSession,
+  WorkoutSessionExercise,
+  WorkoutSet,
   WorkoutSplitDay,
 } from "@/lib/types";
-import { generateId, nowISO } from "@/lib/utils";
+import { generateId, nowISO, todayDate } from "@/lib/utils";
 
 interface TemplateExerciseInput {
   name: string;
@@ -170,13 +175,149 @@ export const useGymStore = create<GymState>((set, get) => ({
     void sync((uid) => sbDeleteSplitDay(uid, persona, id));
   },
 
-  async startSession() {
-    return null;
+  async startSession(splitDayId) {
+    const day = get().splitDays.find((d) => d.id === splitDayId);
+    if (!day) return null;
+    const exercises: WorkoutSessionExercise[] = day.exercises
+      .slice()
+      .sort((a, b) => a.order - b.order)
+      .map((e) => ({
+        id: generateId(),
+        name: e.name,
+        muscles: e.muscles,
+        isBodyweight: e.isBodyweight,
+        order: e.order,
+        sets: [],
+      }));
+    const session = await storage.createSession({
+      date: todayDate(),
+      splitDayId: day.id,
+      name: day.name,
+      muscles: day.muscles,
+      exercises,
+    });
+    set((s) => ({
+      sessions: [session, ...s.sessions],
+      currentSessionId: session.id,
+      activeExerciseId: session.exercises[0]?.id ?? null,
+      lastRecord: null,
+      inputError: null,
+    }));
+    const persona = usePersonaStore.getState().activePersona;
+    void sync((uid) => sbUpsertSession(uid, persona, session));
+    return session;
   },
-  async setRating() {},
-  async deleteSession() {},
-  setActiveExercise() {},
-  async logSet() {},
-  async editSet() {},
-  async deleteSet() {},
+
+  async logSet(raw) {
+    const state = get();
+    const session = state.sessions.find((s) => s.id === state.currentSessionId);
+    if (!session) {
+      set({ inputError: "Start a session first" });
+      return;
+    }
+    const sorted = session.exercises.slice().sort((a, b) => a.order - b.order);
+    let activeIndex = sorted.findIndex((e) => e.id === state.activeExerciseId);
+    if (activeIndex === -1) activeIndex = 0;
+    const active = sorted[activeIndex];
+    if (!active) {
+      set({ inputError: "No exercises in this session" });
+      return;
+    }
+
+    // Advance rule needs the candidate set number before full validation, since
+    // the target exercise (not the currently active one) determines whether 2 or
+    // 3 numbers are expected (bodyweight vs weighted).
+    const leadingToken = raw.trim().split(/[\s,]+/)[0];
+    const candidateSetNumber = Number(leadingToken);
+    let targetIndex = activeIndex;
+    if (candidateSetNumber === 1 && active.sets.length > 0 && activeIndex < sorted.length - 1) {
+      targetIndex = activeIndex + 1;
+    }
+    const target = sorted[targetIndex];
+
+    const parsed = parseSetInput(raw, target.isBodyweight);
+    if (!parsed.ok) {
+      set({ inputError: parsed.error });
+      return;
+    }
+
+    const newSet: WorkoutSet = {
+      setNumber: parsed.value.setNumber,
+      weightKg: parsed.value.weightKg,
+      reps: parsed.value.reps,
+      loggedAt: nowISO(),
+    };
+
+    const updatedExercises = session.exercises.map((e) =>
+      e.id === target.id ? { ...e, sets: [...e.sets, newSet] } : e,
+    );
+
+    await storage.updateSession(session.id, { exercises: updatedExercises });
+    const updatedAt = nowISO();
+    const updatedSession = { ...session, exercises: updatedExercises, updatedAt };
+    set((s) => ({
+      sessions: s.sessions.map((x) => (x.id === session.id ? updatedSession : x)),
+      activeExerciseId: target.id,
+      lastRecord: { exerciseName: target.name, setNumber: newSet.setNumber, weightKg: newSet.weightKg, reps: newSet.reps },
+      inputError: null,
+    }));
+    const persona = usePersonaStore.getState().activePersona;
+    void sync((uid) => sbUpsertSession(uid, persona, updatedSession));
+  },
+
+  async setRating(rating) {
+    const state = get();
+    const session = state.sessions.find((s) => s.id === state.currentSessionId);
+    if (!session) return;
+    await storage.updateSession(session.id, { rating });
+    const updatedSession = { ...session, rating, updatedAt: nowISO() };
+    set((s) => ({ sessions: s.sessions.map((x) => (x.id === session.id ? updatedSession : x)) }));
+    const persona = usePersonaStore.getState().activePersona;
+    void sync((uid) => sbUpsertSession(uid, persona, updatedSession));
+  },
+
+  async deleteSession(id) {
+    await storage.deleteSession(id);
+    set((s) => ({
+      sessions: s.sessions.filter((x) => x.id !== id),
+      currentSessionId: s.currentSessionId === id ? null : s.currentSessionId,
+      activeExerciseId: s.currentSessionId === id ? null : s.activeExerciseId,
+    }));
+    const persona = usePersonaStore.getState().activePersona;
+    void sync((uid) => sbDeleteSession(uid, persona, id));
+  },
+
+  setActiveExercise(exerciseId) {
+    set({ activeExerciseId: exerciseId, inputError: null });
+  },
+
+  async editSet(exerciseId, setNumber, updates) {
+    const state = get();
+    const session = state.sessions.find((s) => s.id === state.currentSessionId);
+    if (!session) return;
+    const updatedExercises = session.exercises.map((e) =>
+      e.id === exerciseId
+        ? { ...e, sets: e.sets.map((set) => (set.setNumber === setNumber ? { ...set, ...updates } : set)) }
+        : e,
+    );
+    await storage.updateSession(session.id, { exercises: updatedExercises });
+    const updatedSession = { ...session, exercises: updatedExercises, updatedAt: nowISO() };
+    set((s) => ({ sessions: s.sessions.map((x) => (x.id === session.id ? updatedSession : x)) }));
+    const persona = usePersonaStore.getState().activePersona;
+    void sync((uid) => sbUpsertSession(uid, persona, updatedSession));
+  },
+
+  async deleteSet(exerciseId, setNumber) {
+    const state = get();
+    const session = state.sessions.find((s) => s.id === state.currentSessionId);
+    if (!session) return;
+    const updatedExercises = session.exercises.map((e) =>
+      e.id === exerciseId ? { ...e, sets: e.sets.filter((set) => set.setNumber !== setNumber) } : e,
+    );
+    await storage.updateSession(session.id, { exercises: updatedExercises });
+    const updatedSession = { ...session, exercises: updatedExercises, updatedAt: nowISO() };
+    set((s) => ({ sessions: s.sessions.map((x) => (x.id === session.id ? updatedSession : x)) }));
+    const persona = usePersonaStore.getState().activePersona;
+    void sync((uid) => sbUpsertSession(uid, persona, updatedSession));
+  },
 }));
