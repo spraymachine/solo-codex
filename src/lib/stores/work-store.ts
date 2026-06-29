@@ -258,6 +258,9 @@ export const useWorkStore = create<WorkState>((set, get) => {
     const personaChanged = get()._persona !== persona;
     set({ _persona: persona });
     if (personaChanged) {
+      // Drop the previous persona's data immediately — otherwise it stays on
+      // screen under the new persona until the async refetch below resolves.
+      set({ contacts: [], projects: [], courses: [], chapters: [], milestones: [], loaded: false });
       await get().unsubscribe();
     }
 
