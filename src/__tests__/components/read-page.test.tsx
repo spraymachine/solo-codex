@@ -15,8 +15,8 @@ describe("ReadPage", () => {
   it("renders capture controls and empty record state", async () => {
     render(<ReadPage />);
 
-    expect(screen.getByRole("heading", { name: "Read" })).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("Look up a word and save it directly")).toBeInTheDocument();
+    expect(screen.getByText("Read")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Add a word…")).toBeInTheDocument();
     await waitFor(() => expect(screen.getByText("No saved words")).toBeInTheDocument());
   });
 

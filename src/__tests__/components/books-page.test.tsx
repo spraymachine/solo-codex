@@ -18,7 +18,7 @@ describe("BooksPage", () => {
       coverUrl: null, totalPages: 412, shelf: "reading",
     });
     render(<BooksPage />);
-    expect(await screen.findByText("Reading")).toBeInTheDocument();
+    expect(await screen.findByText("Currently reading")).toBeInTheDocument();
     await waitFor(() => expect(screen.getAllByText("Dune").length).toBeGreaterThan(0));
   });
 });

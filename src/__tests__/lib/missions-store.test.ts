@@ -12,6 +12,8 @@ describe("missions store", () => {
     await useMissionsStore.getState().createMission({
       title: "Bench 100kg",
       rank: "B",
+      date: "2026-04-16",
+      why: "Get stronger.",
       targetMetric: "Weight",
       currentValue: 20,
       targetValue: 100,
@@ -44,6 +46,8 @@ describe("missions store", () => {
     await useMissionsStore.getState().createMission({
       title: "Consistency",
       rank: "D",
+      date: "2026-04-16",
+      why: "Build the habit.",
       targetMetric: "Sessions",
       currentValue: 0,
       targetValue: 10,

@@ -42,6 +42,7 @@ describe("WorkPage", () => {
   it("copies the external AI prompt", async () => {
     render(<WorkPage />);
 
+    fireEvent.click(await screen.findByRole("button", { name: "Paste Plan" }));
     fireEvent.click(await screen.findByRole("button", { name: "Copy AI prompt" }));
 
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
@@ -52,6 +53,7 @@ describe("WorkPage", () => {
   it("parses and previews a course plan before saving", async () => {
     render(<WorkPage />);
 
+    fireEvent.click(await screen.findByRole("button", { name: "Paste Plan" }));
     fireEvent.change(await screen.findByLabelText("Course plan text"), {
       target: {
         value: `Course: Advanced Next.js
