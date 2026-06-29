@@ -28,6 +28,7 @@ interface ReadRecordInput {
 interface ReadState {
   records: ReadRecord[];
   loaded: boolean;
+  loadedPersona: Persona | null;
   load: (persona?: Persona) => Promise<void>;
   createRecords: (items: ReadRecordInput[]) => Promise<ReadRecord[]>;
   updateRecord: (
@@ -53,10 +54,18 @@ async function syncReadToSupabase(fn: (userId: string) => Promise<void>) {
 export const useReadStore = create<ReadState>((set, get) => ({
   records: [],
   loaded: false,
+  loadedPersona: null,
 
   async load(persona) {
     if (persona && usePersonaStore.getState().activePersona !== persona) {
       return;
+    }
+
+    // Switching personas: drop whatever is in state immediately so a stale
+    // pendingLocal merge (below) can never carry the previous persona's
+    // records into this persona's view/cache/sync.
+    if (persona && get().loadedPersona !== persona) {
+      set({ records: [], loaded: false });
     }
 
     if (persona) {
@@ -67,8 +76,9 @@ export const useReadStore = create<ReadState>((set, get) => ({
           if (cloudRecords) {
             // Keep any local-only records not yet pushed to Supabase (fire-and-forget
             // sync may still be in flight) so a fresh fetch can't wipe a just-created word.
+            // Only safe when state still belongs to this persona (checked above).
             const cloudIds = new Set(cloudRecords.map((r) => r.id));
-            const pendingLocal = get().records.filter((r) => !cloudIds.has(r.id));
+            const pendingLocal = get().loadedPersona === persona ? get().records.filter((r) => !cloudIds.has(r.id)) : [];
             const merged = [...pendingLocal, ...cloudRecords].sort((a, b) =>
               b.createdAt.localeCompare(a.createdAt),
             );
@@ -79,7 +89,7 @@ export const useReadStore = create<ReadState>((set, get) => ({
               if (merged.length > 0) await db.readRecords.bulkAdd(merged);
             });
             if (usePersonaStore.getState().activePersona !== persona) return;
-            set({ records: merged, loaded: true });
+            set({ records: merged, loaded: true, loadedPersona: persona });
             return;
           }
         }
@@ -92,29 +102,37 @@ export const useReadStore = create<ReadState>((set, get) => ({
     if (persona && usePersonaStore.getState().activePersona !== persona) {
       return;
     }
-    set({ records, loaded: true });
+    set({ records, loaded: true, loadedPersona: persona ?? get().loadedPersona });
   },
 
   async createRecords(items) {
+    const persona = usePersonaStore.getState().activePersona;
     const created = await Promise.all(
       items
         .filter((item) => item.word.trim())
         .map((item) =>
-          storage.createReadRecord({
-            word: item.word,
-            definition: item.definition,
-            partOfSpeech: item.partOfSpeech,
-            myDefinition: item.myDefinition,
-            synonyms: item.synonyms,
-            allDefinitions: item.allDefinitions,
-            allSynonyms: item.allSynonyms,
-            sourceType: item.sourceType,
-            bookId: item.bookId ?? null,
-          }),
+          storage.createReadRecord(
+            {
+              word: item.word,
+              definition: item.definition,
+              partOfSpeech: item.partOfSpeech,
+              myDefinition: item.myDefinition,
+              synonyms: item.synonyms,
+              allDefinitions: item.allDefinitions,
+              allSynonyms: item.allSynonyms,
+              sourceType: item.sourceType,
+              bookId: item.bookId ?? null,
+            },
+            { persona },
+          ),
         ),
     );
 
     if (created.length === 0) return created;
+
+    // Persona may have switched while the writes above were in flight — don't
+    // splice another persona's just-created records into the current view.
+    if (usePersonaStore.getState().activePersona !== persona) return created;
 
     set((state) => ({
       records: [...created, ...state.records].sort((a, b) =>
@@ -122,7 +140,6 @@ export const useReadStore = create<ReadState>((set, get) => ({
       ),
     }));
 
-    const persona = usePersonaStore.getState().activePersona;
     void syncReadToSupabase(async (uid) => {
       await Promise.all(created.map((record) => sbCreateReadRecord(uid, persona, record)));
     });
@@ -131,21 +148,23 @@ export const useReadStore = create<ReadState>((set, get) => ({
   },
 
   async updateRecord(id, updates) {
-    await storage.updateReadRecord(id, updates);
+    const persona = usePersonaStore.getState().activePersona;
+    await storage.updateReadRecord(id, updates, { persona });
     const updatedAt = new Date().toISOString();
+    if (usePersonaStore.getState().activePersona !== persona) return;
     set((state) => ({
       records: state.records.map((record) =>
         record.id === id ? { ...record, ...updates, updatedAt } : record,
       ),
     }));
-    const persona = usePersonaStore.getState().activePersona;
     void syncReadToSupabase((uid) => sbUpdateReadRecord(uid, persona, id, { ...updates, updatedAt }));
   },
 
   async deleteRecord(id) {
-    await storage.deleteReadRecord(id);
-    set((state) => ({ records: state.records.filter((record) => record.id !== id) }));
     const persona = usePersonaStore.getState().activePersona;
+    await storage.deleteReadRecord(id, { persona });
+    if (usePersonaStore.getState().activePersona !== persona) return;
+    set((state) => ({ records: state.records.filter((record) => record.id !== id) }));
     void syncReadToSupabase((uid) => sbDeleteReadRecord(uid, persona, id));
   },
 }));

@@ -377,8 +377,8 @@ export const storage = {
     allSynonyms: string[];
     sourceType: ReadSourceType;
     bookId?: string | null;
-  }): Promise<ReadRecord> {
-    const db = getDb();
+  }, options?: StorageOptions): Promise<ReadRecord> {
+    const db = getDb(options?.persona);
     const timestamp = nowISO();
     const record: ReadRecord = {
       id: generateId(),
@@ -403,8 +403,9 @@ export const storage = {
   async updateReadRecord(
     id: string,
     updates: Partial<Pick<ReadRecord, "word" | "definition" | "partOfSpeech" | "sourceType" | "myDefinition" | "synonyms" | "bookId" | "allDefinitions" | "allSynonyms" | "favorite">>,
+    options?: StorageOptions,
   ): Promise<void> {
-    const db = getDb();
+    const db = getDb(options?.persona);
     if (updates.synonyms) updates.synonyms = updates.synonyms.slice(0, 2);
     await db.readRecords.update(id, {
       ...updates,
@@ -412,8 +413,8 @@ export const storage = {
     });
   },
 
-  async deleteReadRecord(id: string): Promise<void> {
-    const db = getDb();
+  async deleteReadRecord(id: string, options?: StorageOptions): Promise<void> {
+    const db = getDb(options?.persona);
     await db.readRecords.delete(id);
   },
 
