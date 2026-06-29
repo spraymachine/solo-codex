@@ -1,7 +1,7 @@
 "use client";
 
 import type { ButtonHTMLAttributes, ReactNode } from "react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, Reorder, useDragControls } from "framer-motion";
 import { useAuth } from "@/components/auth/auth-gate";
 import { Modal } from "@/components/ui/modal";
@@ -911,28 +911,42 @@ export default function HomePage() {
     const now = new Date();
     return { year: now.getFullYear(), month: now.getMonth() };
   });
-  const dayTodos = missions
-    .filter((mission) => mission.date === selectedDate)
-    .sort((left, right) => {
-      const leftComplete = isMissionComplete(left);
-      const rightComplete = isMissionComplete(right);
+  const dayTodos = useMemo(
+    () =>
+      missions
+        .filter((mission) => mission.date === selectedDate)
+        .sort((left, right) => {
+          const leftComplete = isMissionComplete(left);
+          const rightComplete = isMissionComplete(right);
 
-      if (leftComplete !== rightComplete) {
-        return Number(leftComplete) - Number(rightComplete);
-      }
+          if (leftComplete !== rightComplete) {
+            return Number(leftComplete) - Number(rightComplete);
+          }
 
-      if (left.order !== right.order) {
-        return left.order - right.order;
-      }
+          if (left.order !== right.order) {
+            return left.order - right.order;
+          }
 
-      return left.createdAt.localeCompare(right.createdAt);
-    });
-  const pendingTodos = dayTodos.filter((mission) => !isMissionComplete(mission));
-  const completedTodosList = dayTodos.filter((mission) => isMissionComplete(mission));
-  const arcGoals = [...gates].sort((a, b) => {
-    const rankDiff = GOAL_RANK_ORDER[a.rank] - GOAL_RANK_ORDER[b.rank];
-    return rankDiff !== 0 ? rankDiff : a.createdAt.localeCompare(b.createdAt);
-  });
+          return left.createdAt.localeCompare(right.createdAt);
+        }),
+    [missions, selectedDate],
+  );
+  const pendingTodos = useMemo(
+    () => dayTodos.filter((mission) => !isMissionComplete(mission)),
+    [dayTodos],
+  );
+  const completedTodosList = useMemo(
+    () => dayTodos.filter((mission) => isMissionComplete(mission)),
+    [dayTodos],
+  );
+  const arcGoals = useMemo(
+    () =>
+      [...gates].sort((a, b) => {
+        const rankDiff = GOAL_RANK_ORDER[a.rank] - GOAL_RANK_ORDER[b.rank];
+        return rankDiff !== 0 ? rankDiff : a.createdAt.localeCompare(b.createdAt);
+      }),
+    [gates],
+  );
   const activeGoal = arcGoals.find((goal) => goal.id === activeGoalId) ?? null;
   const dayRecord = records.find((record) => record.date === selectedDate) ?? null;
   // Month-navigation calendar
@@ -946,11 +960,15 @@ export default function HomePage() {
   ];
   const monthStart = monthDates[0];
   const monthEnd = monthDates[monthDates.length - 1];
-  const arcsThisMonth = arcGoals.filter((goal) => {
-    const arcStart = goal.date;
-    const arcEnd = goal.endDate ?? shiftDate(goal.date, 21);
-    return arcStart <= monthEnd && arcEnd >= monthStart;
-  });
+  const arcsThisMonth = useMemo(
+    () =>
+      arcGoals.filter((goal) => {
+        const arcStart = goal.date;
+        const arcEnd = goal.endDate ?? shiftDate(goal.date, 21);
+        return arcStart <= monthEnd && arcEnd >= monthStart;
+      }),
+    [arcGoals, monthEnd, monthStart],
+  );
 
   const personaDateLabel = formatShortDayDate(new Date(`${selectedDate}T12:00:00`));
 

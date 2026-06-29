@@ -17,15 +17,8 @@ import { useSystemStore } from "@/lib/stores/system-store";
 import { useGymStore } from "@/lib/stores/gym-store";
 export function StoreInitializer() {
   const activePersona = usePersonaStore((state) => state.activePersona);
-  const playerLoaded = usePlayerStore((state) => state.loaded);
   const gatesLoaded = useGatesStore((state) => state.loaded);
   const missionsLoaded = useMissionsStore((state) => state.loaded);
-  const inventoryLoaded = useInventoryStore((state) => state.loaded);
-  const readLoaded = useReadStore((state) => state.loaded);
-  const booksLoaded = useBooksStore((state) => state.loaded);
-  const recordsLoaded = useRecordsStore((state) => state.loaded);
-  const statsLoaded = useStatsStore((state) => state.loaded);
-  const gymLoaded = useGymStore((state) => state.loaded);
   const quests = useGatesStore((state) => state.quests);
   const loadPlayer = usePlayerStore((state) => state.load);
   const loadGates = useGatesStore((state) => state.load);
@@ -38,63 +31,6 @@ export function StoreInitializer() {
   const loadWork = useWorkStore((state) => state.load);
   const loadGym = useGymStore((state) => state.load);
   const syncLinkedProgress = useMissionsStore((state) => state.syncLinkedProgress);
-
-  useEffect(() => {
-    if (!playerLoaded) {
-      void loadPlayer();
-    }
-
-    if (!gatesLoaded) {
-      void loadGates();
-    }
-
-    if (!missionsLoaded) {
-      void loadMissions();
-    }
-
-    if (!inventoryLoaded) {
-      void loadInventory();
-    }
-
-    if (!readLoaded) {
-      void loadRead();
-    }
-
-    if (!booksLoaded) {
-      void loadBooks();
-    }
-
-    if (!recordsLoaded) {
-      void loadRecords();
-    }
-
-    if (!statsLoaded) {
-      void loadStats();
-    }
-
-    if (!gymLoaded) {
-      void loadGym();
-    }
-  }, [
-    gatesLoaded,
-    inventoryLoaded,
-    loadGates,
-    loadInventory,
-    loadMissions,
-    loadPlayer,
-    loadRead,
-    loadBooks,
-    loadRecords,
-    loadStats,
-    loadGym,
-    missionsLoaded,
-    playerLoaded,
-    readLoaded,
-    booksLoaded,
-    recordsLoaded,
-    statsLoaded,
-    gymLoaded,
-  ]);
 
   useEffect(() => {
     useCampaignStore.persist.setOptions({

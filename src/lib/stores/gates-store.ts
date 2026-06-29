@@ -39,11 +39,13 @@ export const useGatesStore = create<GatesState>((set, get) => ({
     }
 
     const gates = await storage.getGates({ persona });
+    const questLists = await Promise.all(
+      gates.map((gate) => storage.getQuestsByGate(gate.id, { persona })),
+    );
     const quests: Record<string, Quest[]> = {};
-
-    for (const gate of gates) {
-      quests[gate.id] = await storage.getQuestsByGate(gate.id, { persona });
-    }
+    gates.forEach((gate, i) => {
+      quests[gate.id] = questLists[i];
+    });
 
     if (persona && usePersonaStore.getState().activePersona !== persona) {
       return;
