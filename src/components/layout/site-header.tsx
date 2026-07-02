@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/components/auth/auth-gate";
@@ -43,11 +44,11 @@ function MoonIcon() {
 }
 
 const NAV = [
-  { href: "/", label: "Dashboard", glyph: "⬡" },
-  { href: "/books", label: "Books", glyph: "▥" },
-  { href: "/words", label: "Words", glyph: "▣" },
-  { href: "/work", label: "Work", glyph: "▦" },
-  { href: "/gym", label: "Gym", glyph: "▤" },
+  { href: "/", label: "Dashboard", icon: "/nav-icons/dashboard.png" },
+  { href: "/books", label: "Books", icon: "/nav-icons/read.png" },
+  { href: "/words", label: "Words", icon: "/nav-icons/words.png" },
+  { href: "/work", label: "Work", icon: "/nav-icons/work.png" },
+  { href: "/gym", label: "Gym", icon: "/nav-icons/gym.png" },
 ];
 
 export function SiteHeader() {
@@ -97,12 +98,19 @@ export function SiteHeader() {
               href={item.href}
               aria-label={item.label}
               title={item.label}
-              className={`flex flex-col items-center gap-0.5 rounded-lg px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] transition-colors duration-200 ${
+              className={`flex items-center justify-center rounded-lg p-2 transition-colors duration-200 ${
                 active ? "bg-[var(--bg-panel-strong)] text-[var(--text-primary)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
               }`}
             >
-              <span aria-hidden className="text-base leading-none">{item.glyph}</span>
-              <span className="hidden sm:inline">{item.label}</span>
+              <Image
+                src={item.icon}
+                alt=""
+                aria-hidden
+                width={26}
+                height={26}
+                className="h-[26px] w-[26px] object-contain sm:h-[20px] sm:w-[20px]"
+                style={{ filter: theme === "dark" ? "invert(1)" : "none", opacity: active ? 1 : 0.6 }}
+              />
             </Link>
           );
         })}
