@@ -43,12 +43,14 @@ function MoonIcon() {
   );
 }
 
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+
 const NAV = [
-  { href: "/", label: "Dashboard", icon: "/nav-icons/dashboard.png" },
-  { href: "/books", label: "Books", icon: "/nav-icons/read.png" },
-  { href: "/words", label: "Words", icon: "/nav-icons/words.png" },
-  { href: "/work", label: "Work", icon: "/nav-icons/work.png" },
-  { href: "/gym", label: "Gym", icon: "/nav-icons/gym.png" },
+  { href: "/", label: "Dashboard", icon: `${BASE_PATH}/nav-icons/dashboard.png` },
+  { href: "/books", label: "Books", icon: `${BASE_PATH}/nav-icons/read.png` },
+  { href: "/words", label: "Words", icon: `${BASE_PATH}/nav-icons/words.png` },
+  { href: "/work", label: "Work", icon: `${BASE_PATH}/nav-icons/work.png` },
+  { href: "/gym", label: "Gym", icon: `${BASE_PATH}/nav-icons/gym.png` },
 ];
 
 export function SiteHeader() {
@@ -98,7 +100,7 @@ export function SiteHeader() {
               href={item.href}
               aria-label={item.label}
               title={item.label}
-              className={`flex items-center justify-center rounded-lg p-2 transition-colors duration-200 ${
+              className={`flex flex-col items-center gap-0.5 rounded-lg px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] transition-colors duration-200 ${
                 active ? "bg-[var(--bg-panel-strong)] text-[var(--text-primary)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
               }`}
             >
@@ -111,6 +113,7 @@ export function SiteHeader() {
                 className="h-[26px] w-[26px] object-contain sm:h-[20px] sm:w-[20px]"
                 style={{ filter: theme === "dark" ? "invert(1)" : "none", opacity: active ? 1 : 0.6 }}
               />
+              <span className="hidden sm:inline">{item.label}</span>
             </Link>
           );
         })}
